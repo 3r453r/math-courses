@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { LessonContentRenderer } from "@/components/lesson/LessonContentRenderer";
+import type { LessonContent } from "@/types/lesson";
 
 interface LessonDetail {
   id: string;
@@ -174,27 +176,27 @@ export default function LessonPage({
             </CardContent>
           </Card>
         ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>{lesson.title}</CardTitle>
-              <CardDescription>{lesson.summary}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Lesson content rendering will be implemented in Phase 2.
-                The structured content is stored and ready to display.
-              </p>
-              <div className="mt-4 flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleGenerate}
-                  disabled={generating}
-                >
-                  {generating ? "Regenerating..." : "Regenerate Content"}
-                </Button>
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold">{lesson.title}</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {lesson.summary}
+                </p>
               </div>
-            </CardContent>
-          </Card>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleGenerate}
+                disabled={generating}
+              >
+                {generating ? "Regenerating..." : "Regenerate"}
+              </Button>
+            </div>
+            <LessonContentRenderer
+              content={JSON.parse(lesson.contentJson!) as LessonContent}
+            />
+          </div>
         )}
       </main>
     </div>
