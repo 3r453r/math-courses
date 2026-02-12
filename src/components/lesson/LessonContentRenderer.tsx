@@ -48,7 +48,7 @@ export function LessonContentRenderer({ content }: Props) {
               className="text-sm text-muted-foreground flex gap-2 items-start"
             >
               <span className="text-primary mt-0.5">&#10003;</span>
-              <span>{obj}</span>
+              <MathMarkdown content={obj} className="inline [&_p]:my-0" />
             </li>
           ))}
         </ul>
