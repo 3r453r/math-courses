@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma migrate:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(powershell:*)",
+      "Bash(del \"C:\\\\Users\\\\aswie\\\\source\\\\repos\\\\3r453r\\\\math-courses\\\\prisma\\\\dev.db\")"
+    ]
+  }
+}
