@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Course {
+  id                String   @id @default(cuid())
+  title             String
+  description       String
+  topic             String
+  focusAreas        String   @default("[]")
+  targetLessonCount Int      @default(10)
+  difficulty        String   @default("intermediate")
+  status            String   @default("draft")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  lessons        Lesson[]
+  edges          CourseEdge[]
+  diagnosticQuiz DiagnosticQuiz?
+}
+
+model Lesson {
+  id               String   @id @default(cuid())
+  courseId          String
+  title            String
+  summary          String
+  orderIndex       Int
+  status           String   @default("pending")
+  contentJson      String?
+  rawMarkdown      String?
+  generationPrompt String?
+  isSupplementary  Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  course          Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  quizzes         Quiz[]
+  notes           Note[]
+  chatMessages    ChatMessage[]
+  prerequisiteFor CourseEdge[]  @relation("FromLesson")
+  dependsOn       CourseEdge[]  @relation("ToLesson")
+
+  @@index([courseId])
+}
+
+model CourseEdge {
+  id           String @id @default(cuid())
+  courseId      String
+  fromLessonId String
+  toLessonId   String
+  relationship String @default("prerequisite")
+
+  course     Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  fromLesson Lesson @relation("FromLesson", fields: [fromLessonId], references: [id], onDelete: Cascade)
+  toLesson   Lesson @relation("ToLesson", fields: [toLessonId], references: [id], onDelete: Cascade)
+
+  @@unique([fromLessonId, toLessonId])
+  @@index([courseId])
+}
+
+model DiagnosticQuiz {
+  id            String   @id @default(cuid())
+  courseId      String   @unique
+  questionsJson String
+  status        String   @default("pending")
+  createdAt     DateTime @default(now())
+
+  course   Course              @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  attempts DiagnosticAttempt[]
+}
+
+model DiagnosticAttempt {
+  id                   String   @id @default(cuid())
+  diagnosticQuizId     String
+  answersJson          String
+  score                Float
+  weakAreas            String
+  recommendation       String
+  suggestedCourseTitle String?
+  createdAt            DateTime @default(now())
+
+  diagnosticQuiz DiagnosticQuiz @relation(fields: [diagnosticQuizId], references: [id], onDelete: Cascade)
+
+  @@index([diagnosticQuizId])
+}
+
+model Quiz {
+  id            String   @id @default(cuid())
+  lessonId      String
+  questionsJson String
+  questionCount Int      @default(15)
+  status        String   @default("pending")
+  createdAt     DateTime @default(now())
+
+  lesson   Lesson        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  attempts QuizAttempt[]
+
+  @@index([lessonId])
+}
+
+model QuizAttempt {
+  id             String   @id @default(cuid())
+  quizId         String
+  answersJson    String
+  score          Float
+  weakTopics     String
+  recommendation String
+  createdAt      DateTime @default(now())
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([quizId])
+}
+
+model Note {
+  id           String   @id @default(cuid())
+  lessonId     String
+  content      String
+  isScratchpad Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  lessonId  String
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
+}
