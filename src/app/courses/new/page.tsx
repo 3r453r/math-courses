@@ -221,9 +221,30 @@ export default function NewCoursePage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="beginner">Beginner</SelectItem>
-                    <SelectItem value="intermediate">Intermediate</SelectItem>
-                    <SelectItem value="advanced">Advanced</SelectItem>
+                    <SelectItem value="beginner">
+                      <div>
+                        <span>Beginner</span>
+                        <p className="text-xs text-muted-foreground font-normal">
+                          No prior knowledge assumed. Builds from the ground up with extra intuition and examples.
+                        </p>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="intermediate">
+                      <div>
+                        <span>Intermediate</span>
+                        <p className="text-xs text-muted-foreground font-normal">
+                          Assumes familiarity with foundational concepts. Covers core theory with proofs and applications.
+                        </p>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="advanced">
+                      <div>
+                        <span>Advanced</span>
+                        <p className="text-xs text-muted-foreground font-normal">
+                          Assumes strong background. Focuses on rigorous proofs, abstractions, and advanced applications.
+                        </p>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
