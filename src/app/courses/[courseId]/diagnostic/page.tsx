@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/stores/appStore";
+import { useHydrated } from "@/stores/useHydrated";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -50,6 +51,7 @@ export default function DiagnosticPage({
 }) {
   const { courseId } = use(params);
   const router = useRouter();
+  const hydrated = useHydrated();
   const { apiKey, generationModel } = useAppStore();
 
   const [courseTitle, setCourseTitle] = useState("");
@@ -64,12 +66,13 @@ export default function DiagnosticPage({
   const [addingPrereqs, setAddingPrereqs] = useState(false);
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!apiKey) {
       router.push("/setup");
       return;
     }
     fetchData();
-  }, [apiKey, courseId, router]);
+  }, [hydrated, apiKey, courseId, router]);
 
   function mapDiagnosticQuestions(raw: DiagnosticQuestion[]): QuizQuestion[] {
     return raw.map((q) => ({

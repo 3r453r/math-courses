@@ -4,7 +4,15 @@
       "Bash(npx prisma migrate:*)",
       "Bash(npx prisma db push:*)",
       "Bash(powershell:*)",
-      "Bash(del \"C:\\\\Users\\\\aswie\\\\source\\\\repos\\\\3r453r\\\\math-courses\\\\prisma\\\\dev.db\")"
+      "Bash(del \"C:\\\\Users\\\\aswie\\\\source\\\\repos\\\\3r453r\\\\math-courses\\\\prisma\\\\dev.db\")",
+      "Bash(pnpm add:*)",
+      "Bash(npx playwright install:*)",
+      "Bash(npx vitest run:*)",
+      "Bash(set \"DATABASE_URL=file:./test-verify.db\")",
+      "Bash(npx playwright test:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(if exist .nextdevlock del .nextdevlock)"
     ]
   }
 }

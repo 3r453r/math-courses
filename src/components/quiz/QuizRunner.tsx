@@ -100,7 +100,6 @@ export function QuizRunner({ questions, onSubmit, isSubmitting, disabled }: Prop
                     >
                       <Checkbox
                         checked={isSelected}
-                        onCheckedChange={() => toggleChoice(question.id, choice.id)}
                         disabled={disabled}
                         className="mt-0.5"
                       />

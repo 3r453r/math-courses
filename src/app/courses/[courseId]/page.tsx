@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, use } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/stores/appStore";
+import { useHydrated } from "@/stores/useHydrated";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -77,18 +78,20 @@ export default function CourseOverviewPage({
 }) {
   const { courseId } = use(params);
   const router = useRouter();
+  const hydrated = useHydrated();
   const apiKey = useAppStore((s) => s.apiKey);
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!apiKey) {
       router.push("/setup");
       return;
     }
     fetchCourse();
-  }, [apiKey, courseId, router]);
+  }, [hydrated, apiKey, courseId, router]);
 
   async function fetchCourse() {
     try {

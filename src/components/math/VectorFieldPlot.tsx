@@ -40,6 +40,8 @@ export function VectorFieldPlot({ spec }: Props) {
       }}
       preserveAspectRatio={false}
       height={350}
+      zoom
+      pan
     >
       <Coordinates.Cartesian />
       {fieldFn && <Plot.VectorField xy={fieldFn} step={0.75} />}

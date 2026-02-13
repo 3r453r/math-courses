@@ -30,6 +30,8 @@ export function FunctionPlot({ spec }: Props) {
       viewBox={{ x: xRange as [number, number], y: yRange as [number, number] }}
       preserveAspectRatio={false}
       height={350}
+      zoom
+      pan
     >
       <Coordinates.Cartesian />
       {safeFunctions.map((sf, i) => (

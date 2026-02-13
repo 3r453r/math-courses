@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/stores/appStore";
+import { useHydrated } from "@/stores/useHydrated";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -27,17 +28,19 @@ interface CourseWithCount {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const hydrated = useHydrated();
   const apiKey = useAppStore((s) => s.apiKey);
   const [courses, setCourses] = useState<CourseWithCount[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!apiKey) {
       router.push("/setup");
       return;
     }
     fetchCourses();
-  }, [apiKey, router]);
+  }, [hydrated, apiKey, router]);
 
   async function fetchCourses() {
     try {
@@ -73,7 +76,7 @@ export default function DashboardPage() {
     }
   }
 
-  if (!apiKey) return null;
+  if (!hydrated || !apiKey) return null;
 
   return (
     <div className="min-h-screen bg-background">

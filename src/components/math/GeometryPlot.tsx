@@ -19,6 +19,8 @@ export function GeometryPlot({ spec }: Props) {
       }}
       preserveAspectRatio="contain"
       height={350}
+      zoom
+      pan
     >
       <Coordinates.Cartesian />
       {shapes?.map((shape, i) => {

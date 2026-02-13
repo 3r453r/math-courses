@@ -37,6 +37,8 @@ export function ParametricPlot({ spec }: Props) {
       }}
       preserveAspectRatio={false}
       height={350}
+      zoom
+      pan
     >
       <Coordinates.Cartesian />
       <Plot.Parametric

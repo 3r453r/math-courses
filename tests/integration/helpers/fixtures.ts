@@ -1,0 +1,111 @@
+import { getTestPrisma } from "./db";
+
+function prisma() {
+  return getTestPrisma();
+}
+
+export async function createTestCourse(overrides?: {
+  title?: string;
+  topic?: string;
+  status?: string;
+  difficulty?: string;
+}) {
+  return prisma().course.create({
+    data: {
+      title: overrides?.title ?? "Test Course",
+      description: "A test course for integration testing",
+      topic: overrides?.topic ?? "Mathematics",
+      focusAreas: JSON.stringify(["Algebra", "Calculus"]),
+      targetLessonCount: 5,
+      difficulty: overrides?.difficulty ?? "intermediate",
+      status: overrides?.status ?? "draft",
+    },
+  });
+}
+
+export async function createTestLesson(
+  courseId: string,
+  overrides?: {
+    title?: string;
+    orderIndex?: number;
+    status?: string;
+    contentJson?: string;
+  }
+) {
+  return prisma().lesson.create({
+    data: {
+      courseId,
+      title: overrides?.title ?? "Test Lesson",
+      summary: "A test lesson for integration testing",
+      orderIndex: overrides?.orderIndex ?? 0,
+      status: overrides?.status ?? "pending",
+      contentJson: overrides?.contentJson ?? null,
+    },
+  });
+}
+
+export async function createTestEdge(
+  courseId: string,
+  fromLessonId: string,
+  toLessonId: string,
+  relationship = "prerequisite"
+) {
+  return prisma().courseEdge.create({
+    data: {
+      courseId,
+      fromLessonId,
+      toLessonId,
+      relationship,
+    },
+  });
+}
+
+export async function createTestQuiz(
+  lessonId: string,
+  overrides?: {
+    questionsJson?: string;
+    status?: string;
+    questionCount?: number;
+  }
+) {
+  return prisma().quiz.create({
+    data: {
+      lessonId,
+      questionsJson: overrides?.questionsJson ?? "[]",
+      status: overrides?.status ?? "pending",
+      questionCount: overrides?.questionCount ?? 0,
+    },
+  });
+}
+
+export async function createTestDiagnostic(
+  courseId: string,
+  overrides?: {
+    questionsJson?: string;
+    status?: string;
+  }
+) {
+  return prisma().diagnosticQuiz.create({
+    data: {
+      courseId,
+      questionsJson: overrides?.questionsJson ?? "{}",
+      status: overrides?.status ?? "pending",
+    },
+  });
+}
+
+export async function createTestNote(
+  lessonId: string,
+  overrides?: {
+    content?: string;
+    isScratchpad?: boolean;
+  }
+) {
+  return prisma().note.create({
+    data: {
+      lessonId,
+      content: overrides?.content ?? "",
+      isScratchpad: overrides?.isScratchpad ?? false,
+    },
+  });
+}

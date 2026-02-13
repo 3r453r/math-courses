@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/stores/appStore";
+import { useHydrated } from "@/stores/useHydrated";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -42,6 +43,7 @@ export default function LessonPage({
 }) {
   const { courseId, lessonId } = use(params);
   const router = useRouter();
+  const hydrated = useHydrated();
   const { apiKey, generationModel, scratchpadOpen, setScratchpadOpen } =
     useAppStore();
   const [lesson, setLesson] = useState<LessonDetail | null>(null);
@@ -49,12 +51,13 @@ export default function LessonPage({
   const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!apiKey) {
       router.push("/setup");
       return;
     }
     fetchLesson();
-  }, [apiKey, lessonId, router]);
+  }, [hydrated, apiKey, lessonId, router]);
 
   async function fetchLesson() {
     try {

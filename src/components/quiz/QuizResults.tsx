@@ -188,7 +188,6 @@ export function QuizResults({
                 >
                   <Checkbox
                     checked={isSelected}
-                    onCheckedChange={() => toggleTopic(topic)}
                     className="mt-0.5"
                   />
                   <Label className="cursor-pointer flex-1 font-normal">
