@@ -189,14 +189,14 @@ export const ScratchpadEditor = forwardRef<ScratchpadEditorHandle, ScratchpadEdi
     }, [value, updateSlashDetection]);
 
     return (
-      <div className={`relative h-full ${className ?? ""}`}>
+      <div className={`relative flex-1 min-h-0 flex flex-col ${className ?? ""}`}>
         <textarea
           ref={textareaRef}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           onClick={updateSlashDetection}
-          className="w-full h-full resize-none bg-background text-foreground font-mono text-sm p-4 outline-none placeholder:text-muted-foreground"
+          className="w-full flex-1 min-h-0 resize-none bg-background text-foreground font-mono text-sm p-4 outline-none placeholder:text-muted-foreground"
           placeholder={`Start typing your notes here...\n\nUse LaTeX: $x^2$ for inline math, $$\\sum_{i=1}^n$$ for display math\n\nType / to see available slash commands\nPress Ctrl+S to save`}
           spellCheck={false}
         />

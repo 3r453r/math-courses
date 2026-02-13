@@ -15,7 +15,7 @@ export function ScratchpadPreview({
   if (!content.trim()) {
     return (
       <div
-        className={`flex items-center justify-center h-full text-muted-foreground text-sm ${className ?? ""}`}
+        className={`flex items-center justify-center flex-1 min-h-0 text-muted-foreground text-sm ${className ?? ""}`}
       >
         Preview will appear here as you type...
       </div>
@@ -23,7 +23,7 @@ export function ScratchpadPreview({
   }
 
   return (
-    <ScrollArea className={`h-full ${className ?? ""}`}>
+    <ScrollArea className={`flex-1 min-h-0 ${className ?? ""}`}>
       <div className="p-4">
         <MathMarkdown content={content} />
       </div>

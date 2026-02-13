@@ -5,9 +5,6 @@ export interface ExpansionResult {
   newCursorPosition: number;
 }
 
-/** Characters that are valid immediately before a `/` command trigger */
-const VALID_PREDECESSOR = /[\s${}()\[\]]/;
-
 /**
  * Scans backward from cursor to find a pending `/` command.
  * Returns the slash index and partial query, or null if no `/` is active.
@@ -22,9 +19,7 @@ export function detectPendingSlash(
     const ch = text[i];
     if (ch === " " || ch === "\t" || ch === "\n") break;
     if (ch === "/") {
-      if (i === 0 || VALID_PREDECESSOR.test(text[i - 1])) {
-        slashIndex = i;
-      }
+      slashIndex = i;
       break;
     }
   }
