@@ -52,7 +52,8 @@ No test framework is configured.
 - `/setup` — API key and model configuration
 - `/courses/new` — Course creation wizard
 - `/courses/[courseId]` — Course overview with dependency graph
-- `/courses/[courseId]/lessons/[lessonId]` — Lesson viewer
+- `/courses/[courseId]/lessons/[lessonId]` — Lesson viewer with scratchpad panel
+- `/courses/[courseId]/lessons/[lessonId]/quiz` — Lesson quiz
 
 ## Tech Stack
 
@@ -65,3 +66,25 @@ Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Zu
 - Users supply their own Anthropic API key, stored in browser localStorage via Zustand — never persisted server-side
 - Lesson content is a structured JSON schema with typed sections: text, math, definitions, theorems, visualizations, worked examples, practice exercises
 - CourseEdge model defines prerequisite relationships between lessons with types: "prerequisite", "recommended", "related"
+
+## Conventions
+
+- **Client components** use `"use client"` directive, fetch data in `useEffect`, manage local state with `useState`
+- **API routes** follow try/catch pattern with `NextResponse.json()` and consistent error shape `{ error: string }`
+- **Prisma singleton** via `src/lib/db.ts` — always import `prisma` from there, never instantiate directly
+- **Zustand store** (`src/stores/appStore.ts`) for global persisted state (API key, sidebar toggles, model selection); use custom hooks for local/transient state (e.g., `useScratchpad`)
+- **Toast notifications** via `sonner` — `toast.success()`, `toast.error()`
+- **Component organization**: `src/components/<feature>/` with barrel `index.ts` exports (e.g., `lesson/`, `math/`, `scratchpad/`, `quiz/`)
+- **API key** passed to generation endpoints via `x-api-key` header
+- **Content format**: lesson content stored as JSON string in `contentJson` field, parsed at render time
+
+## Roadmap
+
+- Phase 1: Foundation — Next.js app, Prisma schema, AI course generation, setup page (DONE)
+- Phase 2: Lesson Content Rendering — KaTeX, visualizations, worked examples, practice exercises (DONE)
+- Phase 3: Assessment System — quizzes, diagnostics, scoring, adaptive recommendations (DONE)
+- Phase 4: Lesson Scratchpad — per-lesson notes editor with LaTeX slash-commands, autosave (CURRENT)
+- Phase 5: AI Chat Sidebar — conversational tutor for asking questions during study
+- Phase 6: Progress Tracking & Dashboard — completion status, score history, course progress
+- Phase 7: Polish & UX — animations, responsive design, dark mode, keyboard navigation
+- Phase 8: Export/Sharing — export courses as PDF/markdown, share between users
