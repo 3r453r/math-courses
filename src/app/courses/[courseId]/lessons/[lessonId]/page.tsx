@@ -183,7 +183,7 @@ export default function LessonPage({
       <div className="flex-1 flex min-h-0">
         <main
           className={`flex-1 overflow-y-auto ${
-            scratchpadOpen ? "px-4 py-8" : "container mx-auto px-4 py-8 max-w-4xl"
+            scratchpadOpen ? "px-6 py-8" : "container mx-auto px-4 py-8 max-w-4xl"
           }`}
         >
           {!hasContent ? (
@@ -213,7 +213,7 @@ export default function LessonPage({
               </CardContent>
             </Card>
           ) : (
-            <div className={scratchpadOpen ? "max-w-4xl" : ""}>
+            <div>
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-2xl font-bold">{lesson.title}</h2>
