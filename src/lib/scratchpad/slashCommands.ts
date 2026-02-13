@@ -120,9 +120,18 @@ export function getCommandsByCategory(): Record<string, SlashCommand[]> {
   return groups;
 }
 
-/** Filter commands by prefix match on trigger. Empty query returns all. */
+/** Filter commands by prefix match on trigger. Empty query returns a diverse sample. */
 export function filterCommandsByPrefix(query: string, limit = 8): SlashCommand[] {
-  if (!query) return SLASH_COMMANDS.slice(0, limit);
+  if (!query) {
+    // Return a sample from each category so the popup is representative
+    const grouped = getCommandsByCategory();
+    const results: SlashCommand[] = [];
+    const perCategory = Math.max(1, Math.floor(limit / Object.keys(grouped).length));
+    for (const cmds of Object.values(grouped)) {
+      results.push(...cmds.slice(0, perCategory));
+    }
+    return results.slice(0, limit);
+  }
   const lower = query.toLowerCase();
   const results: SlashCommand[] = [];
   for (const cmd of SLASH_COMMANDS) {
