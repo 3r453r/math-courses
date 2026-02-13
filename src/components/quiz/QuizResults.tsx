@@ -23,6 +23,7 @@ interface Props {
   onAction?: (action: string) => void;
   variant: "lesson" | "diagnostic";
   prerequisites?: { topic: string; importance: string; description: string }[];
+  isRegenerating?: boolean;
 }
 
 export function QuizResults({
@@ -32,6 +33,7 @@ export function QuizResults({
   onAction,
   variant,
   prerequisites,
+  isRegenerating,
 }: Props) {
   const [showReview, setShowReview] = useState(false);
   const percentage = Math.round(result.score * 100);
@@ -147,15 +149,19 @@ export function QuizResults({
                   Continue to Next Lesson
                 </Button>
               )}
-              {result.recommendation === "supplement" && (
+              {(result.recommendation === "supplement" ||
+                result.recommendation === "regenerate") && (
                 <>
-                  <Button variant="outline" onClick={() => onAction("advance")}>
-                    Continue Anyway
+                  <Button onClick={() => onAction("regenerate")} disabled={isRegenerating}>
+                    {isRegenerating ? (
+                      <>
+                        <span className="animate-spin mr-2">&#9696;</span>
+                        Regenerating Lesson...
+                      </>
+                    ) : (
+                      "Regenerate Lesson"
+                    )}
                   </Button>
-                </>
-              )}
-              {result.recommendation === "regenerate" && (
-                <>
                   <Button variant="outline" onClick={() => onAction("advance")}>
                     Continue Anyway
                   </Button>

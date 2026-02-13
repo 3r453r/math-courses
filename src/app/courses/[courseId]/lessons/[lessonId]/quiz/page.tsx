@@ -43,6 +43,7 @@ export default function LessonQuizPage({
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [quizId, setQuizId] = useState<string | null>(null);
   const [result, setResult] = useState<QuizResult | null>(null);
@@ -165,12 +166,44 @@ export default function LessonQuizPage({
     }
   }
 
+  async function handleRegenerateLesson() {
+    if (!apiKey || !result) return;
+    setRegenerating(true);
+    try {
+      const res = await fetch("/api/generate/lesson", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+        },
+        body: JSON.stringify({
+          lessonId,
+          courseId,
+          model: generationModel,
+          weakTopics: result.weakTopics,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to regenerate lesson");
+      }
+      toast.success("Lesson regenerated with focus on your weak areas!");
+      router.push(`/courses/${courseId}/lessons/${lessonId}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Regeneration failed");
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
   function handleAction(action: string) {
     if (action === "advance") {
       router.push(`/courses/${courseId}`);
     } else if (action === "retake") {
       setResult(null);
       setSubmittedAnswers({});
+    } else if (action === "regenerate") {
+      handleRegenerateLesson();
     }
   }
 
@@ -228,6 +261,7 @@ export default function LessonQuizPage({
             result={result}
             onAction={handleAction}
             variant="lesson"
+            isRegenerating={regenerating}
           />
         ) : (
           <QuizRunner

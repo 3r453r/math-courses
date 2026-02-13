@@ -132,7 +132,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "API key required" }, { status: 401 });
   }
 
-  let body: { lessonId?: string; courseId?: string; model?: string } = {};
+  let body: { lessonId?: string; courseId?: string; model?: string; weakTopics?: string[] } = {};
 
   try {
     body = await request.json();
@@ -178,7 +178,7 @@ export async function POST(request: Request) {
 
       const focusAreas = JSON.parse(lesson.course.focusAreas || "[]") as string[];
 
-      const prompt = `You are a mathematics educator creating a detailed lesson.
+      let prompt = `You are a mathematics educator creating a detailed lesson.
 
 LESSON: ${lesson.title}
 SUMMARY: ${lesson.summary}
@@ -199,6 +199,18 @@ CONTENT GUIDELINES:
 6. For practice exercises: mirror the worked example pattern but change the specific values.
 7. Aim for 8-15 sections of varied types (text, math, definition, theorem, visualization).
 8. Make the content thorough but accessible - explain the "why" not just the "what".`;
+
+      if (body.weakTopics && body.weakTopics.length > 0) {
+        prompt += `\n\nIMPORTANT - QUIZ FEEDBACK:
+The student previously studied this lesson and took a quiz. They scored poorly on these topics:
+${body.weakTopics.map((t) => `- ${t}`).join("\n")}
+
+Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
+- Add more detailed explanations and intuition for the weak topics
+- Include additional worked examples specifically targeting these areas
+- Add more practice exercises for the weak topics
+- Consider alternative explanations or approaches that might resonate better`;
+      }
 
       const { object } = await generateObject({
         model: anthropic(model),
