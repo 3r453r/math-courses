@@ -61,6 +61,7 @@ export default function DiagnosticPage({
   const [prerequisites, setPrerequisites] = useState<Prerequisite[]>([]);
   const [result, setResult] = useState<QuizResult | null>(null);
   const [submittedAnswers, setSubmittedAnswers] = useState<QuizAnswers>({});
+  const [addingPrereqs, setAddingPrereqs] = useState(false);
 
   useEffect(() => {
     if (!apiKey) {
@@ -195,12 +196,36 @@ export default function DiagnosticPage({
     }
   }
 
-  function handleAction(action: string) {
+  async function handleAction(action: string, payload?: unknown) {
     if (action === "start") {
       router.push(`/courses/${courseId}`);
     } else if (action === "retake") {
       setResult(null);
       setSubmittedAnswers({});
+    } else if (action === "add-prerequisites") {
+      const data = payload as { topics: { title: string; summary: string }[] } | undefined;
+      if (!data?.topics?.length) return;
+      setAddingPrereqs(true);
+      try {
+        const res = await fetch(`/api/courses/${courseId}/add-prerequisites`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topics: data.topics }),
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || "Failed to add prerequisites");
+        }
+        const result = await res.json();
+        toast.success(
+          `Added ${result.lessons.length} prerequisite lesson${result.lessons.length > 1 ? "s" : ""} to your course!`
+        );
+        router.push(`/courses/${courseId}`);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to add prerequisites");
+      } finally {
+        setAddingPrereqs(false);
+      }
     }
   }
 
@@ -266,6 +291,7 @@ export default function DiagnosticPage({
             onAction={handleAction}
             variant="diagnostic"
             prerequisites={prerequisites}
+            isAddingPrereqs={addingPrereqs}
           />
         ) : (
           <QuizRunner
