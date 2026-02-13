@@ -12,9 +12,29 @@ export async function GET(
       include: {
         lessons: {
           orderBy: { orderIndex: "asc" },
+          include: {
+            quizzes: {
+              where: { status: "ready" },
+              take: 1,
+              orderBy: { createdAt: "desc" },
+              include: {
+                attempts: {
+                  take: 1,
+                  orderBy: { createdAt: "desc" },
+                },
+              },
+            },
+          },
         },
         edges: true,
-        diagnosticQuiz: true,
+        diagnosticQuiz: {
+          include: {
+            attempts: {
+              take: 1,
+              orderBy: { createdAt: "desc" },
+            },
+          },
+        },
       },
     });
 
