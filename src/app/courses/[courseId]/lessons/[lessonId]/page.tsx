@@ -16,6 +16,12 @@ import { toast } from "sonner";
 import { LessonContentRenderer } from "@/components/lesson/LessonContentRenderer";
 import type { LessonContent } from "@/types/lesson";
 
+interface QuizInfo {
+  id: string;
+  status: string;
+  attempts: { id: string; score: number; recommendation: string }[];
+}
+
 interface LessonDetail {
   id: string;
   title: string;
@@ -25,6 +31,7 @@ interface LessonDetail {
   contentJson: string | null;
   isSupplementary: boolean;
   courseId: string;
+  quizzes?: QuizInfo[];
 }
 
 export default function LessonPage({
@@ -196,6 +203,65 @@ export default function LessonPage({
             <LessonContentRenderer
               content={JSON.parse(lesson.contentJson!) as LessonContent}
             />
+
+            {/* Quiz section */}
+            <Card className="mt-8">
+              <CardContent className="pt-6">
+                {lesson.quizzes?.[0]?.attempts?.[0] ? (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <p className="font-medium text-sm">Lesson Quiz</p>
+                        <p className="text-xs text-muted-foreground">
+                          Score: {Math.round(lesson.quizzes[0].attempts[0].score * 100)}%
+                        </p>
+                      </div>
+                      <Badge
+                        variant={
+                          lesson.quizzes[0].attempts[0].score >= 0.8
+                            ? "default"
+                            : lesson.quizzes[0].attempts[0].score >= 0.5
+                              ? "secondary"
+                              : "destructive"
+                        }
+                      >
+                        {lesson.quizzes[0].attempts[0].recommendation}
+                      </Badge>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        router.push(
+                          `/courses/${courseId}/lessons/${lessonId}/quiz`
+                        )
+                      }
+                    >
+                      Review / Retake
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm">Ready to test your understanding?</p>
+                      <p className="text-xs text-muted-foreground">
+                        Take a quiz to check your grasp of this lesson&apos;s material.
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        router.push(
+                          `/courses/${courseId}/lessons/${lessonId}/quiz`
+                        )
+                      }
+                    >
+                      Take Quiz
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         )}
       </main>

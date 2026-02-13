@@ -13,6 +13,19 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
+
+interface QuizAttemptInfo {
+  id: string;
+  score: number;
+  recommendation: string;
+}
+
+interface QuizInfo {
+  id: string;
+  status: string;
+  attempts: QuizAttemptInfo[];
+}
 
 interface Lesson {
   id: string;
@@ -21,6 +34,7 @@ interface Lesson {
   orderIndex: number;
   status: string;
   isSupplementary: boolean;
+  quizzes?: QuizInfo[];
 }
 
 interface Edge {
@@ -28,6 +42,19 @@ interface Edge {
   fromLessonId: string;
   toLessonId: string;
   relationship: string;
+}
+
+interface DiagnosticAttemptInfo {
+  id: string;
+  score: number;
+  recommendation: string;
+  weakAreas: string;
+}
+
+interface DiagnosticInfo {
+  id: string;
+  status: string;
+  attempts: DiagnosticAttemptInfo[];
 }
 
 interface CourseDetail {
@@ -40,6 +67,7 @@ interface CourseDetail {
   status: string;
   lessons: Lesson[];
   edges: Edge[];
+  diagnosticQuiz?: DiagnosticInfo | null;
 }
 
 export default function CourseOverviewPage({
@@ -196,6 +224,68 @@ export default function CourseOverviewPage({
           ))}
         </div>
 
+        {/* Prerequisite Assessment */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="text-base">Prerequisite Assessment</CardTitle>
+            <CardDescription>
+              Optional diagnostic to check your prerequisite knowledge before starting.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {course.diagnosticQuiz?.attempts?.[0] ? (() => {
+              const attempt = course.diagnosticQuiz.attempts[0];
+              const pct = Math.round(attempt.score * 100);
+              const weakAreas: string[] = JSON.parse(attempt.weakAreas || "[]");
+              return (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl font-bold">{pct}%</span>
+                      <Badge
+                        variant={
+                          attempt.score >= 0.8
+                            ? "default"
+                            : attempt.score >= 0.5
+                              ? "secondary"
+                              : "destructive"
+                        }
+                      >
+                        {attempt.recommendation}
+                      </Badge>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push(`/courses/${courseId}/diagnostic`)}
+                    >
+                      View Details / Retake
+                    </Button>
+                  </div>
+                  <Progress value={pct} className="h-2" />
+                  {weakAreas.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      <span className="text-xs text-muted-foreground mr-1">Weak areas:</span>
+                      {weakAreas.map((area) => (
+                        <Badge key={area} variant="destructive" className="text-xs">
+                          {area}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })() : (
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/courses/${courseId}/diagnostic`)}
+              >
+                Take Diagnostic Quiz
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Lesson graph - layered layout */}
         <Card className="mb-8">
           <CardHeader>
@@ -288,12 +378,28 @@ export default function CourseOverviewPage({
                       {lesson.summary}
                     </p>
                   </div>
-                  <Badge
-                    variant={lesson.status === "ready" ? "default" : "outline"}
-                    className="text-xs"
-                  >
-                    {lesson.status}
-                  </Badge>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {lesson.quizzes?.[0]?.attempts?.[0] && (
+                      <Badge
+                        variant={
+                          lesson.quizzes[0].attempts[0].score >= 0.8
+                            ? "default"
+                            : lesson.quizzes[0].attempts[0].score >= 0.5
+                              ? "secondary"
+                              : "destructive"
+                        }
+                        className="text-xs"
+                      >
+                        Quiz: {Math.round(lesson.quizzes[0].attempts[0].score * 100)}%
+                      </Badge>
+                    )}
+                    <Badge
+                      variant={lesson.status === "ready" ? "default" : "outline"}
+                      className="text-xs"
+                    >
+                      {lesson.status}
+                    </Badge>
+                  </div>
                 </button>
               ))}
             </div>
