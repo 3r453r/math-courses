@@ -129,7 +129,7 @@ export default function LessonPage({
   const hasContent = !!lesson.contentJson;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       <header className="border-b shrink-0">
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
           <Button

@@ -151,7 +151,7 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
 
         <TabsContent value="split" className="flex-1 min-h-0 flex flex-col">
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="flex-1 min-h-0 border-b overflow-hidden">
+            <div className="flex-1 min-h-0 border-b overflow-hidden flex flex-col">
               <ScratchpadEditor
                 ref={editorRef}
                 value={content}
@@ -159,7 +159,7 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
                 onSave={save}
               />
             </div>
-            <div className="flex-1 min-h-0 overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
               <ScratchpadPreview content={previewContent} />
             </div>
           </div>
