@@ -1,5 +1,6 @@
 import { generateObject } from "ai";
 import { getAnthropicClient, getApiKeyFromRequest, MODELS } from "@/lib/ai/client";
+import { mockLessonContent } from "@/lib/ai/mockData";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -162,16 +163,22 @@ export async function POST(request: Request) {
       data: { status: "generating" },
     });
 
-    const anthropic = getAnthropicClient(apiKey);
     const model = body.model || MODELS.generation;
 
-    const prerequisiteSummaries = lesson.dependsOn
-      .map((e) => `- ${e.fromLesson.title}: ${e.fromLesson.summary}`)
-      .join("\n");
+    let content;
+    let generationPrompt = "mock";
+    if (model === "mock") {
+      content = mockLessonContent();
+    } else {
+      const anthropic = getAnthropicClient(apiKey);
 
-    const focusAreas = JSON.parse(lesson.course.focusAreas || "[]") as string[];
+      const prerequisiteSummaries = lesson.dependsOn
+        .map((e) => `- ${e.fromLesson.title}: ${e.fromLesson.summary}`)
+        .join("\n");
 
-    const prompt = `You are a mathematics educator creating a detailed lesson.
+      const focusAreas = JSON.parse(lesson.course.focusAreas || "[]") as string[];
+
+      const prompt = `You are a mathematics educator creating a detailed lesson.
 
 LESSON: ${lesson.title}
 SUMMARY: ${lesson.summary}
@@ -193,18 +200,21 @@ CONTENT GUIDELINES:
 7. Aim for 8-15 sections of varied types (text, math, definition, theorem, visualization).
 8. Make the content thorough but accessible - explain the "why" not just the "what".`;
 
-    const { object: content } = await generateObject({
-      model: anthropic(model),
-      schema: lessonContentSchema,
-      prompt,
-    });
+      const { object } = await generateObject({
+        model: anthropic(model),
+        schema: lessonContentSchema,
+        prompt,
+      });
+      content = object;
+      generationPrompt = prompt;
+    }
 
     // Save generated content
     await prisma.lesson.update({
       where: { id: lessonId },
       data: {
         contentJson: JSON.stringify(content),
-        generationPrompt: prompt,
+        generationPrompt,
         status: "ready",
       },
     });

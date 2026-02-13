@@ -1,5 +1,6 @@
 import { generateObject } from "ai";
 import { getAnthropicClient, getApiKeyFromRequest, MODELS } from "@/lib/ai/client";
+import { mockQuiz } from "@/lib/ai/mockData";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { quizSchema } from "@/lib/ai/schemas/quizSchema";
@@ -47,21 +48,28 @@ export async function POST(request: Request) {
       },
     });
 
-    const anthropic = getAnthropicClient(apiKey);
     const model = body.model || MODELS.generation;
 
-    const prompt = buildQuizPrompt({
-      lessonTitle: lesson.title,
-      lessonSummary: lesson.summary,
-      courseTopic: lesson.course.topic,
-      difficulty: lesson.course.difficulty,
-    });
+    let result;
+    if (model === "mock") {
+      result = mockQuiz();
+    } else {
+      const anthropic = getAnthropicClient(apiKey);
 
-    const { object: result } = await generateObject({
-      model: anthropic(model),
-      schema: quizSchema,
-      prompt,
-    });
+      const prompt = buildQuizPrompt({
+        lessonTitle: lesson.title,
+        lessonSummary: lesson.summary,
+        courseTopic: lesson.course.topic,
+        difficulty: lesson.course.difficulty,
+      });
+
+      const { object } = await generateObject({
+        model: anthropic(model),
+        schema: quizSchema,
+        prompt,
+      });
+      result = object;
+    }
 
     await prisma.quiz.update({
       where: { id: quiz.id },
