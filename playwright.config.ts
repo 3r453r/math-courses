@@ -1,7 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
+import path from "path";
+
+const E2E_PORT = 3001;
+const E2E_DB = path.resolve("e2e-test.db");
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  globalSetup: "./tests/e2e/global-setup.ts",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -9,7 +14,7 @@ export default defineConfig({
   reporter: "html",
   timeout: 60000,
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: `http://localhost:${E2E_PORT}`,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     actionTimeout: 15000,
@@ -21,9 +26,13 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "pnpm dev",
-    url: "http://localhost:3000",
+    command: `npx next dev --port ${E2E_PORT}`,
+    url: `http://localhost:${E2E_PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 60000,
+    env: {
+      DATABASE_URL: `file:${E2E_DB}`,
+      NEXT_TEST_MODE: "1",
+    },
   },
 });
