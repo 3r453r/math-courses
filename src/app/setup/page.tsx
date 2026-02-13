@@ -109,6 +109,7 @@ export default function SetupPage() {
                 <SelectItem value="claude-opus-4-20250514">Claude Opus 4 (highest quality)</SelectItem>
                 <SelectItem value="claude-sonnet-4-20250514">Claude Sonnet 4 (balanced)</SelectItem>
                 <SelectItem value="claude-haiku-4-20250514">Claude Haiku 4 (fastest)</SelectItem>
+                <SelectItem value="mock">Mock (No API Call)</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -1,5 +1,6 @@
 import { generateObject } from "ai";
 import { getAnthropicClient, getApiKeyFromRequest, MODELS } from "@/lib/ai/client";
+import { mockDiagnostic } from "@/lib/ai/mockData";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { diagnosticSchema } from "@/lib/ai/schemas/diagnosticSchema";
@@ -51,22 +52,29 @@ export async function POST(request: Request) {
       },
     });
 
-    const anthropic = getAnthropicClient(apiKey);
     const model = body.model || MODELS.generation;
 
-    const prompt = buildDiagnosticPrompt({
-      courseTitle: course.title,
-      courseTopic: course.topic,
-      courseDescription: course.description,
-      difficulty: course.difficulty,
-      lessonTitles: course.lessons.map((l) => l.title),
-    });
+    let result;
+    if (model === "mock") {
+      result = mockDiagnostic();
+    } else {
+      const anthropic = getAnthropicClient(apiKey);
 
-    const { object: result } = await generateObject({
-      model: anthropic(model),
-      schema: diagnosticSchema,
-      prompt,
-    });
+      const prompt = buildDiagnosticPrompt({
+        courseTitle: course.title,
+        courseTopic: course.topic,
+        courseDescription: course.description,
+        difficulty: course.difficulty,
+        lessonTitles: course.lessons.map((l) => l.title),
+      });
+
+      const { object } = await generateObject({
+        model: anthropic(model),
+        schema: diagnosticSchema,
+        prompt,
+      });
+      result = object;
+    }
 
     await prisma.diagnosticQuiz.update({
       where: { id: diagnostic.id },

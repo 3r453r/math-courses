@@ -2,6 +2,7 @@ import { generateObject } from "ai";
 import { getAnthropicClient, getApiKeyFromRequest, MODELS } from "@/lib/ai/client";
 import { courseStructureSchema } from "@/lib/ai/schemas/courseSchema";
 import { buildCourseStructurePrompt } from "@/lib/ai/prompts/courseStructure";
+import { mockCourseStructure } from "@/lib/ai/mockData";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 
@@ -33,22 +34,29 @@ export async function POST(request: Request) {
       });
     }
 
-    const anthropic = getAnthropicClient(apiKey);
     const model = body.model || MODELS.generation;
 
-    const systemPrompt = buildCourseStructurePrompt({
-      topic: topic || "",
-      description: description || "",
-      focusAreas: focusAreas || [],
-      lessonCount,
-      difficulty: difficulty || "intermediate",
-    });
+    let courseStructure;
+    if (model === "mock") {
+      courseStructure = mockCourseStructure();
+    } else {
+      const anthropic = getAnthropicClient(apiKey);
 
-    const { object: courseStructure } = await generateObject({
-      model: anthropic(model),
-      schema: courseStructureSchema,
-      prompt: systemPrompt,
-    });
+      const systemPrompt = buildCourseStructurePrompt({
+        topic: topic || "",
+        description: description || "",
+        focusAreas: focusAreas || [],
+        lessonCount,
+        difficulty: difficulty || "intermediate",
+      });
+
+      const { object } = await generateObject({
+        model: anthropic(model),
+        schema: courseStructureSchema,
+        prompt: systemPrompt,
+      });
+      courseStructure = object;
+    }
 
     // If we have a courseId, save the generated structure to the database
     if (courseId) {
