@@ -119,3 +119,17 @@ export function getCommandsByCategory(): Record<string, SlashCommand[]> {
   }
   return groups;
 }
+
+/** Filter commands by prefix match on trigger. Empty query returns all. */
+export function filterCommandsByPrefix(query: string, limit = 8): SlashCommand[] {
+  if (!query) return SLASH_COMMANDS.slice(0, limit);
+  const lower = query.toLowerCase();
+  const results: SlashCommand[] = [];
+  for (const cmd of SLASH_COMMANDS) {
+    if (cmd.trigger.toLowerCase().startsWith(lower)) {
+      results.push(cmd);
+      if (results.length >= limit) break;
+    }
+  }
+  return results;
+}

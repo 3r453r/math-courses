@@ -5,6 +5,36 @@ export interface ExpansionResult {
   newCursorPosition: number;
 }
 
+/** Characters that are valid immediately before a `/` command trigger */
+const VALID_PREDECESSOR = /[\s${}()\[\]]/;
+
+/**
+ * Scans backward from cursor to find a pending `/` command.
+ * Returns the slash index and partial query, or null if no `/` is active.
+ * Used by both expansion and autocomplete popup.
+ */
+export function detectPendingSlash(
+  text: string,
+  cursorPosition: number
+): { slashIndex: number; query: string } | null {
+  let slashIndex = -1;
+  for (let i = cursorPosition - 1; i >= 0; i--) {
+    const ch = text[i];
+    if (ch === " " || ch === "\t" || ch === "\n") break;
+    if (ch === "/") {
+      if (i === 0 || VALID_PREDECESSOR.test(text[i - 1])) {
+        slashIndex = i;
+      }
+      break;
+    }
+  }
+
+  if (slashIndex === -1) return null;
+
+  const query = text.substring(slashIndex + 1, cursorPosition);
+  return { slashIndex, query };
+}
+
 /**
  * Attempts to expand a slash command at the current cursor position.
  * Scans backward from cursor to find a `/`, extracts the trigger word,
@@ -16,30 +46,13 @@ export function tryExpandSlashCommand(
   text: string,
   cursorPosition: number
 ): ExpansionResult | null {
-  // Scan backward from cursor to find the slash
-  let slashIndex = -1;
-  for (let i = cursorPosition - 1; i >= 0; i--) {
-    const ch = text[i];
-    // Stop at whitespace or newline — no command spans whitespace
-    if (ch === " " || ch === "\t" || ch === "\n") break;
-    if (ch === "/") {
-      // Only match if slash is at start of text or preceded by whitespace/newline
-      if (i === 0 || /\s/.test(text[i - 1])) {
-        slashIndex = i;
-      }
-      break;
-    }
-  }
+  const pending = detectPendingSlash(text, cursorPosition);
+  if (!pending || !pending.query) return null;
 
-  if (slashIndex === -1) return null;
-
-  const trigger = text.substring(slashIndex + 1, cursorPosition);
-  if (!trigger) return null;
-
-  const command = getCommandByTrigger(trigger);
+  const command = getCommandByTrigger(pending.query);
   if (!command) return null;
 
-  const before = text.substring(0, slashIndex);
+  const before = text.substring(0, pending.slashIndex);
   const after = text.substring(cursorPosition);
   const newText = before + command.expansion + after;
   const endOfExpansion = before.length + command.expansion.length;

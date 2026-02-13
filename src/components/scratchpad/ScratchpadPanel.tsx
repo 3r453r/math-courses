@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useScratchpad } from "@/hooks/useScratchpad";
 import { ScratchpadEditor } from "./ScratchpadEditor";
+import type { ScratchpadEditorHandle } from "./ScratchpadEditor";
 import { ScratchpadPreview } from "./ScratchpadPreview";
 import { ScratchpadToolbar } from "./ScratchpadToolbar";
 import { Button } from "@/components/ui/button";
@@ -62,22 +63,29 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
   const { content, setContent, saveStatus, lastSavedAt, save, isLoading, error } =
     useScratchpad(lessonId);
   const [activeTab, setActiveTab] = useState("split");
+  const editorRef = useRef<ScratchpadEditorHandle>(null);
 
-  // Debounce preview to avoid excessive re-renders during typing
-  const [debouncedContent, setDebouncedContent] = useState(content);
-  const [debounceTimer, setDebounceTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  // Debounced preview content — reacts to ALL content changes including initial fetch
+  const [previewContent, setPreviewContent] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleContentChange = (newContent: string) => {
-    setContent(newContent);
-    // Debounce preview update by 300ms
-    if (debounceTimer) clearTimeout(debounceTimer);
-    setDebounceTimer(
-      setTimeout(() => setDebouncedContent(newContent), 300)
-    );
+  useEffect(() => {
+    // In preview-only mode, update immediately
+    if (activeTab === "preview") {
+      setPreviewContent(content);
+      return;
+    }
+    // In split/write mode, debounce by 300ms
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setPreviewContent(content), 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [content, activeTab]);
+
+  const handleInsertSymbol = (text: string, cursorOffset: number) => {
+    editorRef.current?.insertAtCursor(text, cursorOffset);
   };
-
-  // On initial load or tab switch, sync debounced content immediately
-  const previewContent = activeTab === "preview" ? content : debouncedContent;
 
   if (isLoading) {
     return (
@@ -119,7 +127,7 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setDebouncedContent(content); }} className="flex-1 flex flex-col min-h-0">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
         <div className="px-3 pt-2 shrink-0">
           <TabsList className="w-full">
             <TabsTrigger value="write" className="flex-1">Write</TabsTrigger>
@@ -130,29 +138,29 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
 
         <TabsContent value="write" className="flex-1 min-h-0">
           <ScratchpadEditor
+            ref={editorRef}
             value={content}
-            onChange={handleContentChange}
+            onChange={setContent}
             onSave={save}
-            className="h-full"
           />
         </TabsContent>
 
         <TabsContent value="preview" className="flex-1 min-h-0">
-          <ScratchpadPreview content={previewContent} className="h-full" />
+          <ScratchpadPreview content={previewContent} />
         </TabsContent>
 
         <TabsContent value="split" className="flex-1 min-h-0 flex flex-col">
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="flex-1 min-h-0 border-b">
+            <div className="flex-1 min-h-0 border-b overflow-hidden">
               <ScratchpadEditor
+                ref={editorRef}
                 value={content}
-                onChange={handleContentChange}
+                onChange={setContent}
                 onSave={save}
-                className="h-full"
               />
             </div>
-            <div className="flex-1 min-h-0">
-              <ScratchpadPreview content={previewContent} className="h-full" />
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <ScratchpadPreview content={previewContent} />
             </div>
           </div>
         </TabsContent>
@@ -160,7 +168,7 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
 
       {/* Toolbar */}
       <div className="shrink-0">
-        <ScratchpadToolbar />
+        <ScratchpadToolbar onInsertSymbol={handleInsertSymbol} />
       </div>
     </div>
   );
