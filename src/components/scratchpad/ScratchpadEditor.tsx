@@ -126,9 +126,16 @@ export const ScratchpadEditor = forwardRef<ScratchpadEditorHandle, ScratchpadEdi
           }
         }
 
-        // Tab: always prevent default (no focus leave). Try expansion, else insert soft tab.
+        // Tab: always prevent default (no focus leave).
+        // If popup visible, apply selected command. Else try exact expansion, else soft tab.
         if (e.key === "Tab") {
           e.preventDefault();
+
+          if (popupVisible && popupCommands.length > 0) {
+            applyCommand(popupCommands[popupIndex]);
+            return;
+          }
+
           const textarea = e.currentTarget;
           const result = tryExpandSlashCommand(textarea.value, textarea.selectionStart);
 
