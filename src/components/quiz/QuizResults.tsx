@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
@@ -20,10 +22,11 @@ interface Props {
   questions: QuizQuestion[];
   answers: QuizAnswers;
   result: QuizResult;
-  onAction?: (action: string) => void;
+  onAction?: (action: string, payload?: unknown) => void;
   variant: "lesson" | "diagnostic";
   prerequisites?: { topic: string; importance: string; description: string }[];
   isRegenerating?: boolean;
+  isAddingPrereqs?: boolean;
 }
 
 export function QuizResults({
@@ -34,8 +37,15 @@ export function QuizResults({
   variant,
   prerequisites,
   isRegenerating,
+  isAddingPrereqs,
 }: Props) {
   const [showReview, setShowReview] = useState(false);
+  const [selectedTopics, setSelectedTopics] = useState<Set<string>>(() => {
+    if (variant === "diagnostic" && result.weakTopics.length > 0) {
+      return new Set(result.weakTopics);
+    }
+    return new Set();
+  });
   const percentage = Math.round(result.score * 100);
 
   const scoreColor =
@@ -66,6 +76,15 @@ export function QuizResults({
   };
 
   const rec = recommendationConfig[result.recommendation];
+
+  function toggleTopic(topic: string) {
+    setSelectedTopics((prev) => {
+      const next = new Set(prev);
+      if (next.has(topic)) next.delete(topic);
+      else next.add(topic);
+      return next;
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -139,6 +158,60 @@ export function QuizResults({
         </CardContent>
       </Card>
 
+      {/* Prerequisite lesson selection (diagnostic only, when weak topics exist) */}
+      {variant === "diagnostic" &&
+        (result.recommendation === "supplement" || result.recommendation === "regenerate") &&
+        result.weakTopics.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Add Prerequisite Lessons</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Select weak topics to add as new lessons before your course content.
+              These will appear at the beginning of your course.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {result.weakTopics.map((topic) => {
+              const prereq = prerequisites?.find((p) => p.topic === topic);
+              const score = result.topicScores[topic];
+              const pct = Math.round((score ?? 0) * 100);
+              const isSelected = selectedTopics.has(topic);
+
+              return (
+                <div
+                  key={topic}
+                  className={cn(
+                    "flex items-start gap-3 p-3 rounded-lg border transition-colors cursor-pointer",
+                    isSelected ? "bg-primary/5 border-primary/30" : "hover:bg-muted/50"
+                  )}
+                  onClick={() => toggleTopic(topic)}
+                >
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => toggleTopic(topic)}
+                    className="mt-0.5"
+                  />
+                  <Label className="cursor-pointer flex-1 font-normal">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium">{topic}</span>
+                      <Badge variant="destructive" className="text-xs">{pct}%</Badge>
+                      {prereq && (
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {prereq.importance}
+                        </Badge>
+                      )}
+                    </div>
+                    {prereq?.description && (
+                      <p className="text-xs text-muted-foreground mt-1">{prereq.description}</p>
+                    )}
+                  </Label>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Action buttons */}
       {onAction && (
         <div className="flex flex-wrap gap-3">
@@ -174,7 +247,37 @@ export function QuizResults({
           )}
           {variant === "diagnostic" && (
             <>
-              <Button onClick={() => onAction("start")}>Start Course</Button>
+              {selectedTopics.size > 0 && (
+                <Button
+                  onClick={() => {
+                    const topics = result.weakTopics
+                      .filter((t) => selectedTopics.has(t))
+                      .map((t) => ({
+                        title: t,
+                        summary:
+                          prerequisites?.find((p) => p.topic === t)?.description ??
+                          `Prerequisite: ${t}`,
+                      }));
+                    onAction("add-prerequisites", { topics });
+                  }}
+                  disabled={isAddingPrereqs}
+                >
+                  {isAddingPrereqs ? (
+                    <>
+                      <span className="animate-spin mr-2">&#9696;</span>
+                      Adding Prerequisite Lessons...
+                    </>
+                  ) : (
+                    `Add ${selectedTopics.size} Prerequisite Lesson${selectedTopics.size > 1 ? "s" : ""} & Start`
+                  )}
+                </Button>
+              )}
+              <Button
+                variant={selectedTopics.size > 0 ? "outline" : "default"}
+                onClick={() => onAction("start")}
+              >
+                {selectedTopics.size > 0 ? "Start Without Prerequisites" : "Start Course"}
+              </Button>
               <Button variant="outline" onClick={() => onAction("retake")}>
                 Retake Diagnostic
               </Button>
