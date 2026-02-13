@@ -182,8 +182,8 @@ export default function LessonPage({
 
       <div className="flex-1 flex min-h-0">
         <main
-          className={`flex-1 overflow-y-auto ${
-            scratchpadOpen ? "px-6 py-8" : "container mx-auto px-4 py-8 max-w-4xl"
+          className={`overflow-y-auto ${
+            scratchpadOpen ? "w-1/2 px-6 py-8" : "flex-1 container mx-auto px-4 py-8 max-w-4xl"
           }`}
         >
           {!hasContent ? (

@@ -89,7 +89,7 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
 
   if (isLoading) {
     return (
-      <div className="w-[480px] border-l bg-background flex items-center justify-center">
+      <div className="w-1/2 border-l bg-background flex items-center justify-center">
         <p className="text-sm text-muted-foreground">Loading scratchpad...</p>
       </div>
     );
@@ -97,7 +97,7 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
 
   if (error && !content) {
     return (
-      <div className="w-[480px] border-l bg-background flex flex-col items-center justify-center gap-2 p-4">
+      <div className="w-1/2 border-l bg-background flex flex-col items-center justify-center gap-2 p-4">
         <p className="text-sm text-destructive">{error}</p>
         <Button variant="outline" size="sm" onClick={onClose}>
           Close
@@ -107,7 +107,7 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
   }
 
   return (
-    <div className="w-[480px] border-l bg-background flex flex-col h-full">
+    <div className="w-1/2 border-l bg-background flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b shrink-0">
         <div className="flex items-center gap-2">
@@ -136,7 +136,7 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
           </TabsList>
         </div>
 
-        <TabsContent value="write" className="flex-1 min-h-0">
+        <TabsContent value="write" className="flex-1 min-h-0 flex flex-col">
           <ScratchpadEditor
             ref={editorRef}
             value={content}
@@ -145,7 +145,7 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
           />
         </TabsContent>
 
-        <TabsContent value="preview" className="flex-1 min-h-0">
+        <TabsContent value="preview" className="flex-1 min-h-0 flex flex-col">
           <ScratchpadPreview content={previewContent} />
         </TabsContent>
 
