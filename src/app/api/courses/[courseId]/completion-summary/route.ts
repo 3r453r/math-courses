@@ -2,6 +2,7 @@ import { generateObject } from "ai";
 import { getAnthropicClient, getApiKeyFromRequest, MODELS } from "@/lib/ai/client";
 import { completionSummarySchema } from "@/lib/ai/schemas/completionSummarySchema";
 import { buildCompletionSummaryPrompt } from "@/lib/ai/prompts/completionSummary";
+import { evaluateCourseCompletion } from "@/lib/quiz/courseCompletion";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 
@@ -99,16 +100,23 @@ export async function POST(
       return {
         title: lesson.title,
         bestScore,
+        weight: lesson.weight,
         quizGenerations: lesson.quizzes.length,
         weakTopicsAcrossAttempts,
       };
     });
 
-    const allScores = perLesson.map((l) => l.bestScore);
-    const overallAverageScore =
-      allScores.length > 0
-        ? allScores.reduce((a, b) => a + b, 0) / allScores.length
-        : 0;
+    const lessonScoresForCompletion = course.lessons.map((lesson, idx) => ({
+      lessonId: lesson.id,
+      bestScore: perLesson[idx].bestScore,
+      weight: lesson.weight,
+    }));
+    const completionResult = evaluateCourseCompletion(lessonScoresForCompletion, {
+      passThreshold: course.passThreshold,
+      noLessonCanFail: course.noLessonCanFail,
+      lessonFailureThreshold: course.lessonFailureThreshold,
+    });
+    const overallAverageScore = completionResult.weightedScore;
 
     const aggregateWeakTopics = Array.from(weakTopicMap.entries())
       .map(([topic, data]) => ({ topic, ...data }))
@@ -138,6 +146,10 @@ export async function POST(
         contextDoc: course.contextDoc,
         focusAreas,
         summaryData,
+        passThreshold: course.passThreshold,
+        noLessonCanFail: course.noLessonCanFail,
+        lessonFailureThreshold: course.lessonFailureThreshold,
+        passed: completionResult.passed,
         language: course.language,
       }),
     });

@@ -16,12 +16,14 @@ describe("buildCompletionSummaryPrompt", () => {
         {
           title: "Vectors and Spaces",
           bestScore: 0.9,
+          weight: 1.0,
           quizGenerations: 1,
           weakTopicsAcrossAttempts: [],
         },
         {
           title: "Matrix Operations",
           bestScore: 0.75,
+          weight: 2.0,
           quizGenerations: 2,
           weakTopicsAcrossAttempts: ["Matrix Multiplication"],
         },
@@ -30,6 +32,10 @@ describe("buildCompletionSummaryPrompt", () => {
         { topic: "Matrix Multiplication", frequency: 2, latestScore: 0.75 },
       ],
     },
+    passThreshold: 0.8,
+    noLessonCanFail: true,
+    lessonFailureThreshold: 0.5,
+    passed: true,
     language: "en",
   };
 
@@ -97,5 +103,36 @@ describe("buildCompletionSummaryPrompt", () => {
     const prompt = buildCompletionSummaryPrompt({ ...baseParams, language: "pl" });
     expect(prompt).toContain("LANGUAGE REQUIREMENT");
     expect(prompt).toContain("Polish");
+  });
+
+  it("includes pass threshold information", () => {
+    const prompt = buildCompletionSummaryPrompt(baseParams);
+    expect(prompt).toContain("Pass threshold: 80%");
+  });
+
+  it("includes no lesson can fail status", () => {
+    const prompt = buildCompletionSummaryPrompt(baseParams);
+    expect(prompt).toContain("No lesson can be failed: Yes");
+  });
+
+  it("includes lesson failure threshold when noLessonCanFail is true", () => {
+    const prompt = buildCompletionSummaryPrompt(baseParams);
+    expect(prompt).toContain("Lesson failure threshold: 50%");
+  });
+
+  it("includes course result status", () => {
+    const prompt = buildCompletionSummaryPrompt(baseParams);
+    expect(prompt).toContain("Course result: PASSED");
+  });
+
+  it("shows NOT YET PASSED when passed is false", () => {
+    const prompt = buildCompletionSummaryPrompt({ ...baseParams, passed: false });
+    expect(prompt).toContain("Course result: NOT YET PASSED");
+  });
+
+  it("includes lesson weights in per-lesson breakdown", () => {
+    const prompt = buildCompletionSummaryPrompt(baseParams);
+    expect(prompt).toContain("[weight: 1]");
+    expect(prompt).toContain("[weight: 2]");
   });
 });

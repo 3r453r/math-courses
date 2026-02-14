@@ -33,5 +33,16 @@
   "pleaseEnterTopic": "Proszę podać temat",
   "courseGenerated": "Struktura kursu wygenerowana!",
   "defaultDescription": "Kurs o temacie: {{topic}}",
-  "defaultDetailedDescription": "Kompleksowy kurs na temat: {{topic}}"
+  "defaultDetailedDescription": "Kompleksowy kurs na temat: {{topic}}",
+  "prefilledFromRecommendation": "Wstępnie wypełnione z rekomendacji po ukończeniu kursu. Dostosuj dowolne pola przed generowaniem.",
+  "advancedSettings": "Zaawansowane ustawienia zaliczenia",
+  "passThresholdLabel": "Próg zaliczenia kursu",
+  "passThresholdNote": "Minimalny wynik ważony do zaliczenia kursu. AI przypisze wagi lekcjom na podstawie ich ważności.",
+  "noLessonCanFailLabel": "Żadna lekcja nie może być niezaliczona",
+  "noLessonCanFailNote": "Po włączeniu każda lekcja musi osiągnąć minimalny próg wyniku.",
+  "lessonFailureThresholdLabel": "Próg niezaliczenia lekcji",
+  "lessonFailureThresholdNote": "Minimalny wynik dla pojedynczej lekcji, gdy opcja 'żadna lekcja nie może być niezaliczona' jest włączona.",
+  "passThresholdSummary": "Próg zaliczenia:",
+  "noLessonCanFailSummary": "Bez niezaliczonych lekcji:",
+  "lessonFailureThresholdSummary": "Próg niezaliczenia lekcji:"
 }

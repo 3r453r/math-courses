@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { evaluateCourseCompletion } from "@/lib/quiz/courseCompletion";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -106,6 +107,20 @@ export async function GET() {
         ? Math.max(...courseScores)
         : null;
 
+      const lessonScoresForCompletion = course.lessons.map((lesson) => {
+        const allAttemptScores = lesson.quizzes.flatMap((q) => q.attempts.map((a) => a.score));
+        return {
+          lessonId: lesson.id,
+          bestScore: allAttemptScores.length > 0 ? Math.max(...allAttemptScores) : 0,
+          weight: lesson.weight,
+        };
+      });
+      const completionResult = evaluateCourseCompletion(lessonScoresForCompletion, {
+        passThreshold: course.passThreshold,
+        noLessonCanFail: course.noLessonCanFail,
+        lessonFailureThreshold: course.lessonFailureThreshold,
+      });
+
       const weakTopics = Array.from(weakTopicMap.entries())
         .map(([topic, data]) => ({ topic, ...data }))
         .sort((a, b) => b.frequency - a.frequency);
@@ -125,6 +140,9 @@ export async function GET() {
           percentComplete: total > 0 ? Math.round((completedLessons / total) * 100) : 0,
           averageScore: avgScore,
           bestScore,
+          weightedScore: completionResult.weightedScore,
+          passed: completionResult.passed,
+          failedLessons: completionResult.failedLessons,
           isCompleted: !!course.completionSummary,
         },
         lessons,

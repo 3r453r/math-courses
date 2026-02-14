@@ -33,5 +33,16 @@
   "pleaseEnterTopic": "Please enter a topic",
   "courseGenerated": "Course structure generated!",
   "defaultDescription": "A course on {{topic}}",
-  "defaultDetailedDescription": "A comprehensive course on {{topic}}"
+  "defaultDetailedDescription": "A comprehensive course on {{topic}}",
+  "prefilledFromRecommendation": "Pre-filled from a course completion recommendation. Adjust any fields before generating.",
+  "advancedSettings": "Advanced Completion Settings",
+  "passThresholdLabel": "Course Pass Threshold",
+  "passThresholdNote": "Minimum weighted score to pass the course. AI will assign per-lesson weights based on importance.",
+  "noLessonCanFailLabel": "No Lesson Can Be Failed",
+  "noLessonCanFailNote": "When enabled, every lesson must meet the minimum score threshold.",
+  "lessonFailureThresholdLabel": "Lesson Failure Threshold",
+  "lessonFailureThresholdNote": "Minimum score on any individual lesson when 'no lesson can be failed' is enabled.",
+  "passThresholdSummary": "Pass Threshold:",
+  "noLessonCanFailSummary": "No Failed Lessons:",
+  "lessonFailureThresholdSummary": "Lesson Failure Threshold:"
 }

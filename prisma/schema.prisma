@@ -16,8 +16,11 @@ model Course {
   targetLessonCount Int      @default(10)
   difficulty        String   @default("intermediate")
   language          String   @default("en")
-  contextDoc        String?
-  status            String   @default("draft")
+  contextDoc             String?
+  passThreshold          Float    @default(0.8)
+  noLessonCanFail        Boolean  @default(true)
+  lessonFailureThreshold Float    @default(0.5)
+  status                 String   @default("draft")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -39,6 +42,7 @@ model Lesson {
   rawMarkdown      String?
   generationPrompt String?
   isSupplementary  Boolean  @default(false)
+  weight           Float    @default(1.0)
   completedAt      DateTime?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

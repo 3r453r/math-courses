@@ -22,5 +22,9 @@
   "generateCompletionSummary": "Wygeneruj podsumowanie",
   "viewCompletionSummary": "Zobacz podsumowanie",
   "allLessonsCompleted": "Wszystkie lekcje uko\u0144czone!",
-  "generatingSummary": "Generowanie..."
+  "generatingSummary": "Generowanie...",
+  "weightedScore": "Wynik ważony",
+  "blockedByFailedLesson": "{{count}} lekcja(e) z wynikiem poniżej {{threshold}}%. Wszystkie lekcje muszą być zaliczone.",
+  "weight": "Waga",
+  "coursePassed": "Kurs zaliczony!"
 }
