@@ -12,13 +12,13 @@ async function findCloneConflict(courseId: string) {
   // Walk ancestors (clonedFromId chain, max 10 hops)
   let currentId: string | null = courseId;
   for (let i = 0; i < 10 && currentId; i++) {
-    const course = await prisma.course.findUnique({
+    const ancestor: { clonedFromId: string | null } | null = await prisma.course.findUnique({
       where: { id: currentId },
       select: { clonedFromId: true },
     });
-    if (!course?.clonedFromId) break;
-    relatedCourseIds.push(course.clonedFromId);
-    currentId = course.clonedFromId;
+    if (!ancestor?.clonedFromId) break;
+    relatedCourseIds.push(ancestor.clonedFromId);
+    currentId = ancestor.clonedFromId;
   }
 
   // Direct descendants (courses cloned from this one)
