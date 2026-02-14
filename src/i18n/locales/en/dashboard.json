@@ -5,5 +5,9 @@
   "loadingCourses": "Loading courses...",
   "welcomeTitle": "Welcome to Learning Courses",
   "welcomeDescription": "Create your first course to get started. The AI will help you design a structured learning path with lessons, quizzes, and interactive visualizations.",
-  "createFirstCourse": "Create Your First Course"
+  "createFirstCourse": "Create Your First Course",
+  "viewProgress": "Progress",
+  "completedBadge": "Completed",
+  "lessonsCompleted": "{{completed}}/{{total}} lessons",
+  "avgScore": "Avg: {{score}}%"
 }

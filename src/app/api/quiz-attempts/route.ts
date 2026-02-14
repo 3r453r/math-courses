@@ -30,6 +30,14 @@ export async function POST(request: Request) {
       },
     });
 
+    // Mark lesson completed on first advance-level score (≥80%)
+    if (result.recommendation === "advance") {
+      await prisma.lesson.updateMany({
+        where: { id: quiz.lessonId, completedAt: null },
+        data: { completedAt: new Date() },
+      });
+    }
+
     return NextResponse.json({ attempt, result });
   } catch (error) {
     console.error("Failed to score quiz:", error);

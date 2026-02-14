@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo, use } from "react";
+import { useEffect, useState, useMemo, use } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/stores/appStore";
 import { useHydrated } from "@/stores/useHydrated";
@@ -40,6 +40,7 @@ interface Lesson {
   orderIndex: number;
   status: string;
   isSupplementary: boolean;
+  completedAt?: string | null;
   quizzes?: QuizInfo[];
 }
 
@@ -63,6 +64,11 @@ interface DiagnosticInfo {
   attempts: DiagnosticAttemptInfo[];
 }
 
+interface CompletionSummaryInfo {
+  id: string;
+  completedAt: string;
+}
+
 interface CourseDetail {
   id: string;
   title: string;
@@ -75,6 +81,7 @@ interface CourseDetail {
   lessons: Lesson[];
   edges: Edge[];
   diagnosticQuiz?: DiagnosticInfo | null;
+  completionSummary?: CompletionSummaryInfo | null;
 }
 
 export default function CourseOverviewPage({
@@ -95,6 +102,7 @@ export default function CourseOverviewPage({
   const [editingContextDoc, setEditingContextDoc] = useState(false);
   const [contextDocDraft, setContextDocDraft] = useState("");
   const [savingContextDoc, setSavingContextDoc] = useState(false);
+  const [generatingSummary, setGeneratingSummary] = useState(false);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -173,14 +181,19 @@ export default function CourseOverviewPage({
     return { layers, edgeList: edges };
   }, [course]);
 
-  function statusColor(status: string) {
-    switch (status) {
+  function lessonNodeColor(lesson: Lesson) {
+    if (lesson.completedAt) {
+      return "bg-emerald-100 text-emerald-800 border-emerald-400";
+    }
+    const hasAttempt = lesson.quizzes?.[0]?.attempts?.[0];
+    if (hasAttempt) {
+      return "bg-amber-100 text-amber-800 border-amber-400";
+    }
+    switch (lesson.status) {
       case "ready":
-        return "bg-green-100 text-green-800 border-green-300";
+        return "bg-green-50 text-green-800 border-green-300";
       case "generating":
         return "bg-yellow-100 text-yellow-800 border-yellow-300";
-      case "pending":
-        return "bg-gray-100 text-gray-600 border-gray-300";
       default:
         return "bg-gray-100 text-gray-600 border-gray-300";
     }
@@ -229,7 +242,31 @@ export default function CourseOverviewPage({
     }
   }
 
+  async function handleGenerateCompletionSummary() {
+    setGeneratingSummary(true);
+    try {
+      const res = await fetch(`/api/courses/${courseId}/completion-summary`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey || "",
+        },
+      });
+      if (!res.ok) throw new Error("Failed to generate summary");
+      router.push(`/courses/${courseId}/completion`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to generate summary");
+    } finally {
+      setGeneratingSummary(false);
+    }
+  }
+
   const focusAreas = JSON.parse(course.focusAreas || "[]") as string[];
+
+  // Compute progress stats
+  const completedLessons = course.lessons.filter((l) => l.completedAt).length;
+  const totalLessons = course.lessons.length;
+  const allCompleted = totalLessons > 0 && completedLessons === totalLessons;
 
   return (
     <div className="fixed inset-0 bg-background flex flex-col">
@@ -401,6 +438,59 @@ export default function CourseOverviewPage({
               </CardContent>
             </Card>
 
+            {/* Course Progress */}
+            {course.status === "ready" && totalLessons > 0 && (
+              <Card className="mb-8">
+                <CardHeader>
+                  <CardTitle className="text-base">{t("courseOverview:courseProgress")}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        {t("courseOverview:lessonsCompleted", {
+                          completed: completedLessons,
+                          total: totalLessons,
+                        })}
+                      </span>
+                      <span className="font-medium tabular-nums">
+                        {totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0}%
+                      </span>
+                    </div>
+                    <Progress
+                      value={totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0}
+                      className="h-3"
+                    />
+                    {allCompleted && !course.completionSummary && (
+                      <div className="pt-2">
+                        <p className="text-sm text-emerald-600 font-medium mb-2">
+                          {t("courseOverview:allLessonsCompleted")}
+                        </p>
+                        <Button
+                          onClick={handleGenerateCompletionSummary}
+                          disabled={generatingSummary}
+                        >
+                          {generatingSummary
+                            ? t("courseOverview:generatingSummary")
+                            : t("courseOverview:generateCompletionSummary")}
+                        </Button>
+                      </div>
+                    )}
+                    {course.completionSummary && (
+                      <div className="pt-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => router.push(`/courses/${courseId}/completion`)}
+                        >
+                          {t("courseOverview:viewCompletionSummary")}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Lesson graph - layered layout */}
             <Card className="mb-8">
               <CardHeader>
@@ -438,18 +528,25 @@ export default function CourseOverviewPage({
                                 relative p-3 rounded-lg border-2 text-left
                                 min-w-[200px] max-w-[280px]
                                 transition-all hover:shadow-md hover:scale-[1.02]
-                                ${statusColor(lesson.status)}
+                                ${lessonNodeColor(lesson)}
                               `}
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <span className="text-xs font-mono opacity-60">
                                   #{lesson.orderIndex}
                                 </span>
-                                {lesson.isSupplementary && (
-                                  <Badge variant="outline" className="text-[10px] px-1 py-0">
-                                    {t("common:supplementary")}
-                                  </Badge>
-                                )}
+                                <div className="flex items-center gap-1">
+                                  {lesson.completedAt && (
+                                    <svg className="size-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                    </svg>
+                                  )}
+                                  {lesson.isSupplementary && (
+                                    <Badge variant="outline" className="text-[10px] px-1 py-0">
+                                      {t("common:supplementary")}
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
                               <p className="font-medium text-sm mt-1 leading-tight">
                                 {lesson.title}
@@ -493,6 +590,11 @@ export default function CourseOverviewPage({
                         </p>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
+                        {lesson.completedAt && (
+                          <svg className="size-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        )}
                         {lesson.quizzes?.[0]?.attempts?.[0] && (
                           <Badge
                             variant={

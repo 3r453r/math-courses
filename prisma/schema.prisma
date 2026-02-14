@@ -21,10 +21,11 @@ model Course {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  lessons        Lesson[]
-  edges          CourseEdge[]
-  notes          Note[]
-  diagnosticQuiz DiagnosticQuiz?
+  lessons           Lesson[]
+  edges             CourseEdge[]
+  notes             Note[]
+  diagnosticQuiz    DiagnosticQuiz?
+  completionSummary CourseCompletionSummary?
 }
 
 model Lesson {
@@ -38,6 +39,7 @@ model Lesson {
   rawMarkdown      String?
   generationPrompt String?
   isSupplementary  Boolean  @default(false)
+  completedAt      DateTime?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -98,6 +100,8 @@ model Quiz {
   questionsJson String
   questionCount Int      @default(15)
   status        String   @default("pending")
+  generation    Int      @default(1)
+  isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
 
   lesson   Lesson        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
@@ -148,4 +152,15 @@ model ChatMessage {
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
   @@index([lessonId])
+}
+
+model CourseCompletionSummary {
+  id                 String   @id @default(cuid())
+  courseId            String   @unique
+  summaryJson        String
+  narrativeMarkdown  String?
+  recommendationJson String?
+  completedAt        DateTime @default(now())
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }

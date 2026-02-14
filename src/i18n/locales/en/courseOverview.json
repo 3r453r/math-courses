@@ -16,5 +16,11 @@
   "courseStructureDescription": "Lessons are organized as a dependency graph. Click a lesson to view its content. Lessons in the same row can be studied in parallel.",
   "noLessonsYet": "No lessons generated yet.",
   "allLessons": "All Lessons ({{count}})",
-  "quizScore": "Quiz: {{score}}%"
+  "quizScore": "Quiz: {{score}}%",
+  "courseProgress": "Course Progress",
+  "lessonsCompleted": "{{completed}} of {{total}} lessons completed",
+  "generateCompletionSummary": "Generate Completion Summary",
+  "viewCompletionSummary": "View Completion Summary",
+  "allLessonsCompleted": "All lessons completed!",
+  "generatingSummary": "Generating..."
 }

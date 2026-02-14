@@ -14,7 +14,7 @@ export async function GET(
           orderBy: { orderIndex: "asc" },
           include: {
             quizzes: {
-              where: { status: "ready" },
+              where: { isActive: true },
               take: 1,
               orderBy: { createdAt: "desc" },
               include: {
@@ -35,6 +35,7 @@ export async function GET(
             },
           },
         },
+        completionSummary: true,
       },
     });
 
