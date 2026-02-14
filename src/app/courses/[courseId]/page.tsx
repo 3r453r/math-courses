@@ -18,6 +18,7 @@ import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { NotebookPanel } from "@/components/notebook";
 import { MathMarkdown } from "@/components/lesson/MathMarkdown";
+import { evaluateCourseCompletion } from "@/lib/quiz/courseCompletion";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
@@ -40,6 +41,7 @@ interface Lesson {
   orderIndex: number;
   status: string;
   isSupplementary: boolean;
+  weight: number;
   completedAt?: string | null;
   quizzes?: QuizInfo[];
 }
@@ -77,6 +79,9 @@ interface CourseDetail {
   focusAreas: string;
   difficulty: string;
   contextDoc?: string | null;
+  passThreshold: number;
+  noLessonCanFail: boolean;
+  lessonFailureThreshold: number;
   status: string;
   lessons: Lesson[];
   edges: Edge[];
@@ -266,7 +271,18 @@ export default function CourseOverviewPage({
   // Compute progress stats
   const completedLessons = course.lessons.filter((l) => l.completedAt).length;
   const totalLessons = course.lessons.length;
-  const allCompleted = totalLessons > 0 && completedLessons === totalLessons;
+
+  const lessonScoresForCompletion = course.lessons.map((l) => ({
+    lessonId: l.id,
+    bestScore: l.quizzes?.[0]?.attempts?.[0]?.score ?? 0,
+    weight: l.weight ?? 1.0,
+  }));
+  const completionResult = evaluateCourseCompletion(lessonScoresForCompletion, {
+    passThreshold: course.passThreshold ?? 0.8,
+    noLessonCanFail: course.noLessonCanFail ?? true,
+    lessonFailureThreshold: course.lessonFailureThreshold ?? 0.5,
+  });
+  const coursePassed = completionResult.passed;
 
   return (
     <div className="fixed inset-0 bg-background flex flex-col">
@@ -461,10 +477,30 @@ export default function CourseOverviewPage({
                       value={totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0}
                       className="h-3"
                     />
-                    {allCompleted && !course.completionSummary && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        {t("courseOverview:weightedScore")}
+                      </span>
+                      <span className={`font-bold tabular-nums ${
+                        coursePassed ? "text-emerald-600" : "text-muted-foreground"
+                      }`}>
+                        {Math.round(completionResult.weightedScore * 100)}%
+                        {" / "}
+                        {Math.round((course.passThreshold ?? 0.8) * 100)}%
+                      </span>
+                    </div>
+                    {completionResult.blockedByFailedLesson && (
+                      <p className="text-sm text-amber-600">
+                        {t("courseOverview:blockedByFailedLesson", {
+                          count: completionResult.failedLessons.length,
+                          threshold: Math.round((course.lessonFailureThreshold ?? 0.5) * 100),
+                        })}
+                      </p>
+                    )}
+                    {coursePassed && !course.completionSummary && (
                       <div className="pt-2">
                         <p className="text-sm text-emerald-600 font-medium mb-2">
-                          {t("courseOverview:allLessonsCompleted")}
+                          {t("courseOverview:coursePassed")}
                         </p>
                         <Button
                           onClick={handleGenerateCompletionSummary}
@@ -594,6 +630,11 @@ export default function CourseOverviewPage({
                           <svg className="size-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                           </svg>
+                        )}
+                        {lesson.weight != null && lesson.weight !== 1.0 && (
+                          <Badge variant="outline" className="text-[10px]">
+                            {t("courseOverview:weight")}: {lesson.weight}x
+                          </Badge>
                         )}
                         {lesson.quizzes?.[0]?.attempts?.[0] && (
                           <Badge

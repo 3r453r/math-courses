@@ -14,6 +14,7 @@ export function mockCourseStructure(): CourseStructureOutput {
         prerequisites: [],
         keyTopics: ["testing", "mock data"],
         estimatedDifficulty: "introductory",
+        weight: 1.0,
       },
     ],
     edges: [],

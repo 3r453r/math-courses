@@ -25,5 +25,7 @@
   "backToCourse": "Back to Course",
   "loading": "Loading completion summary...",
   "noSummary": "No completion summary generated yet.",
-  "lessonsCompletedOf": "{{completed}} of {{total}} lessons completed"
+  "lessonsCompletedOf": "{{completed}} of {{total}} lessons completed",
+  "weightedScore": "Weighted Score",
+  "lessonWeight": "Weight"
 }

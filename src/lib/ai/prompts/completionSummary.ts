@@ -3,6 +3,7 @@ import { buildLanguageInstruction } from "./languageInstruction";
 interface LessonPerformance {
   title: string;
   bestScore: number;
+  weight: number;
   quizGenerations: number;
   weakTopicsAcrossAttempts: string[];
 }
@@ -26,6 +27,10 @@ interface CompletionSummaryParams {
     perLesson: LessonPerformance[];
     aggregateWeakTopics: AggregateWeakTopic[];
   };
+  passThreshold?: number;
+  noLessonCanFail?: boolean;
+  lessonFailureThreshold?: number;
+  passed?: boolean;
   language?: string;
 }
 
@@ -37,6 +42,10 @@ export function buildCompletionSummaryPrompt(params: CompletionSummaryParams): s
     contextDoc,
     focusAreas,
     summaryData,
+    passThreshold,
+    noLessonCanFail,
+    lessonFailureThreshold,
+    passed,
     language,
   } = params;
 
@@ -48,15 +57,20 @@ DIFFICULTY: ${difficulty}
 FOCUS AREAS: ${focusAreas.join(", ") || "General coverage"}
 
 ${contextDoc ? `COURSE CONTEXT DOCUMENT:\n${contextDoc}\n` : ""}
+COURSE COMPLETION THRESHOLDS:
+- Pass threshold: ${Math.round((passThreshold ?? 0.8) * 100)}% (weighted score)
+- No lesson can be failed: ${(noLessonCanFail ?? true) ? "Yes" : "No"}${(noLessonCanFail ?? true) ? `\n- Lesson failure threshold: ${Math.round((lessonFailureThreshold ?? 0.5) * 100)}%` : ""}
+- Course result: ${passed !== undefined ? (passed ? "PASSED" : "NOT YET PASSED") : "N/A"}
+
 STUDENT PERFORMANCE DATA:
 - Lessons completed: ${summaryData.lessonsCompleted}/${summaryData.totalLessons}
-- Overall average quiz score: ${Math.round(summaryData.overallAverageScore * 100)}%
+- Overall weighted score: ${Math.round(summaryData.overallAverageScore * 100)}%
 
-PER-LESSON BREAKDOWN:
+PER-LESSON BREAKDOWN (with weights):
 ${summaryData.perLesson
   .map(
     (l) =>
-      `- "${l.title}": best score ${Math.round(l.bestScore * 100)}%, ` +
+      `- "${l.title}" [weight: ${l.weight ?? 1.0}]: best score ${Math.round(l.bestScore * 100)}%, ` +
       `${l.quizGenerations} quiz generation(s), ` +
       `weak areas: ${l.weakTopicsAcrossAttempts.length > 0 ? l.weakTopicsAcrossAttempts.join(", ") : "none"}`
   )

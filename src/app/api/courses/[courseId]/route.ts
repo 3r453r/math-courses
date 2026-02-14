@@ -57,15 +57,35 @@ export async function PATCH(
   try {
     const { courseId } = await params;
     const body = await request.json();
-    const { contextDoc } = body;
+    const { contextDoc, passThreshold, noLessonCanFail, lessonFailureThreshold, lessonWeights } = body;
 
-    if (typeof contextDoc !== "string") {
-      return NextResponse.json({ error: "contextDoc must be a string" }, { status: 400 });
+    const updateData: Record<string, unknown> = {};
+    if (typeof contextDoc === "string") updateData.contextDoc = contextDoc;
+    if (typeof passThreshold === "number") updateData.passThreshold = passThreshold;
+    if (typeof noLessonCanFail === "boolean") updateData.noLessonCanFail = noLessonCanFail;
+    if (typeof lessonFailureThreshold === "number") updateData.lessonFailureThreshold = lessonFailureThreshold;
+
+    if (Object.keys(updateData).length > 0) {
+      await prisma.course.update({
+        where: { id: courseId },
+        data: updateData,
+      });
     }
 
-    const updated = await prisma.course.update({
+    if (lessonWeights && typeof lessonWeights === "object") {
+      for (const [lessonId, weight] of Object.entries(lessonWeights)) {
+        if (typeof weight === "number" && weight >= 0.1 && weight <= 5.0) {
+          await prisma.lesson.update({
+            where: { id: lessonId },
+            data: { weight },
+          });
+        }
+      }
+    }
+
+    const updated = await prisma.course.findUnique({
       where: { id: courseId },
-      data: { contextDoc },
+      include: { lessons: { orderBy: { orderIndex: "asc" } } },
     });
 
     return NextResponse.json(updated);

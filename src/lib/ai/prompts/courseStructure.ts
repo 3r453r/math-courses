@@ -27,6 +27,11 @@ CRITICAL RULES:
 7. Every lesson after index 0 must have at least one prerequisite edge.
 8. The graph must be connected - every lesson must be reachable from at least one starting lesson.
 
+LESSON WEIGHT GUIDELINES:
+- Each lesson has a "weight" field (0.1-5.0) for course completion scoring importance.
+- Introductory/foundational: 0.5-1.0. Standard: 1.0. Integration/synthesis: 1.5-2.0. Capstone: 2.0-3.0.
+- Weights are normalized when computing the weighted average, so they do not need to sum to a specific value.
+
 PEDAGOGICAL GUIDELINES:
 - Start with foundational/intuitive concepts before formal definitions.
 - Build complexity gradually.

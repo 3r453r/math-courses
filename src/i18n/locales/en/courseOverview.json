@@ -22,5 +22,9 @@
   "generateCompletionSummary": "Generate Completion Summary",
   "viewCompletionSummary": "View Completion Summary",
   "allLessonsCompleted": "All lessons completed!",
-  "generatingSummary": "Generating..."
+  "generatingSummary": "Generating...",
+  "weightedScore": "Weighted Score",
+  "blockedByFailedLesson": "{{count}} lesson(s) scored below {{threshold}}%. All lessons must pass.",
+  "weight": "Weight",
+  "coursePassed": "Course passed!"
 }
