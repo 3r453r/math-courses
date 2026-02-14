@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { NotebookPanel } from "@/components/notebook";
 import { MathMarkdown } from "@/components/lesson/MathMarkdown";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface QuizAttemptInfo {
   id: string;
@@ -82,6 +83,7 @@ export default function CourseOverviewPage({
   params: Promise<{ courseId: string }>;
 }) {
   const { courseId } = use(params);
+  const { t } = useTranslation(["courseOverview", "common", "notebook"]);
   const router = useRouter();
   const hydrated = useHydrated();
   const apiKey = useAppStore((s) => s.apiKey);
@@ -110,7 +112,7 @@ export default function CourseOverviewPage({
       const data = await res.json();
       setCourse(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load course");
+      setError(err instanceof Error ? err.message : t("courseOverview:failedToLoadCourse"));
     } finally {
       setLoading(false);
     }
@@ -187,7 +189,7 @@ export default function CourseOverviewPage({
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading course...</p>
+        <p className="text-muted-foreground">{t("courseOverview:loadingCourse")}</p>
       </div>
     );
   }
@@ -197,11 +199,11 @@ export default function CourseOverviewPage({
       <div className="min-h-screen flex items-center justify-center">
         <Card className="max-w-md">
           <CardHeader>
-            <CardTitle>Error</CardTitle>
-            <CardDescription>{error || "Course not found"}</CardDescription>
+            <CardTitle>{t("common:error")}</CardTitle>
+            <CardDescription>{error || t("courseOverview:courseNotFound")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => router.push("/")}>Back to Dashboard</Button>
+            <Button onClick={() => router.push("/")}>{t("courseOverview:backToDashboard")}</Button>
           </CardContent>
         </Card>
       </div>
@@ -219,9 +221,9 @@ export default function CourseOverviewPage({
       if (!res.ok) throw new Error("Failed to save");
       setCourse((prev) => prev ? { ...prev, contextDoc: contextDocDraft } : prev);
       setEditingContextDoc(false);
-      toast.success("Context document updated");
+      toast.success(t("courseOverview:contextDocUpdated"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save");
+      toast.error(err instanceof Error ? err.message : t("courseOverview:failedToSave"));
     } finally {
       setSavingContextDoc(false);
     }
@@ -234,7 +236,7 @@ export default function CourseOverviewPage({
       <header className="border-b shrink-0">
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
           <Button variant="ghost" onClick={() => router.push("/")}>
-            &larr; Back
+            &larr; {t("common:back")}
           </Button>
           <div className="flex-1">
             <h1 className="text-xl font-bold">{course.title}</h1>
@@ -259,7 +261,7 @@ export default function CourseOverviewPage({
                 d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
               />
             </svg>
-            Notebook
+            {t("notebook:notebook")}
           </Button>
           <Badge variant="outline" className="capitalize">
             {course.difficulty}
@@ -292,7 +294,7 @@ export default function CourseOverviewPage({
               <Card className="mb-8">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">Course Context Document</CardTitle>
+                    <CardTitle className="text-base">{t("courseOverview:contextDocTitle")}</CardTitle>
                     <Button
                       variant="outline"
                       size="sm"
@@ -305,11 +307,11 @@ export default function CourseOverviewPage({
                         }
                       }}
                     >
-                      {editingContextDoc ? "Cancel" : "Edit"}
+                      {editingContextDoc ? t("common:cancel") : t("common:edit")}
                     </Button>
                   </div>
                   <CardDescription>
-                    Pedagogical guide used as context when generating lessons. Edit to customize.
+                    {t("courseOverview:contextDocDescription")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -323,10 +325,10 @@ export default function CourseOverviewPage({
                       />
                       <div className="flex justify-end gap-2">
                         <Button variant="outline" size="sm" onClick={() => setEditingContextDoc(false)}>
-                          Cancel
+                          {t("common:cancel")}
                         </Button>
                         <Button size="sm" disabled={savingContextDoc} onClick={handleSaveContextDoc}>
-                          {savingContextDoc ? "Saving..." : "Save"}
+                          {savingContextDoc ? t("common:saving") : t("common:save")}
                         </Button>
                       </div>
                     </div>
@@ -340,9 +342,9 @@ export default function CourseOverviewPage({
             {/* Prerequisite Assessment */}
             <Card className="mb-8">
               <CardHeader>
-                <CardTitle className="text-base">Prerequisite Assessment</CardTitle>
+                <CardTitle className="text-base">{t("courseOverview:prerequisiteTitle")}</CardTitle>
                 <CardDescription>
-                  Optional diagnostic to check your prerequisite knowledge before starting.
+                  {t("courseOverview:prerequisiteDescription")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -372,13 +374,13 @@ export default function CourseOverviewPage({
                           size="sm"
                           onClick={() => router.push(`/courses/${courseId}/diagnostic`)}
                         >
-                          View Details / Retake
+                          {t("courseOverview:viewDetailsRetake")}
                         </Button>
                       </div>
                       <Progress value={pct} className="h-2" />
                       {weakAreas.length > 0 && (
                         <div className="flex flex-wrap gap-1">
-                          <span className="text-xs text-muted-foreground mr-1">Weak areas:</span>
+                          <span className="text-xs text-muted-foreground mr-1">{t("courseOverview:weakAreas")}</span>
                           {weakAreas.map((area) => (
                             <Badge key={area} variant="destructive" className="text-xs">
                               {area}
@@ -393,7 +395,7 @@ export default function CourseOverviewPage({
                     variant="outline"
                     onClick={() => router.push(`/courses/${courseId}/diagnostic`)}
                   >
-                    Take Diagnostic Quiz
+                    {t("courseOverview:takeDiagnosticQuiz")}
                   </Button>
                 )}
               </CardContent>
@@ -402,16 +404,15 @@ export default function CourseOverviewPage({
             {/* Lesson graph - layered layout */}
             <Card className="mb-8">
               <CardHeader>
-                <CardTitle>Course Structure</CardTitle>
+                <CardTitle>{t("courseOverview:courseStructureTitle")}</CardTitle>
                 <CardDescription>
-                  Lessons are organized as a dependency graph. Click a lesson to view its content.
-                  Lessons in the same row can be studied in parallel.
+                  {t("courseOverview:courseStructureDescription")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {lessonGraph.layers.length === 0 ? (
                   <p className="text-muted-foreground text-center py-8">
-                    No lessons generated yet.
+                    {t("courseOverview:noLessonsYet")}
                   </p>
                 ) : (
                   <div className="space-y-6">
@@ -446,7 +447,7 @@ export default function CourseOverviewPage({
                                 </span>
                                 {lesson.isSupplementary && (
                                   <Badge variant="outline" className="text-[10px] px-1 py-0">
-                                    supplementary
+                                    {t("common:supplementary")}
                                   </Badge>
                                 )}
                               </div>
@@ -469,7 +470,7 @@ export default function CourseOverviewPage({
             {/* Lesson list */}
             <Card>
               <CardHeader>
-                <CardTitle>All Lessons ({course.lessons.length})</CardTitle>
+                <CardTitle>{t("courseOverview:allLessons", { count: course.lessons.length })}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
@@ -503,7 +504,7 @@ export default function CourseOverviewPage({
                             }
                             className="text-xs"
                           >
-                            Quiz: {Math.round(lesson.quizzes[0].attempts[0].score * 100)}%
+                            {t("courseOverview:quizScore", { score: Math.round(lesson.quizzes[0].attempts[0].score * 100) })}
                           </Badge>
                         )}
                         <Badge

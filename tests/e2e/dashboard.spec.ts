@@ -18,7 +18,7 @@ test.describe("Dashboard", () => {
 
     await page.goto("/");
     await expect(
-      page.getByText("Welcome to Math Courses")
+      page.getByText("Welcome to Learning Courses")
     ).toBeVisible({ timeout: 10000 });
     await expect(
       page.getByRole("button", { name: /Create Your First Course/i })
@@ -28,7 +28,7 @@ test.describe("Dashboard", () => {
   test("New Course button navigates to creation wizard", async ({ page }) => {
     await page.goto("/");
     // Wait for dashboard to actually load (not redirect to setup)
-    await expect(page.getByText("Math Courses")).toBeVisible({
+    await expect(page.getByText("Learning Courses")).toBeVisible({
       timeout: 10000,
     });
     await page.getByRole("button", { name: /New Course/i }).click();
@@ -37,7 +37,7 @@ test.describe("Dashboard", () => {
 
   test("Settings button navigates to setup page", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByText("Math Courses")).toBeVisible({
+    await expect(page.getByText("Learning Courses")).toBeVisible({
       timeout: 10000,
     });
     await page.getByRole("button", { name: /Settings/i }).click();

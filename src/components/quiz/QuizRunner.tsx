@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Card,
   CardContent,
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function QuizRunner({ questions, onSubmit, isSubmitting, disabled }: Props) {
+  const { t } = useTranslation("quiz");
   const [answers, setAnswers] = useState<QuizAnswers>({});
 
   const answeredCount = Object.keys(answers).filter(
@@ -49,7 +51,7 @@ export function QuizRunner({ questions, onSubmit, isSubmitting, disabled }: Prop
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur py-3 border-b">
         <div className="flex items-center justify-between mb-2">
           <p className="text-sm text-muted-foreground">
-            {answeredCount} of {questions.length} answered
+            {t("answeredOf", { answered: answeredCount, total: questions.length })}
           </p>
           <p className="text-sm font-medium">{Math.round(progress)}%</p>
         </div>
@@ -64,7 +66,7 @@ export function QuizRunner({ questions, onSubmit, isSubmitting, disabled }: Prop
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="outline" className="text-xs">
-                  Q{qIdx + 1}
+                  {t("qNumber", { number: qIdx + 1 })}
                 </Badge>
                 <Badge variant="secondary" className="text-xs">
                   {question.topic}
@@ -126,10 +128,10 @@ export function QuizRunner({ questions, onSubmit, isSubmitting, disabled }: Prop
           {isSubmitting ? (
             <>
               <span className="animate-spin mr-2">&#9696;</span>
-              Scoring...
+              {t("scoring")}
             </>
           ) : (
-            `Submit Quiz (${answeredCount}/${questions.length} answered)`
+            t("submitQuiz", { answered: answeredCount, total: questions.length })
           )}
         </Button>
       </div>

@@ -1,0 +1,21 @@
+{
+  "back": "Back",
+  "delete": "Delete",
+  "close": "Close",
+  "settings": "Settings",
+  "loading": "Loading...",
+  "save": "Save",
+  "cancel": "Cancel",
+  "next": "Next",
+  "add": "Add",
+  "error": "Error",
+  "retry": "Retry",
+  "previous": "Previous",
+  "confirmDeleteCourse": "Are you sure you want to delete this course? All lessons and progress will be lost.",
+  "lessonCount_one": "{{count}} lesson",
+  "lessonCount_other": "{{count}} lessons",
+  "supplementary": "supplementary",
+  "edit": "Edit",
+  "saving": "Saving...",
+  "language": "Language"
+}

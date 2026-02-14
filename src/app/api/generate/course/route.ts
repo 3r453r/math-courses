@@ -34,6 +34,13 @@ export async function POST(request: Request) {
       });
     }
 
+    // Get the course language (set at creation time)
+    let courseLanguage = "en";
+    if (courseId) {
+      const course = await prisma.course.findUnique({ where: { id: courseId }, select: { language: true } });
+      courseLanguage = course?.language ?? "en";
+    }
+
     const model = body.model || MODELS.generation;
 
     let courseStructure;
@@ -48,6 +55,7 @@ export async function POST(request: Request) {
         focusAreas: focusAreas || [],
         lessonCount,
         difficulty: difficulty || "intermediate",
+        language: courseLanguage,
       });
 
       const { object } = await generateObject({

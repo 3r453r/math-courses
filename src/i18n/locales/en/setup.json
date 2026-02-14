@@ -1,0 +1,21 @@
+{
+  "title": "Setup",
+  "description": "Configure your Anthropic API key and model preferences to get started. Your key is stored locally in your browser and never sent to any server except Anthropic's API.",
+  "apiKeyLabel": "Anthropic API Key",
+  "pleaseEnterApiKey": "Please enter an API key",
+  "keySaved": "Key saved successfully",
+  "generationModelLabel": "Generation Model (lessons, quizzes)",
+  "chatModelLabel": "Chat Model (AI sidebar)",
+  "opus": "Claude Opus 4 (highest quality)",
+  "sonnet": "Claude Sonnet 4 (balanced)",
+  "haiku": "Claude Haiku 4 (fastest)",
+  "mock": "Mock (No API Call)",
+  "testKey": "Test Key",
+  "testing": "Testing...",
+  "saveAndContinue": "Save & Continue",
+  "getApiKeyFrom": "Get your API key from",
+  "languageLabel": "Interface Language",
+  "languageDescription": "Language for the UI and AI-generated course content",
+  "english": "English",
+  "polish": "Polski"
+}

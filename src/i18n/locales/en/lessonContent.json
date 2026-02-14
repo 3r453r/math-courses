@@ -1,0 +1,23 @@
+{
+  "learningObjectives": "Learning Objectives",
+  "workedExamples": "Worked Examples",
+  "practiceExercises": "Practice Exercises",
+  "keyTakeaways": "Key Takeaways",
+  "example": "Example {{number}}",
+  "problem": "Problem",
+  "solutionSteps": "Solution Steps",
+  "showNextStep": "Show Next Step ({{current}}/{{total}})",
+  "showAllSteps": "Show All Steps",
+  "finalAnswer": "Final Answer",
+  "exercise": "Exercise {{number}}",
+  "checkAnswer": "Check Answer",
+  "tryAgain": "Try Again",
+  "hint": "Hint ({{current}}/{{total}})",
+  "hintLabel": "Hint {{number}}",
+  "showSolution": "Show Solution",
+  "solution": "Solution",
+  "correctBadge": "Correct!",
+  "incorrectBadge": "Incorrect",
+  "numericPlaceholder": "Enter your numeric answer...",
+  "freeResponsePlaceholder": "Write your answer here..."
+}

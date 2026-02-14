@@ -1,9 +1,12 @@
+import { buildLanguageInstruction } from "./languageInstruction";
+
 export function buildQuizPrompt(params: {
   lessonTitle: string;
   lessonSummary: string;
   courseTopic: string;
   difficulty: string;
   lessonContent?: unknown;
+  language?: string;
 }) {
   let prompt = `You are an assessment designer for ${params.courseTopic}, creating a quiz for a specific lesson.
 
@@ -31,7 +34,7 @@ REQUIREMENTS:
    - Include questions that require applying techniques to new situations
 8. Ensure at least one question has multiple correct answers.
 9. Each question ID should be unique (e.g., "q1", "q2", etc.).
-10. Each choice ID should be unique within its question (e.g., "a", "b", "c", "d").`;
+10. Each choice ID should be unique within its question (e.g., "a", "b", "c", "d").${buildLanguageInstruction(params.language ?? "en")}`;
 
   return prompt;
 }
@@ -42,6 +45,7 @@ export function buildDiagnosticPrompt(params: {
   courseDescription: string;
   difficulty: string;
   lessonTitles: string[];
+  language?: string;
 }) {
   return `You are an assessment designer for ${params.courseTopic}, creating a diagnostic prerequisite quiz.
 
@@ -66,5 +70,5 @@ YOUR TASK:
 
 3. Cover all essential prerequisites and most helpful ones.
 4. Each question ID should be unique (e.g., "d1", "d2", etc.).
-5. Each choice ID should be unique within its question (e.g., "a", "b", "c", "d").`;
+5. Each choice ID should be unique within its question (e.g., "a", "b", "c", "d").${buildLanguageInstruction(params.language ?? "en")}`;
 }

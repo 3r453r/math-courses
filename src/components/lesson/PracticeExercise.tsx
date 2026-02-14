@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Card,
   CardContent,
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function PracticeExercise({ exercise, index }: Props) {
+  const { t } = useTranslation("lessonContent");
   const [hintsRevealed, setHintsRevealed] = useState(0);
   const [showSolution, setShowSolution] = useState(false);
   const [userAnswer, setUserAnswer] = useState("");
@@ -62,7 +64,7 @@ export function PracticeExercise({ exercise, index }: Props) {
             variant="outline"
             className="bg-emerald-50 text-emerald-700 border-emerald-300"
           >
-            Exercise {index + 1}
+            {t("exercise", { number: index + 1 })}
           </Badge>
           <Badge variant="secondary" className="text-xs capitalize">
             {exercise.answerType.replace("_", " ")}
@@ -113,7 +115,7 @@ export function PracticeExercise({ exercise, index }: Props) {
           <div className="flex items-center gap-3">
             <Input
               type="text"
-              placeholder="Enter your numeric answer..."
+              placeholder={t("numericPlaceholder")}
               value={userAnswer}
               onChange={(e) => setUserAnswer(e.target.value)}
               disabled={submitted}
@@ -121,7 +123,7 @@ export function PracticeExercise({ exercise, index }: Props) {
             />
             {submitted && isCorrect !== null && (
               <Badge variant={isCorrect ? "default" : "destructive"}>
-                {isCorrect ? "Correct!" : "Incorrect"}
+                {isCorrect ? t("correctBadge") : t("incorrectBadge")}
               </Badge>
             )}
           </div>
@@ -131,7 +133,7 @@ export function PracticeExercise({ exercise, index }: Props) {
         {exercise.answerType === "free_response" && (
           <textarea
             className="w-full min-h-[100px] p-3 rounded-lg border bg-background text-sm resize-y"
-            placeholder="Write your answer here..."
+            placeholder={t("freeResponsePlaceholder")}
             value={userAnswer}
             onChange={(e) => setUserAnswer(e.target.value)}
             disabled={submitted}
@@ -150,12 +152,12 @@ export function PracticeExercise({ exercise, index }: Props) {
                 (exercise.answerType === "numeric" && !userAnswer.trim())
               }
             >
-              Check Answer
+              {t("checkAnswer")}
             </Button>
           )}
           {submitted && (
             <Button size="sm" variant="outline" onClick={handleReset}>
-              Try Again
+              {t("tryAgain")}
             </Button>
           )}
           {exercise.hints.length > 0 &&
@@ -165,7 +167,7 @@ export function PracticeExercise({ exercise, index }: Props) {
                 variant="ghost"
                 onClick={() => setHintsRevealed((prev) => prev + 1)}
               >
-                Hint ({hintsRevealed}/{exercise.hints.length})
+                {t("hint", { current: hintsRevealed, total: exercise.hints.length })}
               </Button>
             )}
           {!showSolution && (
@@ -174,7 +176,7 @@ export function PracticeExercise({ exercise, index }: Props) {
               variant="ghost"
               onClick={() => setShowSolution(true)}
             >
-              Show Solution
+              {t("showSolution")}
             </Button>
           )}
         </div>
@@ -188,7 +190,7 @@ export function PracticeExercise({ exercise, index }: Props) {
                 className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-3 border border-amber-200 dark:border-amber-800"
               >
                 <p className="text-xs font-medium text-amber-700 dark:text-amber-400 mb-1">
-                  Hint {i + 1}
+                  {t("hintLabel", { number: i + 1 })}
                 </p>
                 <MathMarkdown content={hint} className="text-sm" />
               </div>
@@ -202,7 +204,7 @@ export function PracticeExercise({ exercise, index }: Props) {
             <Separator />
             <div className="bg-muted/50 rounded-lg p-3">
               <p className="text-xs font-medium text-muted-foreground mb-1">
-                Solution
+                {t("solution")}
               </p>
               <MathMarkdown content={exercise.solution} />
             </div>

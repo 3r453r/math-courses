@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { LessonContentRenderer } from "@/components/lesson/LessonContentRenderer";
 import { ScratchpadPanel } from "@/components/scratchpad";
 import { ChatPanel } from "@/components/chat";
@@ -43,6 +44,7 @@ export default function LessonPage({
   params: Promise<{ courseId: string; lessonId: string }>;
 }) {
   const { courseId, lessonId } = use(params);
+  const { t } = useTranslation(["lesson", "common"]);
   const router = useRouter();
   const hydrated = useHydrated();
   const {
@@ -76,7 +78,7 @@ export default function LessonPage({
       setLesson(found);
     } catch (err) {
       console.error(err);
-      toast.error("Failed to load lesson");
+      toast.error(t("lesson:failedToLoadLesson"));
     } finally {
       setLoading(false);
     }
@@ -102,7 +104,7 @@ export default function LessonPage({
         const data = await res.json();
         throw new Error(data.error || "Failed to generate lesson");
       }
-      toast.success("Lesson content and quiz generated!");
+      toast.success(t("lesson:lessonGenerated"));
       await fetchLesson();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Generation failed");
@@ -114,7 +116,7 @@ export default function LessonPage({
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading lesson...</p>
+        <p className="text-muted-foreground">{t("lesson:loadingLesson")}</p>
       </div>
     );
   }
@@ -124,11 +126,11 @@ export default function LessonPage({
       <div className="min-h-screen flex items-center justify-center">
         <Card>
           <CardHeader>
-            <CardTitle>Lesson not found</CardTitle>
+            <CardTitle>{t("lesson:lessonNotFound")}</CardTitle>
           </CardHeader>
           <CardContent>
             <Button onClick={() => router.push(`/courses/${courseId}`)}>
-              Back to Course
+              {t("lesson:backToCourse")}
             </Button>
           </CardContent>
         </Card>
@@ -146,12 +148,12 @@ export default function LessonPage({
             variant="ghost"
             onClick={() => router.push(`/courses/${courseId}`)}
           >
-            &larr; Course Overview
+            &larr; {t("lesson:courseOverview")}
           </Button>
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono text-muted-foreground">
-                Lesson {lesson.orderIndex}
+                {t("lesson:lessonIndex", { index: lesson.orderIndex })}
               </span>
               <Badge
                 variant={lesson.status === "ready" ? "default" : "outline"}
@@ -159,7 +161,7 @@ export default function LessonPage({
                 {lesson.status}
               </Badge>
               {lesson.isSupplementary && (
-                <Badge variant="secondary">supplementary</Badge>
+                <Badge variant="secondary">{t("common:supplementary")}</Badge>
               )}
             </div>
             <h1 className="text-xl font-bold">{lesson.title}</h1>
@@ -173,7 +175,7 @@ export default function LessonPage({
                   if (!chatSidebarOpen) setScratchpadOpen(false);
                   setChatSidebarOpen(!chatSidebarOpen);
                 }}
-                title="Toggle AI tutor chat"
+                title={t("lesson:toggleChat")}
               >
                 <svg
                   className="size-4 mr-1.5"
@@ -188,7 +190,7 @@ export default function LessonPage({
                     d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
                   />
                 </svg>
-                Chat
+                {t("lesson:chat")}
               </Button>
               <Button
                 variant={scratchpadOpen ? "secondary" : "outline"}
@@ -197,7 +199,7 @@ export default function LessonPage({
                   if (!scratchpadOpen) setChatSidebarOpen(false);
                   setScratchpadOpen(!scratchpadOpen);
                 }}
-                title="Toggle scratchpad (notes)"
+                title={t("lesson:toggleScratchpad")}
               >
                 <svg
                   className="size-4 mr-1.5"
@@ -212,7 +214,7 @@ export default function LessonPage({
                     d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
                   />
                 </svg>
-                Scratchpad
+                {t("lesson:scratchpad")}
               </Button>
             </>
           )}
@@ -234,25 +236,23 @@ export default function LessonPage({
             {!hasContent ? (
               <Card className="max-w-lg mx-auto">
                 <CardHeader className="text-center">
-                  <CardTitle>Lesson Not Yet Generated</CardTitle>
+                  <CardTitle>{t("lesson:lessonNotGenerated")}</CardTitle>
                   <CardDescription>
                     {lesson.summary}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col items-center gap-4">
                   <p className="text-sm text-muted-foreground text-center">
-                    Click below to generate the full lesson content using AI.
-                    This will create detailed explanations, visualizations,
-                    worked examples, and practice exercises.
+                    {t("lesson:generateDescription")}
                   </p>
                   <Button onClick={handleGenerate} disabled={generating}>
                     {generating ? (
                       <>
                         <span className="animate-spin mr-2">&#9696;</span>
-                        Generating Lesson Content...
+                        {t("lesson:generatingLessonContent")}
                       </>
                     ) : (
-                      "Generate Lesson Content"
+                      t("lesson:generateLessonContent")
                     )}
                   </Button>
                 </CardContent>
@@ -272,7 +272,7 @@ export default function LessonPage({
                     onClick={handleGenerate}
                     disabled={generating}
                   >
-                    {generating ? "Regenerating..." : "Regenerate"}
+                    {generating ? t("lesson:regenerating") : t("lesson:regenerate")}
                   </Button>
                 </div>
                 <LessonContentRenderer
@@ -286,9 +286,9 @@ export default function LessonPage({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div>
-                            <p className="font-medium text-sm">Lesson Quiz</p>
+                            <p className="font-medium text-sm">{t("lesson:lessonQuiz")}</p>
                             <p className="text-xs text-muted-foreground">
-                              Score: {Math.round(lesson.quizzes[0].attempts[0].score * 100)}%
+                              {t("lesson:score", { score: Math.round(lesson.quizzes[0].attempts[0].score * 100) })}
                             </p>
                           </div>
                           <Badge
@@ -312,15 +312,15 @@ export default function LessonPage({
                             )
                           }
                         >
-                          Review / Retake
+                          {t("lesson:reviewRetake")}
                         </Button>
                       </div>
                     ) : (
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-medium text-sm">Ready to test your understanding?</p>
+                          <p className="font-medium text-sm">{t("lesson:readyToTest")}</p>
                           <p className="text-xs text-muted-foreground">
-                            Take a quiz to check your grasp of this lesson&apos;s material.
+                            {t("lesson:quizPrompt")}
                           </p>
                         </div>
                         <Button
@@ -331,7 +331,7 @@ export default function LessonPage({
                             )
                           }
                         >
-                          Take Quiz
+                          {t("lesson:takeQuiz")}
                         </Button>
                       </div>
                     )}

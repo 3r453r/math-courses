@@ -19,7 +19,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, description, topic, focusAreas, targetLessonCount, difficulty } = body;
+    const { title, description, topic, focusAreas, targetLessonCount, difficulty, language } = body;
 
     const course = await prisma.course.create({
       data: {
@@ -29,6 +29,7 @@ export async function POST(request: Request) {
         focusAreas: JSON.stringify(focusAreas || []),
         targetLessonCount: targetLessonCount || 10,
         difficulty: difficulty || "intermediate",
+        language: language || "en",
         status: "draft",
       },
     });

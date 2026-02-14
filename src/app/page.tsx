@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { useAppStore } from "@/stores/appStore";
 import { useHydrated } from "@/stores/useHydrated";
 import { Button } from "@/components/ui/button";
@@ -30,8 +31,11 @@ export default function DashboardPage() {
   const router = useRouter();
   const hydrated = useHydrated();
   const apiKey = useAppStore((s) => s.apiKey);
+  const language = useAppStore((s) => s.language);
+  const setLanguage = useAppStore((s) => s.setLanguage);
   const [courses, setCourses] = useState<CourseWithCount[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation(["dashboard", "common"]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -57,7 +61,7 @@ export default function DashboardPage() {
   }
 
   async function handleDeleteCourse(courseId: string) {
-    if (!confirm("Are you sure you want to delete this course? All lessons and progress will be lost.")) {
+    if (!confirm(t("common:confirmDeleteCourse"))) {
       return;
     }
     try {
@@ -83,15 +87,23 @@ export default function DashboardPage() {
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Math Courses</h1>
-            <p className="text-sm text-muted-foreground">AI-powered math learning platform</p>
+            <h1 className="text-2xl font-bold">{t("dashboard:title")}</h1>
+            <p className="text-sm text-muted-foreground">{t("dashboard:subtitle")}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs font-medium"
+              onClick={() => setLanguage(language === "en" ? "pl" : "en")}
+            >
+              {language === "en" ? "PL" : "EN"}
+            </Button>
             <Button variant="outline" onClick={() => router.push("/setup")}>
-              Settings
+              {t("common:settings")}
             </Button>
             <Button onClick={() => router.push("/courses/new")}>
-              New Course
+              {t("dashboard:newCourse")}
             </Button>
           </div>
         </div>
@@ -100,20 +112,19 @@ export default function DashboardPage() {
       <main className="container mx-auto px-4 py-8">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <p className="text-muted-foreground">Loading courses...</p>
+            <p className="text-muted-foreground">{t("dashboard:loadingCourses")}</p>
           </div>
         ) : courses.length === 0 ? (
           <Card className="max-w-lg mx-auto">
             <CardHeader className="text-center">
-              <CardTitle>Welcome to Math Courses</CardTitle>
+              <CardTitle>{t("dashboard:welcomeTitle")}</CardTitle>
               <CardDescription>
-                Create your first course to get started. The AI will help you design a structured
-                learning path with lessons, quizzes, and interactive visualizations.
+                {t("dashboard:welcomeDescription")}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center">
               <Button onClick={() => router.push("/courses/new")}>
-                Create Your First Course
+                {t("dashboard:createFirstCourse")}
               </Button>
             </CardContent>
           </Card>
@@ -134,7 +145,7 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span>{course._count.lessons} lessons</span>
+                    <span>{t("common:lessonCount", { count: course._count.lessons })}</span>
                     <Separator orientation="vertical" className="h-4" />
                     <span className="capitalize">{course.difficulty}</span>
                   </div>
@@ -147,7 +158,7 @@ export default function DashboardPage() {
                         handleDeleteCourse(course.id);
                       }}
                     >
-                      Delete
+                      {t("common:delete")}
                     </Button>
                   </div>
                 </CardContent>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Card,
   CardContent,
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export function WorkedExample({ example, index }: Props) {
+  const { t } = useTranslation("lessonContent");
   const [expandedSteps, setExpandedSteps] = useState(0);
   const allExpanded = expandedSteps >= example.steps.length;
 
@@ -31,7 +33,7 @@ export function WorkedExample({ example, index }: Props) {
             variant="outline"
             className="bg-amber-50 text-amber-700 border-amber-300"
           >
-            Example {index + 1}
+            {t("example", { number: index + 1 })}
           </Badge>
           <CardTitle className="text-lg">{example.title}</CardTitle>
         </div>
@@ -39,7 +41,7 @@ export function WorkedExample({ example, index }: Props) {
       <CardContent className="space-y-4">
         <div>
           <p className="text-xs font-medium text-muted-foreground mb-1">
-            Problem
+            {t("problem")}
           </p>
           <MathMarkdown content={example.problemStatement} />
         </div>
@@ -48,7 +50,7 @@ export function WorkedExample({ example, index }: Props) {
 
         <div>
           <p className="text-xs font-medium text-muted-foreground mb-2">
-            Solution Steps
+            {t("solutionSteps")}
           </p>
           <div className="space-y-3">
             {example.steps.slice(0, expandedSteps).map((step, i) => (
@@ -73,7 +75,7 @@ export function WorkedExample({ example, index }: Props) {
                 size="sm"
                 onClick={() => setExpandedSteps((prev) => prev + 1)}
               >
-                Show Next Step ({expandedSteps}/{example.steps.length})
+                {t("showNextStep", { current: expandedSteps, total: example.steps.length })}
               </Button>
             )}
             {expandedSteps > 0 && !allExpanded && (
@@ -82,7 +84,7 @@ export function WorkedExample({ example, index }: Props) {
                 size="sm"
                 onClick={() => setExpandedSteps(example.steps.length)}
               >
-                Show All Steps
+                {t("showAllSteps")}
               </Button>
             )}
           </div>
@@ -93,7 +95,7 @@ export function WorkedExample({ example, index }: Props) {
             <Separator />
             <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-3 border border-green-200 dark:border-green-800">
               <p className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">
-                Final Answer
+                {t("finalAnswer")}
               </p>
               <MathMarkdown content={example.finalAnswer} />
             </div>

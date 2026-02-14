@@ -1,9 +1,12 @@
+import { buildLanguageInstruction } from "./languageInstruction";
+
 export function buildCourseStructurePrompt(params: {
   topic: string;
   description: string;
   focusAreas: string[];
   lessonCount?: number;
   difficulty: string;
+  language?: string;
 }) {
   return `You are a curriculum designer specializing in ${params.topic}, creating a structured course.
 
@@ -38,5 +41,5 @@ This document will be used as a style guide when generating individual lessons. 
 3. KEY THEMES: Identify recurring themes and connections between lessons.
 4. DIFFICULTY CALIBRATION: Describe the expected level of rigor and complexity.
 5. STYLE GUIDELINES: How to structure explanations, what level of detail in proofs or derivations, how to balance theory and practice.
-Keep it 500-1000 words. Use Markdown formatting.`;
+Keep it 500-1000 words. Use Markdown formatting.${buildLanguageInstruction(params.language ?? "en")}`;
 }

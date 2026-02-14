@@ -1,0 +1,12 @@
+{
+  "loadingDiagnostic": "Ładowanie diagnostyki...",
+  "backToCourse": "Powrót do kursu",
+  "prerequisiteAssessment": "Ocena wstępna",
+  "diagnosticQuiz": "Quiz diagnostyczny",
+  "diagnosticDescription": "Rozwiąż szybki quiz diagnostyczny, aby ocenić swoją wiedzę wstępną przed rozpoczęciem kursu. Jest to opcjonalne i nie zablokuje Twoich postępów.",
+  "generateDiagnosticQuiz": "Generuj quiz diagnostyczny",
+  "generatingDiagnostic": "Generowanie diagnostyki...",
+  "diagnosticGenerated": "Quiz diagnostyczny wygenerowany!",
+  "skipGoToCourse": "Pomiń — Przejdź do kursu",
+  "failedToLoadCourse": "Nie udało się załadować kursu"
+}

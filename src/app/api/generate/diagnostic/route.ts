@@ -66,6 +66,7 @@ export async function POST(request: Request) {
         courseDescription: course.description,
         difficulty: course.difficulty,
         lessonTitles: course.lessons.map((l) => l.title),
+        language: course.language,
       });
 
       const { object } = await generateObject({

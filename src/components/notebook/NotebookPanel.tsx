@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useNotebook } from "@/hooks/useNotebook";
 import { ScratchpadEditor } from "@/components/scratchpad/ScratchpadEditor";
 import type { ScratchpadEditorHandle } from "@/components/scratchpad/ScratchpadEditor";
@@ -17,6 +18,7 @@ interface NotebookPanelProps {
 }
 
 export function NotebookPanel({ courseId, onClose }: NotebookPanelProps) {
+  const { t } = useTranslation(["notebook", "scratchpad", "common"]);
   const {
     pages,
     currentIndex,
@@ -77,7 +79,7 @@ export function NotebookPanel({ courseId, onClose }: NotebookPanelProps) {
   if (isLoading) {
     return (
       <div className="w-full border-l bg-background flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Loading notebook...</p>
+        <p className="text-sm text-muted-foreground">{t("notebook:loadingNotebook")}</p>
       </div>
     );
   }
@@ -87,7 +89,7 @@ export function NotebookPanel({ courseId, onClose }: NotebookPanelProps) {
       <div className="w-full border-l bg-background flex flex-col items-center justify-center gap-2 p-4">
         <p className="text-sm text-destructive">{error}</p>
         <Button variant="outline" size="sm" onClick={onClose}>
-          Close
+          {t("common:close")}
         </Button>
       </div>
     );
@@ -97,7 +99,7 @@ export function NotebookPanel({ courseId, onClose }: NotebookPanelProps) {
     <div className="w-full border-l bg-background flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b shrink-0">
-        <h3 className="text-sm font-medium">Notebook</h3>
+        <h3 className="text-sm font-medium">{t("notebook:notebook")}</h3>
         <Button variant="ghost" size="sm" className="h-6 px-2" onClick={onClose}>
           ✕
         </Button>
@@ -128,7 +130,7 @@ export function NotebookPanel({ courseId, onClose }: NotebookPanelProps) {
                     value={currentPage.title}
                     onChange={(e) => handleTitleChange(e.target.value)}
                     className="text-sm font-medium bg-transparent border-none outline-none w-full placeholder:text-muted-foreground"
-                    placeholder="Page title..."
+                    placeholder={t("notebook:pageTitlePlaceholder")}
                   />
                 ) : (
                   <p className="text-sm font-medium text-foreground">{currentPage.title}</p>
@@ -139,9 +141,9 @@ export function NotebookPanel({ courseId, onClose }: NotebookPanelProps) {
               <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
                 <div className="px-3 pt-2 shrink-0">
                   <TabsList className="w-full">
-                    <TabsTrigger value="write" className="flex-1">Write</TabsTrigger>
-                    <TabsTrigger value="preview" className="flex-1">Preview</TabsTrigger>
-                    <TabsTrigger value="split" className="flex-1">Split</TabsTrigger>
+                    <TabsTrigger value="write" className="flex-1">{t("scratchpad:write")}</TabsTrigger>
+                    <TabsTrigger value="preview" className="flex-1">{t("scratchpad:preview")}</TabsTrigger>
+                    <TabsTrigger value="split" className="flex-1">{t("scratchpad:split")}</TabsTrigger>
                   </TabsList>
                 </div>
 
@@ -189,7 +191,7 @@ export function NotebookPanel({ courseId, onClose }: NotebookPanelProps) {
                     className="h-6 text-xs text-destructive hover:text-destructive"
                     onClick={() => deletePage(currentPage.id)}
                   >
-                    Delete page
+                    {t("notebook:deletePage")}
                   </Button>
                 </div>
               )}
@@ -197,8 +199,8 @@ export function NotebookPanel({ courseId, onClose }: NotebookPanelProps) {
           ) : (
             <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
               {pages.length === 0
-                ? "No pages yet. Write scratchpad notes on lessons to see them here."
-                : "Select a page to view."}
+                ? t("notebook:noPagesPrompt")
+                : t("notebook:selectAPage")}
             </div>
           )}
 

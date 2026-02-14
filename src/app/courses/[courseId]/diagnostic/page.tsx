@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { QuizRunner } from "@/components/quiz/QuizRunner";
 import { QuizResults } from "@/components/quiz/QuizResults";
 import type { QuizQuestion, QuizAnswers, QuizResult } from "@/types/quiz";
@@ -50,6 +51,7 @@ export default function DiagnosticPage({
   params: Promise<{ courseId: string }>;
 }) {
   const { courseId } = use(params);
+  const { t } = useTranslation(["diagnostic", "quiz", "common"]);
   const router = useRouter();
   const hydrated = useHydrated();
   const { apiKey, generationModel } = useAppStore();
@@ -117,7 +119,7 @@ export default function DiagnosticPage({
       }
     } catch (err) {
       console.error(err);
-      toast.error("Failed to load course");
+      toast.error(t("diagnostic:failedToLoadCourse"));
     } finally {
       setLoading(false);
     }
@@ -169,7 +171,7 @@ export default function DiagnosticPage({
       };
       setPrerequisites(parsed.prerequisites);
       setQuestions(mapDiagnosticQuestions(parsed.questions));
-      toast.success("Diagnostic quiz generated!");
+      toast.success(t("diagnostic:diagnosticGenerated"));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Generation failed");
     } finally {
@@ -191,7 +193,7 @@ export default function DiagnosticPage({
       setResult(data.result);
       setSubmittedAnswers(answers);
       if (data.prerequisites) setPrerequisites(data.prerequisites);
-      toast.success(`Score: ${Math.round(data.result.score * 100)}%`);
+      toast.success(t("quiz:scoreResult", { score: Math.round(data.result.score * 100) }));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Scoring failed");
     } finally {
@@ -220,9 +222,7 @@ export default function DiagnosticPage({
           throw new Error(err.error || "Failed to add prerequisites");
         }
         const result = await res.json();
-        toast.success(
-          `Added ${result.lessons.length} prerequisite lesson${result.lessons.length > 1 ? "s" : ""} to your course!`
-        );
+        toast.success(t("quiz:addedPrerequisites", { count: result.lessons.length }));
         router.push(`/courses/${courseId}`);
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Failed to add prerequisites");
@@ -235,7 +235,7 @@ export default function DiagnosticPage({
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading diagnostic...</p>
+        <p className="text-muted-foreground">{t("diagnostic:loadingDiagnostic")}</p>
       </div>
     );
   }
@@ -248,10 +248,10 @@ export default function DiagnosticPage({
             variant="ghost"
             onClick={() => router.push(`/courses/${courseId}`)}
           >
-            &larr; Back to Course
+            &larr; {t("diagnostic:backToCourse")}
           </Button>
           <div>
-            <h1 className="text-xl font-bold">Prerequisite Assessment</h1>
+            <h1 className="text-xl font-bold">{t("diagnostic:prerequisiteAssessment")}</h1>
             <p className="text-sm text-muted-foreground">{courseTitle}</p>
           </div>
         </div>
@@ -261,10 +261,9 @@ export default function DiagnosticPage({
         {questions.length === 0 ? (
           <Card className="max-w-lg mx-auto">
             <CardHeader className="text-center">
-              <CardTitle>Diagnostic Quiz</CardTitle>
+              <CardTitle>{t("diagnostic:diagnosticQuiz")}</CardTitle>
               <CardDescription>
-                Take a quick diagnostic to assess your prerequisite knowledge before
-                starting the course. This is optional and won't block your progress.
+                {t("diagnostic:diagnosticDescription")}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">
@@ -272,17 +271,17 @@ export default function DiagnosticPage({
                 {generating ? (
                   <>
                     <span className="animate-spin mr-2">&#9696;</span>
-                    Generating Diagnostic...
+                    {t("diagnostic:generatingDiagnostic")}
                   </>
                 ) : (
-                  "Generate Diagnostic Quiz"
+                  t("diagnostic:generateDiagnosticQuiz")
                 )}
               </Button>
               <Button
                 variant="ghost"
                 onClick={() => router.push(`/courses/${courseId}`)}
               >
-                Skip — Go to Course
+                {t("diagnostic:skipGoToCourse")}
               </Button>
             </CardContent>
           </Card>

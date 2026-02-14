@@ -15,6 +15,7 @@ model Course {
   focusAreas        String   @default("[]")
   targetLessonCount Int      @default(10)
   difficulty        String   @default("intermediate")
+  language          String   @default("en")
   contextDoc        String?
   status            String   @default("draft")
   createdAt         DateTime @default(now())

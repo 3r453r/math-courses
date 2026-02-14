@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { QuizRunner } from "@/components/quiz/QuizRunner";
 import { QuizResults } from "@/components/quiz/QuizResults";
 import type { QuizQuestion, QuizAnswers, QuizResult } from "@/types/quiz";
@@ -37,6 +38,7 @@ export default function LessonQuizPage({
   params: Promise<{ courseId: string; lessonId: string }>;
 }) {
   const { courseId, lessonId } = use(params);
+  const { t } = useTranslation(["quiz", "common", "lesson"]);
   const router = useRouter();
   const hydrated = useHydrated();
   const { apiKey, generationModel } = useAppStore();
@@ -91,7 +93,7 @@ export default function LessonQuizPage({
       }
     } catch (err) {
       console.error(err);
-      toast.error("Failed to load lesson");
+      toast.error(t("lesson:failedToLoadLesson"));
     } finally {
       setLoading(false);
     }
@@ -140,7 +142,7 @@ export default function LessonQuizPage({
       const parsed: QuizQuestion[] = JSON.parse(quiz.questionsJson);
       setQuestions(parsed);
       setQuizId(quiz.id);
-      toast.success("Quiz generated!");
+      toast.success(t("quiz:quizGenerated"));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Generation failed");
     } finally {
@@ -161,7 +163,7 @@ export default function LessonQuizPage({
       const data = await res.json();
       setResult(data.result);
       setSubmittedAnswers(answers);
-      toast.success(`Score: ${Math.round(data.result.score * 100)}%`);
+      toast.success(t("quiz:scoreResult", { score: Math.round(data.result.score * 100) }));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Scoring failed");
     } finally {
@@ -190,7 +192,7 @@ export default function LessonQuizPage({
         const data = await res.json();
         throw new Error(data.error || "Failed to regenerate lesson");
       }
-      toast.success("Lesson regenerated with focus on your weak areas!");
+      toast.success(t("quiz:lessonRegenerated"));
       router.push(`/courses/${courseId}/lessons/${lessonId}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Regeneration failed");
@@ -213,7 +215,7 @@ export default function LessonQuizPage({
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading quiz...</p>
+        <p className="text-muted-foreground">{t("quiz:loadingQuiz")}</p>
       </div>
     );
   }
@@ -226,10 +228,10 @@ export default function LessonQuizPage({
             variant="ghost"
             onClick={() => router.push(`/courses/${courseId}/lessons/${lessonId}`)}
           >
-            &larr; Back to Lesson
+            &larr; {t("quiz:backToLesson")}
           </Button>
           <div>
-            <h1 className="text-xl font-bold">Lesson Quiz</h1>
+            <h1 className="text-xl font-bold">{t("quiz:lessonQuiz")}</h1>
             <p className="text-sm text-muted-foreground">{lesson?.title}</p>
           </div>
         </div>
@@ -239,9 +241,9 @@ export default function LessonQuizPage({
         {questions.length === 0 ? (
           <Card className="max-w-lg mx-auto">
             <CardHeader className="text-center">
-              <CardTitle>Quiz Not Generated</CardTitle>
+              <CardTitle>{t("quiz:quizNotGenerated")}</CardTitle>
               <CardDescription>
-                Generate a quiz to test your understanding of this lesson.
+                {t("quiz:quizNotGeneratedDescription")}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">
@@ -249,10 +251,10 @@ export default function LessonQuizPage({
                 {generating ? (
                   <>
                     <span className="animate-spin mr-2">&#9696;</span>
-                    Generating Quiz...
+                    {t("quiz:generatingQuiz")}
                   </>
                 ) : (
-                  "Generate Quiz"
+                  t("quiz:generateQuiz")
                 )}
               </Button>
             </CardContent>

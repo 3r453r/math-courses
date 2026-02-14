@@ -1,0 +1,20 @@
+{
+  "loadingCourse": "Ładowanie kursu...",
+  "backToDashboard": "Powrót do panelu",
+  "courseNotFound": "Nie znaleziono kursu",
+  "failedToLoadCourse": "Nie udało się załadować kursu",
+  "contextDocTitle": "Dokument kontekstowy kursu",
+  "contextDocDescription": "Przewodnik pedagogiczny używany jako kontekst przy generowaniu lekcji. Edytuj, aby dostosować.",
+  "contextDocUpdated": "Dokument kontekstowy zaktualizowany",
+  "failedToSave": "Nie udało się zapisać",
+  "prerequisiteTitle": "Ocena wstępna",
+  "prerequisiteDescription": "Opcjonalna diagnostyka sprawdzająca Twoją wiedzę wstępną przed rozpoczęciem.",
+  "takeDiagnosticQuiz": "Rozwiąż quiz diagnostyczny",
+  "viewDetailsRetake": "Szczegóły / Powtórz",
+  "weakAreas": "Słabe obszary:",
+  "courseStructureTitle": "Struktura kursu",
+  "courseStructureDescription": "Lekcje są zorganizowane jako graf zależności. Kliknij lekcję, aby zobaczyć jej treść. Lekcje w tym samym rzędzie można studiować równolegle.",
+  "noLessonsYet": "Brak wygenerowanych lekcji.",
+  "allLessons": "Wszystkie lekcje ({{count}})",
+  "quizScore": "Quiz: {{score}}%"
+}

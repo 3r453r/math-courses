@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
@@ -11,6 +12,8 @@ interface ChatInputProps {
 }
 
 export function ChatInput({ value, onChange, onSubmit, isLoading }: ChatInputProps) {
+  const { t } = useTranslation("chat");
+
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -27,12 +30,12 @@ export function ChatInput({ value, onChange, onSubmit, isLoading }: ChatInputPro
           value={value}
           onChange={onChange}
           onKeyDown={handleKeyDown}
-          placeholder="Ask a question..."
+          placeholder={t("placeholder")}
           rows={1}
           className="min-h-[36px] max-h-[120px] resize-none text-sm"
         />
         <Button type="submit" size="sm" disabled={isLoading || !value.trim()}>
-          Send
+          {t("send")}
         </Button>
       </div>
     </form>

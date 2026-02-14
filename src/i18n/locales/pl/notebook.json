@@ -1,0 +1,11 @@
+{
+  "notebook": "Zeszyt",
+  "loadingNotebook": "Ładowanie zeszytu...",
+  "deletePage": "Usuń stronę",
+  "pageTitlePlaceholder": "Tytuł strony...",
+  "insertCustomPage": "Wstaw stronę",
+  "goToLesson": "Przejdź do lekcji",
+  "noPagesYet": "Brak stron. Notatki z lekcji pojawią się tutaj automatycznie.",
+  "noPagesPrompt": "Brak stron. Pisz notatki na lekcjach, aby je tutaj zobaczyć.",
+  "selectAPage": "Wybierz stronę do wyświetlenia."
+}

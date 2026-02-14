@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Card,
   CardContent,
@@ -39,6 +40,7 @@ export function QuizResults({
   isRegenerating,
   isAddingPrereqs,
 }: Props) {
+  const { t } = useTranslation("quiz");
   const [showReview, setShowReview] = useState(false);
   const [selectedTopics, setSelectedTopics] = useState<Set<string>>(() => {
     if (variant === "diagnostic" && result.weakTopics.length > 0) {
@@ -57,20 +59,18 @@ export function QuizResults({
 
   const recommendationConfig = {
     advance: {
-      title: "Great work!",
-      description: "You demonstrated strong understanding. You're ready to move on.",
+      title: t("advanceTitle"),
+      description: t("advanceDescription"),
       color: "border-green-500 bg-green-50 dark:bg-green-950/30",
     },
     supplement: {
-      title: "Good progress, with some gaps",
-      description:
-        "You understand the core concepts but have weak spots. Consider reviewing the topics below before continuing.",
+      title: t("supplementTitle"),
+      description: t("supplementDescription"),
       color: "border-yellow-500 bg-yellow-50 dark:bg-yellow-950/30",
     },
     regenerate: {
-      title: "More practice needed",
-      description:
-        "The results suggest significant gaps in understanding. Consider re-studying the material or trying a different approach.",
+      title: t("regenerateTitle"),
+      description: t("regenerateDescription"),
       color: "border-red-500 bg-red-50 dark:bg-red-950/30",
     },
   };
@@ -97,15 +97,14 @@ export function QuizResults({
                 <span className={scoreColor}>{percentage}%</span>
               </p>
               <p className="text-sm text-muted-foreground">
-                {questions.filter((q) => {
+                {t("correctOf", { correct: questions.filter((q) => {
                   const correctIds = q.choices.filter((c) => c.correct).map((c) => c.id);
                   const userIds = answers[q.id] ?? [];
                   return (
                     correctIds.length === userIds.length &&
                     correctIds.every((id) => userIds.includes(id))
                   );
-                }).length}{" "}
-                of {questions.length} correct
+                }).length, total: questions.length })}
               </p>
             </div>
           </div>
@@ -123,7 +122,7 @@ export function QuizResults({
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            {variant === "diagnostic" ? "Prerequisite Breakdown" : "Topic Breakdown"}
+            {variant === "diagnostic" ? t("prerequisiteBreakdown") : t("topicBreakdown")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -137,7 +136,7 @@ export function QuizResults({
                     <span className="text-sm font-medium">{topic}</span>
                     {isWeak && (
                       <Badge variant="destructive" className="text-xs">
-                        Weak
+                        {t("weak")}
                       </Badge>
                     )}
                     {variant === "diagnostic" && prerequisites && (
@@ -164,10 +163,9 @@ export function QuizResults({
         result.weakTopics.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Add Prerequisite Lessons</CardTitle>
+            <CardTitle className="text-base">{t("addPrerequisiteLessonsTitle")}</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Select weak topics to add as new lessons before your course content.
-              These will appear at the beginning of your course.
+              {t("selectWeakTopics")}
             </p>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -218,7 +216,7 @@ export function QuizResults({
             <>
               {result.recommendation === "advance" && (
                 <Button onClick={() => onAction("advance")}>
-                  Continue to Next Lesson
+                  {t("continueToNextLesson")}
                 </Button>
               )}
               {(result.recommendation === "supplement" ||
@@ -228,19 +226,19 @@ export function QuizResults({
                     {isRegenerating ? (
                       <>
                         <span className="animate-spin mr-2">&#9696;</span>
-                        Regenerating Lesson...
+                        {t("regeneratingLesson")}
                       </>
                     ) : (
-                      "Regenerate Lesson"
+                      t("regenerateLesson")
                     )}
                   </Button>
                   <Button variant="outline" onClick={() => onAction("advance")}>
-                    Continue Anyway
+                    {t("continueAnyway")}
                   </Button>
                 </>
               )}
               <Button variant="outline" onClick={() => onAction("retake")}>
-                Retake Quiz
+                {t("retakeQuiz")}
               </Button>
             </>
           )}
@@ -264,10 +262,10 @@ export function QuizResults({
                   {isAddingPrereqs ? (
                     <>
                       <span className="animate-spin mr-2">&#9696;</span>
-                      Adding Prerequisite Lessons...
+                      {t("addingPrerequisiteLessons")}
                     </>
                   ) : (
-                    `Add ${selectedTopics.size} Prerequisite Lesson${selectedTopics.size > 1 ? "s" : ""} & Start`
+                    t("addPrerequisitesStart", { count: selectedTopics.size })
                   )}
                 </Button>
               )}
@@ -275,10 +273,10 @@ export function QuizResults({
                 variant={selectedTopics.size > 0 ? "outline" : "default"}
                 onClick={() => onAction("start")}
               >
-                {selectedTopics.size > 0 ? "Start Without Prerequisites" : "Start Course"}
+                {selectedTopics.size > 0 ? t("startWithoutPrerequisites") : t("startCourse")}
               </Button>
               <Button variant="outline" onClick={() => onAction("retake")}>
-                Retake Diagnostic
+                {t("retakeDiagnostic")}
               </Button>
             </>
           )}
@@ -292,7 +290,7 @@ export function QuizResults({
           onClick={() => setShowReview(!showReview)}
           className="w-full"
         >
-          {showReview ? "Hide" : "Show"} Question Review
+          {showReview ? t("hideQuestionReview") : t("showQuestionReview")}
         </Button>
       </div>
 
@@ -300,7 +298,7 @@ export function QuizResults({
       {showReview && (
         <div className="space-y-4">
           <Separator />
-          <h3 className="font-semibold">Question Review</h3>
+          <h3 className="font-semibold">{t("questionReview")}</h3>
           {questions.map((question, qIdx) => {
             const userIds = answers[question.id] ?? [];
             const correctIds = question.choices
@@ -321,7 +319,7 @@ export function QuizResults({
                 <CardHeader className="pb-2">
                   <div className="flex items-center gap-2">
                     <Badge variant={isCorrect ? "default" : "destructive"}>
-                      Q{qIdx + 1}: {isCorrect ? "Correct" : "Incorrect"}
+                      {t("qNumber", { number: qIdx + 1 })}: {isCorrect ? t("correct") : t("incorrect")}
                     </Badge>
                     <Badge variant="secondary" className="text-xs">
                       {question.topic}

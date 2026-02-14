@@ -1,0 +1,21 @@
+{
+  "title": "Konfiguracja",
+  "description": "Skonfiguruj swój klucz API Anthropic i preferencje modelu, aby rozpocząć. Twój klucz jest przechowywany lokalnie w przeglądarce i nigdy nie jest wysyłany na żaden serwer poza API Anthropic.",
+  "apiKeyLabel": "Klucz API Anthropic",
+  "pleaseEnterApiKey": "Proszę podać klucz API",
+  "keySaved": "Klucz zapisany pomyślnie",
+  "generationModelLabel": "Model generowania (lekcje, quizy)",
+  "chatModelLabel": "Model czatu (asystent AI)",
+  "opus": "Claude Opus 4 (najwyższa jakość)",
+  "sonnet": "Claude Sonnet 4 (zbalansowany)",
+  "haiku": "Claude Haiku 4 (najszybszy)",
+  "mock": "Mock (bez wywołania API)",
+  "testKey": "Testuj klucz",
+  "testing": "Testowanie...",
+  "saveAndContinue": "Zapisz i kontynuuj",
+  "getApiKeyFrom": "Uzyskaj klucz API na",
+  "languageLabel": "Język interfejsu",
+  "languageDescription": "Język interfejsu oraz treści kursów generowanych przez AI",
+  "english": "English",
+  "polish": "Polski"
+}

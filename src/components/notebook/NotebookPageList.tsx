@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { NotebookPage } from "@/hooks/useNotebook";
@@ -19,6 +20,8 @@ export function NotebookPageList({
   onInsertPage,
   courseId,
 }: NotebookPageListProps) {
+  const { t } = useTranslation("notebook");
+
   return (
     <ScrollArea className="h-full">
       <div className="p-2 space-y-0.5">
@@ -78,7 +81,7 @@ export function NotebookPageList({
                   className="text-[10px] text-muted-foreground hover:text-primary hover:underline ml-4.5 block"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  Go to lesson
+                  {t("goToLesson")}
                 </a>
               )}
             </button>
@@ -95,7 +98,7 @@ export function NotebookPageList({
 
         {pages.length === 0 && (
           <p className="text-xs text-muted-foreground text-center py-4 px-2">
-            No pages yet. Lesson scratchpad notes will appear here automatically.
+            {t("noPagesYet")}
           </p>
         )}
       </div>
@@ -104,6 +107,8 @@ export function NotebookPageList({
 }
 
 function InsertButton({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslation("notebook");
+
   return (
     <div className="flex justify-center py-0.5 group">
       <Button
@@ -111,7 +116,7 @@ function InsertButton({ onClick }: { onClick: () => void }) {
         size="sm"
         className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary"
         onClick={onClick}
-        title="Insert custom page"
+        title={t("insertCustomPage")}
       >
         <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />

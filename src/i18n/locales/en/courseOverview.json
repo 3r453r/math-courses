@@ -1,0 +1,20 @@
+{
+  "loadingCourse": "Loading course...",
+  "backToDashboard": "Back to Dashboard",
+  "courseNotFound": "Course not found",
+  "failedToLoadCourse": "Failed to load course",
+  "contextDocTitle": "Course Context Document",
+  "contextDocDescription": "Pedagogical guide used as context when generating lessons. Edit to customize.",
+  "contextDocUpdated": "Context document updated",
+  "failedToSave": "Failed to save",
+  "prerequisiteTitle": "Prerequisite Assessment",
+  "prerequisiteDescription": "Optional diagnostic to check your prerequisite knowledge before starting.",
+  "takeDiagnosticQuiz": "Take Diagnostic Quiz",
+  "viewDetailsRetake": "View Details / Retake",
+  "weakAreas": "Weak areas:",
+  "courseStructureTitle": "Course Structure",
+  "courseStructureDescription": "Lessons are organized as a dependency graph. Click a lesson to view its content. Lessons in the same row can be studied in parallel.",
+  "noLessonsYet": "No lessons generated yet.",
+  "allLessons": "All Lessons ({{count}})",
+  "quizScore": "Quiz: {{score}}%"
+}

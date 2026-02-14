@@ -1,0 +1,23 @@
+{
+  "back": "Wstecz",
+  "delete": "Usuń",
+  "close": "Zamknij",
+  "settings": "Ustawienia",
+  "loading": "Ładowanie...",
+  "save": "Zapisz",
+  "cancel": "Anuluj",
+  "next": "Dalej",
+  "add": "Dodaj",
+  "error": "Błąd",
+  "retry": "Ponów",
+  "previous": "Poprzedni",
+  "confirmDeleteCourse": "Czy na pewno chcesz usunąć ten kurs? Wszystkie lekcje i postępy zostaną utracone.",
+  "lessonCount_one": "{{count}} lekcja",
+  "lessonCount_few": "{{count}} lekcje",
+  "lessonCount_many": "{{count}} lekcji",
+  "lessonCount_other": "{{count}} lekcji",
+  "supplementary": "uzupełniająca",
+  "edit": "Edytuj",
+  "saving": "Zapisywanie...",
+  "language": "Język"
+}

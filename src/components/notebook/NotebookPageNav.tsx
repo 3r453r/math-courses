@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 
 interface NotebookPageNavProps {
@@ -15,6 +16,8 @@ export function NotebookPageNav({
   onPrev,
   onNext,
 }: NotebookPageNavProps) {
+  const { t } = useTranslation("common");
+
   if (totalPages === 0) return null;
 
   return (
@@ -26,7 +29,7 @@ export function NotebookPageNav({
         onClick={onPrev}
         disabled={currentIndex <= 0}
       >
-        &larr; Previous
+        &larr; {t("previous")}
       </Button>
       <span className="text-xs text-muted-foreground">
         {currentIndex + 1} / {totalPages}
@@ -38,7 +41,7 @@ export function NotebookPageNav({
         onClick={onNext}
         disabled={currentIndex >= totalPages - 1}
       >
-        Next &rarr;
+        {t("next")} &rarr;
       </Button>
     </div>
   );

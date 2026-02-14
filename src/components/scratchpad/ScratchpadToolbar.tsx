@@ -1,28 +1,59 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { getCommandsByCategory } from "@/lib/scratchpad/slashCommands";
 import { SymbolPicker } from "./SymbolPicker";
+import { VoiceKeywordConfig } from "./VoiceKeywordConfig";
+import { useSpeechToText } from "@/hooks/useSpeechToText";
 
-const CATEGORY_LABELS: Record<string, string> = {
-  formatting: "Formatting",
-  operators: "Operators",
-  greek: "Greek Letters",
-  symbols: "Symbols",
-  delimiters: "Delimiters",
-};
-
-type PanelMode = "none" | "help" | "symbols";
+type PanelMode = "none" | "help" | "symbols" | "voice";
 
 interface ScratchpadToolbarProps {
   onInsertSymbol: (text: string, cursorOffset: number) => void;
 }
 
 export function ScratchpadToolbar({ onInsertSymbol }: ScratchpadToolbarProps) {
+  const { t } = useTranslation("scratchpad");
   const [panel, setPanel] = useState<PanelMode>("none");
   const grouped = getCommandsByCategory();
+
+  const { isSupported, isListening, interimTranscript, error, toggleListening } =
+    useSpeechToText({
+      onResult: (processed: string) => {
+        if (processed.length > 0) {
+          const prefix = processed.startsWith("\n") ? "" : " ";
+          onInsertSymbol(prefix + processed, 0);
+        }
+      },
+    });
+
+  // Show errors as toasts
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
+  const categoryLabel = (key: string) => {
+    const labels: Record<string, string> = {
+      formatting: t("formatting"),
+      operators: t("operators"),
+      greek: t("greekLetters"),
+      symbols: t("symbols"),
+      delimiters: t("delimiters"),
+    };
+    return labels[key] ?? key;
+  };
 
   const togglePanel = (mode: PanelMode) => {
     setPanel((prev) => (prev === mode ? "none" : mode));
@@ -35,12 +66,15 @@ export function ScratchpadToolbar({ onInsertSymbol }: ScratchpadToolbarProps) {
         <SymbolPicker onInsert={onInsertSymbol} />
       )}
 
+      {/* Voice Keyword Config Panel */}
+      {panel === "voice" && <VoiceKeywordConfig />}
+
       {/* Help Panel */}
       {panel === "help" && (
         <div className="border-t px-3 py-3 max-h-72 overflow-y-auto text-xs space-y-4">
           {/* Quick Start */}
           <div>
-            <p className="font-medium text-foreground mb-1.5">Quick Start</p>
+            <p className="font-medium text-foreground mb-1.5">{t("quickStart")}</p>
             <div className="text-muted-foreground space-y-1">
               <p>Write notes using <strong>Markdown</strong> with LaTeX math support.</p>
               <p>
@@ -65,24 +99,24 @@ export function ScratchpadToolbar({ onInsertSymbol }: ScratchpadToolbarProps) {
 
           {/* Keyboard Shortcuts */}
           <div>
-            <p className="font-medium text-foreground mb-1.5">Keyboard Shortcuts</p>
+            <p className="font-medium text-foreground mb-1.5">{t("keyboardShortcuts")}</p>
             <div className="text-muted-foreground space-y-0.5">
-              <p><kbd className="bg-muted px-1 rounded font-mono">Ctrl+S</kbd> Save now</p>
-              <p><kbd className="bg-muted px-1 rounded font-mono">Tab</kbd> Expand command or insert indent</p>
-              <p><kbd className="bg-muted px-1 rounded font-mono">Space</kbd> Expand command (after /cmd)</p>
-              <p><kbd className="bg-muted px-1 rounded font-mono">Enter</kbd> Select from popup</p>
-              <p><kbd className="bg-muted px-1 rounded font-mono">Esc</kbd> Close popup</p>
-              <p><kbd className="bg-muted px-1 rounded font-mono">&uarr; &darr;</kbd> Navigate popup</p>
+              <p><kbd className="bg-muted px-1 rounded font-mono">Ctrl+S</kbd> {t("saveNow")}</p>
+              <p><kbd className="bg-muted px-1 rounded font-mono">Tab</kbd> {t("expandCommand")}</p>
+              <p><kbd className="bg-muted px-1 rounded font-mono">Space</kbd> {t("expandAfterCmd")}</p>
+              <p><kbd className="bg-muted px-1 rounded font-mono">Enter</kbd> {t("selectFromPopup")}</p>
+              <p><kbd className="bg-muted px-1 rounded font-mono">Esc</kbd> {t("closePopup")}</p>
+              <p><kbd className="bg-muted px-1 rounded font-mono">&uarr; &darr;</kbd> {t("navigatePopup")}</p>
             </div>
           </div>
 
           {/* Slash Commands */}
           <div>
-            <p className="font-medium text-foreground mb-1.5">Slash Commands</p>
+            <p className="font-medium text-foreground mb-1.5">{t("slashCommands")}</p>
             {Object.entries(grouped).map(([category, commands]) => (
               <div key={category} className="mb-2 last:mb-0">
                 <p className="text-muted-foreground/70 mb-1">
-                  {CATEGORY_LABELS[category] ?? category}
+                  {categoryLabel(category)}
                 </p>
                 <div className="flex flex-wrap gap-1">
                   {commands.map((cmd) => (
@@ -104,17 +138,51 @@ export function ScratchpadToolbar({ onInsertSymbol }: ScratchpadToolbarProps) {
 
       {/* Button bar */}
       <div className="flex items-center justify-between px-3 py-1.5">
-        <span className="text-xs text-muted-foreground">
-          Type <kbd className="bg-muted px-1 rounded text-xs font-mono">/</kbd> for commands
-        </span>
+        {isListening ? (
+          <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+            <span className="inline-block h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+            {interimTranscript || t("listening")}
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground" dangerouslySetInnerHTML={{ __html: t("typeForCommands") }} />
+        )}
         <div className="flex items-center gap-1">
+          {isSupported && (
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={isListening ? "destructive" : "ghost"}
+                      size="sm"
+                      className="h-6 text-xs px-2"
+                      onClick={toggleListening}
+                    >
+                      {isListening ? t("stopDictation") : t("dictateButton")}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {isListening ? t("stopDictation") : t("startDictation")}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <Button
+                variant={panel === "voice" ? "secondary" : "ghost"}
+                size="sm"
+                className="h-6 text-xs px-2"
+                onClick={() => togglePanel("voice")}
+              >
+                {t("voiceConfigButton")}
+              </Button>
+            </>
+          )}
           <Button
             variant={panel === "symbols" ? "secondary" : "ghost"}
             size="sm"
             className="h-6 text-xs px-2"
             onClick={() => togglePanel("symbols")}
           >
-            Symbols
+            {t("symbolsButton")}
           </Button>
           <Button
             variant={panel === "help" ? "secondary" : "ghost"}
@@ -122,7 +190,7 @@ export function ScratchpadToolbar({ onInsertSymbol }: ScratchpadToolbarProps) {
             className="h-6 text-xs px-2"
             onClick={() => togglePanel("help")}
           >
-            Help
+            {t("helpButton")}
           </Button>
         </div>
       </div>

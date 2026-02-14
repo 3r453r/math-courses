@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { MathMarkdown } from "./MathMarkdown";
@@ -39,11 +40,13 @@ function SectionRenderer({ section }: { section: LessonSection }) {
 }
 
 export function LessonContentRenderer({ content }: Props) {
+  const { t } = useTranslation("lessonContent");
+
   return (
     <div className="space-y-2">
       {/* Learning Objectives */}
       <div className="bg-muted/50 rounded-lg p-4 mb-6">
-        <h3 className="text-sm font-semibold mb-2">Learning Objectives</h3>
+        <h3 className="text-sm font-semibold mb-2">{t("learningObjectives")}</h3>
         <ul className="space-y-1">
           {content.learningObjectives.map((obj, i) => (
             <li
@@ -66,7 +69,7 @@ export function LessonContentRenderer({ content }: Props) {
       {content.workedExamples.length > 0 && (
         <>
           <Separator className="my-8" />
-          <h2 className="text-xl font-bold mb-4">Worked Examples</h2>
+          <h2 className="text-xl font-bold mb-4">{t("workedExamples")}</h2>
           {content.workedExamples.map((example, i) => (
             <WorkedExample key={i} example={example} index={i} />
           ))}
@@ -77,7 +80,7 @@ export function LessonContentRenderer({ content }: Props) {
       {content.practiceExercises.length > 0 && (
         <>
           <Separator className="my-8" />
-          <h2 className="text-xl font-bold mb-4">Practice Exercises</h2>
+          <h2 className="text-xl font-bold mb-4">{t("practiceExercises")}</h2>
           {content.practiceExercises.map((exercise, i) => (
             <PracticeExercise key={i} exercise={exercise} index={i} />
           ))}
@@ -89,7 +92,7 @@ export function LessonContentRenderer({ content }: Props) {
         <>
           <Separator className="my-8" />
           <div className="bg-primary/5 rounded-lg p-4">
-            <h3 className="text-sm font-semibold mb-2">Key Takeaways</h3>
+            <h3 className="text-sm font-semibold mb-2">{t("keyTakeaways")}</h3>
             <ul className="space-y-2">
               {content.keyTakeaways.map((takeaway, i) => (
                 <li key={i} className="text-sm flex gap-2 items-start">

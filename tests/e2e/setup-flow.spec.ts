@@ -29,7 +29,7 @@ test.describe("Setup Flow", () => {
 
     // Should redirect to dashboard
     await page.waitForURL("/", { timeout: 10000 });
-    await expect(page.getByText("Math Courses")).toBeVisible();
+    await expect(page.getByText("Learning Courses")).toBeVisible();
   });
 
   test("Test Key and Save & Continue buttons are visible", async ({

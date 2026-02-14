@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport } from "ai";
 import type { UIMessage } from "ai";
@@ -23,6 +24,7 @@ function getTextFromMessage(message: UIMessage): string {
 }
 
 export function ChatPanel({ lessonId, courseId, onClose }: ChatPanelProps) {
+  const { t } = useTranslation("chat");
   const apiKey = useAppStore((s) => s.apiKey);
   const chatModel = useAppStore((s) => s.chatModel);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -149,11 +151,11 @@ export function ChatPanel({ lessonId, courseId, onClose }: ChatPanelProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b shrink-0">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-medium">AI Tutor</h3>
+          <h3 className="text-sm font-medium">{t("aiTutor")}</h3>
           {isLoading && (
             <span className="text-xs text-muted-foreground flex items-center gap-1">
               <span className="animate-spin inline-block">&#9696;</span>
-              Thinking...
+              {t("thinking")}
             </span>
           )}
         </div>
@@ -165,7 +167,7 @@ export function ChatPanel({ lessonId, courseId, onClose }: ChatPanelProps) {
               className="h-6 text-xs px-2"
               onClick={handleClearHistory}
             >
-              Clear
+              {t("clear")}
             </Button>
           )}
           <Button variant="ghost" size="sm" className="h-6 px-2" onClick={onClose}>
@@ -190,10 +192,9 @@ export function ChatPanel({ lessonId, courseId, onClose }: ChatPanelProps) {
       <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
         {messages.length === 0 && (
           <div className="text-center text-sm text-muted-foreground py-8">
-            <p className="font-medium">Ask me anything about this lesson!</p>
+            <p className="font-medium">{t("emptyPrompt")}</p>
             <p className="text-xs mt-1">
-              I can explain concepts, work through problems, or clarify
-              notation.
+              {t("emptyDescription")}
             </p>
           </div>
         )}

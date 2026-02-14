@@ -1,0 +1,11 @@
+{
+  "notebook": "Notebook",
+  "loadingNotebook": "Loading notebook...",
+  "deletePage": "Delete page",
+  "pageTitlePlaceholder": "Page title...",
+  "insertCustomPage": "Insert custom page",
+  "goToLesson": "Go to lesson",
+  "noPagesYet": "No pages yet. Lesson scratchpad notes will appear here automatically.",
+  "noPagesPrompt": "No pages yet. Write scratchpad notes on lessons to see them here.",
+  "selectAPage": "Select a page to view."
+}

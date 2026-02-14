@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useScratchpad } from "@/hooks/useScratchpad";
 import { ScratchpadEditor } from "./ScratchpadEditor";
 import type { ScratchpadEditorHandle } from "./ScratchpadEditor";
@@ -16,6 +17,7 @@ interface ScratchpadPanelProps {
 }
 
 function SaveStatusIndicator({ status, lastSavedAt }: { status: SaveStatus; lastSavedAt: Date | null }) {
+  const { t } = useTranslation("scratchpad");
   const timeStr = useMemo(() => {
     if (!lastSavedAt) return null;
     return lastSavedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -24,20 +26,20 @@ function SaveStatusIndicator({ status, lastSavedAt }: { status: SaveStatus; last
   switch (status) {
     case "idle":
       return timeStr ? (
-        <span className="text-xs text-muted-foreground">Saved {timeStr}</span>
+        <span className="text-xs text-muted-foreground">{t("savedAt", { time: timeStr })}</span>
       ) : null;
     case "unsaved":
       return (
         <span className="text-xs text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
           <span className="size-1.5 rounded-full bg-yellow-500 inline-block" />
-          Unsaved
+          {t("unsaved")}
         </span>
       );
     case "saving":
       return (
         <span className="text-xs text-muted-foreground flex items-center gap-1">
           <span className="size-3 animate-spin inline-block">&#9696;</span>
-          Saving...
+          {t("saving")}
         </span>
       );
     case "saved":
@@ -46,20 +48,21 @@ function SaveStatusIndicator({ status, lastSavedAt }: { status: SaveStatus; last
           <svg className="size-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
-          Saved
+          {t("saved")}
         </span>
       );
     case "error":
       return (
         <span className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
           <span className="size-1.5 rounded-full bg-red-500 inline-block" />
-          Save failed
+          {t("saveFailed")}
         </span>
       );
   }
 }
 
 export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
+  const { t } = useTranslation(["scratchpad", "common"]);
   const { content, setContent, saveStatus, lastSavedAt, save, isLoading, error } =
     useScratchpad(lessonId);
   const [activeTab, setActiveTab] = useState("split");
@@ -90,7 +93,7 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
   if (isLoading) {
     return (
       <div className="w-full border-l bg-background flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Loading scratchpad...</p>
+        <p className="text-sm text-muted-foreground">{t("scratchpad:loadingScratchpad")}</p>
       </div>
     );
   }
@@ -100,7 +103,7 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
       <div className="w-full border-l bg-background flex flex-col items-center justify-center gap-2 p-4">
         <p className="text-sm text-destructive">{error}</p>
         <Button variant="outline" size="sm" onClick={onClose}>
-          Close
+          {t("common:close")}
         </Button>
       </div>
     );
@@ -111,13 +114,13 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b shrink-0">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-medium">Scratchpad</h3>
+          <h3 className="text-sm font-medium">{t("scratchpad:scratchpad")}</h3>
           <SaveStatusIndicator status={saveStatus} lastSavedAt={lastSavedAt} />
         </div>
         <div className="flex items-center gap-1">
           {saveStatus === "error" && (
             <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={save}>
-              Retry
+              {t("common:retry")}
             </Button>
           )}
           <Button variant="ghost" size="sm" className="h-6 px-2" onClick={onClose}>
@@ -130,9 +133,9 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
         <div className="px-3 pt-2 shrink-0">
           <TabsList className="w-full">
-            <TabsTrigger value="write" className="flex-1">Write</TabsTrigger>
-            <TabsTrigger value="preview" className="flex-1">Preview</TabsTrigger>
-            <TabsTrigger value="split" className="flex-1">Split</TabsTrigger>
+            <TabsTrigger value="write" className="flex-1">{t("scratchpad:write")}</TabsTrigger>
+            <TabsTrigger value="preview" className="flex-1">{t("scratchpad:preview")}</TabsTrigger>
+            <TabsTrigger value="split" className="flex-1">{t("scratchpad:split")}</TabsTrigger>
           </TabsList>
         </div>
 

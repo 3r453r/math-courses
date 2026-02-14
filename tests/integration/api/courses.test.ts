@@ -46,6 +46,24 @@ describe("GET /api/courses", () => {
     expect(data[0].title).toBe("Second Course");
     expect(data[1].title).toBe("First Course");
   });
+
+  it("returns courses with their language field", async () => {
+    await createTestCourse({ title: "English Course", language: "en" });
+    await createTestCourse({ title: "Polish Course", language: "pl" });
+
+    const response = await GET();
+    const data = await response.json();
+    expect(data).toHaveLength(2);
+
+    const englishCourse = data.find(
+      (c: { title: string }) => c.title === "English Course"
+    );
+    const polishCourse = data.find(
+      (c: { title: string }) => c.title === "Polish Course"
+    );
+    expect(englishCourse.language).toBe("en");
+    expect(polishCourse.language).toBe("pl");
+  });
 });
 
 describe("POST /api/courses", () => {
@@ -90,6 +108,43 @@ describe("POST /api/courses", () => {
     expect(response.status).toBe(201);
     expect(data.targetLessonCount).toBe(10);
     expect(data.difficulty).toBe("intermediate");
+  });
+
+  it("saves language field when provided", async () => {
+    const body = {
+      title: "Algebra liniowa",
+      description: "Kurs algebry liniowej",
+      topic: "Algebra liniowa",
+      language: "pl",
+    };
+
+    const request = new Request("http://localhost:3000/api/courses", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+    expect(response.status).toBe(201);
+    expect(data.language).toBe("pl");
+  });
+
+  it("defaults language to 'en' when not provided", async () => {
+    const body = {
+      title: "Topology",
+      description: "Intro to topology",
+      topic: "Topology",
+    };
+
+    const request = new Request("http://localhost:3000/api/courses", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+    expect(response.status).toBe(201);
+    expect(data.language).toBe("en");
   });
 });
 

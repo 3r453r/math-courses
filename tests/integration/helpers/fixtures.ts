@@ -9,6 +9,7 @@ export async function createTestCourse(overrides?: {
   topic?: string;
   status?: string;
   difficulty?: string;
+  language?: string;
 }) {
   return prisma().course.create({
     data: {
@@ -18,6 +19,7 @@ export async function createTestCourse(overrides?: {
       focusAreas: JSON.stringify(["Algebra", "Calculus"]),
       targetLessonCount: 5,
       difficulty: overrides?.difficulty ?? "intermediate",
+      language: overrides?.language ?? "en",
       status: overrides?.status ?? "draft",
     },
   });

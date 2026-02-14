@@ -1,5 +1,6 @@
 import { streamText } from "ai";
 import { getAnthropicClient, getApiKeyFromRequest, MODELS } from "@/lib/ai/client";
+import { buildLanguageInstruction } from "@/lib/ai/prompts/languageInstruction";
 import { prisma } from "@/lib/db";
 
 export async function POST(request: Request) {
@@ -33,6 +34,7 @@ export async function POST(request: Request) {
     difficulty: lesson.course.difficulty,
     contextDoc: lesson.course.contextDoc,
     lessonContent,
+    language: lesson.course.language,
   });
 
   const anthropic = getAnthropicClient(apiKey);
@@ -54,6 +56,7 @@ function buildChatSystemPrompt(params: {
   difficulty: string;
   contextDoc?: string | null;
   lessonContent: Record<string, unknown> | null;
+  language?: string;
 }) {
   let prompt = `You are a friendly, knowledgeable tutor helping a student study the lesson "${params.lessonTitle}" in the course "${params.courseTitle}" (topic: ${params.courseTopic}, difficulty: ${params.difficulty}).
 
@@ -94,7 +97,7 @@ GUIDELINES:
 3. When the student asks about a concept, reference the lesson content when relevant.
 4. If asked about topics outside this lesson, briefly address it but guide back to the lesson material.
 5. Keep responses concise unless the student asks for detailed explanations.
-6. Use step-by-step reasoning for computational questions.`;
+6. Use step-by-step reasoning for computational questions.${buildLanguageInstruction(params.language ?? "en")}`;
 
   return prompt;
 }

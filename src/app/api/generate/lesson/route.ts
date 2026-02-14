@@ -2,6 +2,7 @@ import { generateObject } from "ai";
 import { getAnthropicClient, getApiKeyFromRequest, MODELS } from "@/lib/ai/client";
 import { mockLessonContent, mockQuiz } from "@/lib/ai/mockData";
 import { lessonWithQuizSchema } from "@/lib/ai/schemas/lessonWithQuizSchema";
+import { buildLanguageInstruction } from "@/lib/ai/prompts/languageInstruction";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 
@@ -105,6 +106,8 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
 
 For the quiz: include a higher proportion of questions (at least 50%) targeting these weak topics: ${body.weakTopics.join(", ")}`;
       }
+
+      prompt += buildLanguageInstruction(lesson.course.language);
 
       const { object } = await generateObject({
         model: anthropic(model),

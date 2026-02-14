@@ -1,0 +1,23 @@
+{
+  "learningObjectives": "Cele nauczania",
+  "workedExamples": "Rozwiązane przykłady",
+  "practiceExercises": "Ćwiczenia",
+  "keyTakeaways": "Kluczowe wnioski",
+  "example": "Przykład {{number}}",
+  "problem": "Zadanie",
+  "solutionSteps": "Kroki rozwiązania",
+  "showNextStep": "Pokaż następny krok ({{current}}/{{total}})",
+  "showAllSteps": "Pokaż wszystkie kroki",
+  "finalAnswer": "Odpowiedź końcowa",
+  "exercise": "Ćwiczenie {{number}}",
+  "checkAnswer": "Sprawdź odpowiedź",
+  "tryAgain": "Spróbuj ponownie",
+  "hint": "Wskazówka ({{current}}/{{total}})",
+  "hintLabel": "Wskazówka {{number}}",
+  "showSolution": "Pokaż rozwiązanie",
+  "solution": "Rozwiązanie",
+  "correctBadge": "Poprawnie!",
+  "incorrectBadge": "Niepoprawnie",
+  "numericPlaceholder": "Podaj odpowiedź liczbową...",
+  "freeResponsePlaceholder": "Napisz swoją odpowiedź tutaj..."
+}

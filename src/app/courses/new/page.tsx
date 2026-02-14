@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { useAppStore } from "@/stores/appStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +27,8 @@ import { toast } from "sonner";
 
 export default function NewCoursePage() {
   const router = useRouter();
-  const { apiKey, generationModel } = useAppStore();
+  const { apiKey, generationModel, language } = useAppStore();
+  const { t } = useTranslation(["courseNew", "common"]);
 
   const [step, setStep] = useState(1);
   const [topic, setTopic] = useState("");
@@ -55,7 +57,7 @@ export default function NewCoursePage() {
       return;
     }
     if (!topic.trim()) {
-      toast.error("Please enter a topic");
+      toast.error(t("courseNew:pleaseEnterTopic"));
       return;
     }
 
@@ -68,11 +70,12 @@ export default function NewCoursePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: topic,
-          description: description || `A course on ${topic}`,
+          description: description || t("courseNew:defaultDescription", { topic }),
           topic,
           focusAreas,
           targetLessonCount: lessonCount ? parseInt(lessonCount) : 10,
           difficulty,
+          language,
         }),
       });
 
@@ -92,7 +95,7 @@ export default function NewCoursePage() {
         body: JSON.stringify({
           courseId: course.id,
           topic,
-          description: description || `A comprehensive course on ${topic}`,
+          description: description || t("courseNew:defaultDetailedDescription", { topic }),
           focusAreas,
           lessonCount: lessonCount ? parseInt(lessonCount) : undefined,
           difficulty,
@@ -105,7 +108,7 @@ export default function NewCoursePage() {
         throw new Error(err.error || "Failed to generate course structure");
       }
 
-      toast.success("Course structure generated!");
+      toast.success(t("courseNew:courseGenerated"));
       router.push(`/courses/${course.id}`);
     } catch (err) {
       console.error("Course generation failed:", err);
@@ -120,11 +123,11 @@ export default function NewCoursePage() {
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
           <Button variant="ghost" onClick={() => router.push("/")}>
-            &larr; Back
+            &larr; {t("common:back")}
           </Button>
           <div>
-            <h1 className="text-xl font-bold">Create New Course</h1>
-            <p className="text-sm text-muted-foreground">Step {step} of 2</p>
+            <h1 className="text-xl font-bold">{t("courseNew:createNewCourse")}</h1>
+            <p className="text-sm text-muted-foreground">{t("courseNew:stepOf", { step, total: 2 })}</p>
           </div>
         </div>
       </header>
@@ -133,27 +136,27 @@ export default function NewCoursePage() {
         {step === 1 && (
           <Card>
             <CardHeader>
-              <CardTitle>Course Topic</CardTitle>
+              <CardTitle>{t("courseNew:courseTopicTitle")}</CardTitle>
               <CardDescription>
-                What math topic do you want to learn? Be as specific or broad as you like.
+                {t("courseNew:courseTopicDescription")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="topic">Topic *</Label>
+                <Label htmlFor="topic">{t("courseNew:topicLabel")}</Label>
                 <Input
                   id="topic"
-                  placeholder="e.g., Differential Geometry, Linear Algebra, Real Analysis"
+                  placeholder={t("courseNew:topicPlaceholder")}
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description (optional)</Label>
+                <Label htmlFor="description">{t("courseNew:descriptionLabel")}</Label>
                 <Textarea
                   id="description"
-                  placeholder="Describe any specific aspects you want to focus on, your current level, or goals..."
+                  placeholder={t("courseNew:descriptionPlaceholder")}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
@@ -161,11 +164,11 @@ export default function NewCoursePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="focus">Focus Areas (optional)</Label>
+                <Label htmlFor="focus">{t("courseNew:focusAreasLabel")}</Label>
                 <div className="flex gap-2">
                   <Input
                     id="focus"
-                    placeholder="e.g., Riemannian metrics, Curvature tensors"
+                    placeholder={t("courseNew:focusAreasPlaceholder")}
                     value={focusInput}
                     onChange={(e) => setFocusInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -176,7 +179,7 @@ export default function NewCoursePage() {
                     }}
                   />
                   <Button variant="outline" onClick={addFocusArea} type="button">
-                    Add
+                    {t("common:add")}
                   </Button>
                 </div>
                 {focusAreas.length > 0 && (
@@ -197,7 +200,7 @@ export default function NewCoursePage() {
 
               <div className="flex justify-end">
                 <Button onClick={() => setStep(2)} disabled={!topic.trim()}>
-                  Next
+                  {t("common:next")}
                 </Button>
               </div>
             </CardContent>
@@ -207,15 +210,14 @@ export default function NewCoursePage() {
         {step === 2 && (
           <Card>
             <CardHeader>
-              <CardTitle>Course Configuration</CardTitle>
+              <CardTitle>{t("courseNew:courseConfigTitle")}</CardTitle>
               <CardDescription>
-                Set the difficulty level and number of lessons. Leave lesson count empty to let
-                the AI suggest an optimal structure.
+                {t("courseNew:courseConfigDescription")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="difficulty">Difficulty Level</Label>
+                <Label htmlFor="difficulty">{t("courseNew:difficultyLabel")}</Label>
                 <Select value={difficulty} onValueChange={setDifficulty}>
                   <SelectTrigger id="difficulty">
                     <SelectValue />
@@ -223,25 +225,25 @@ export default function NewCoursePage() {
                   <SelectContent>
                     <SelectItem value="beginner">
                       <div>
-                        <span>Beginner</span>
+                        <span>{t("courseNew:beginner")}</span>
                         <p className="text-xs text-muted-foreground font-normal">
-                          No prior knowledge assumed. Builds from the ground up with extra intuition and examples.
+                          {t("courseNew:beginnerDescription")}
                         </p>
                       </div>
                     </SelectItem>
                     <SelectItem value="intermediate">
                       <div>
-                        <span>Intermediate</span>
+                        <span>{t("courseNew:intermediate")}</span>
                         <p className="text-xs text-muted-foreground font-normal">
-                          Assumes familiarity with foundational concepts. Covers core theory with proofs and applications.
+                          {t("courseNew:intermediateDescription")}
                         </p>
                       </div>
                     </SelectItem>
                     <SelectItem value="advanced">
                       <div>
-                        <span>Advanced</span>
+                        <span>{t("courseNew:advanced")}</span>
                         <p className="text-xs text-muted-foreground font-normal">
-                          Assumes strong background. Focuses on rigorous proofs, abstractions, and advanced applications.
+                          {t("courseNew:advancedDescription")}
                         </p>
                       </div>
                     </SelectItem>
@@ -250,47 +252,46 @@ export default function NewCoursePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="lessons">Number of Lessons (optional)</Label>
+                <Label htmlFor="lessons">{t("courseNew:lessonCountLabel")}</Label>
                 <Input
                   id="lessons"
                   type="number"
                   min={3}
                   max={30}
-                  placeholder="Leave empty for AI suggestion (typically 8-20)"
+                  placeholder={t("courseNew:lessonCountPlaceholder")}
                   value={lessonCount}
                   onChange={(e) => setLessonCount(e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  The AI will design a lesson dependency graph - not all lessons are sequential.
-                  Some can be studied in parallel.
+                  {t("courseNew:lessonCountNote")}
                 </p>
               </div>
 
               <div className="rounded-md bg-muted p-4 space-y-2">
-                <p className="font-medium text-sm">Course Summary</p>
-                <p className="text-sm"><strong>Topic:</strong> {topic}</p>
-                {description && <p className="text-sm"><strong>Description:</strong> {description}</p>}
+                <p className="font-medium text-sm">{t("courseNew:courseSummary")}</p>
+                <p className="text-sm"><strong>{t("courseNew:topicSummary")}</strong> {topic}</p>
+                {description && <p className="text-sm"><strong>{t("courseNew:descriptionSummary")}</strong> {description}</p>}
                 {focusAreas.length > 0 && (
-                  <p className="text-sm"><strong>Focus:</strong> {focusAreas.join(", ")}</p>
+                  <p className="text-sm"><strong>{t("courseNew:focusSummary")}</strong> {focusAreas.join(", ")}</p>
                 )}
-                <p className="text-sm"><strong>Difficulty:</strong> {difficulty}</p>
+                <p className="text-sm"><strong>{t("courseNew:difficultySummary")}</strong> {difficulty}</p>
                 <p className="text-sm">
-                  <strong>Lessons:</strong> {lessonCount || "AI will suggest"}
+                  <strong>{t("courseNew:lessonsSummary")}</strong> {lessonCount || t("courseNew:aiWillSuggest")}
                 </p>
               </div>
 
               <div className="flex justify-between">
                 <Button variant="outline" onClick={() => setStep(1)}>
-                  Back
+                  {t("common:back")}
                 </Button>
                 <Button onClick={handleGenerate} disabled={generating}>
                   {generating ? (
                     <>
                       <span className="animate-spin mr-2">&#9696;</span>
-                      Generating Course Structure...
+                      {t("courseNew:generatingCourseStructure")}
                     </>
                   ) : (
-                    "Generate Course"
+                    t("courseNew:generateCourse")
                   )}
                 </Button>
               </div>

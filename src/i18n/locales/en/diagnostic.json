@@ -1,0 +1,12 @@
+{
+  "loadingDiagnostic": "Loading diagnostic...",
+  "backToCourse": "Back to Course",
+  "prerequisiteAssessment": "Prerequisite Assessment",
+  "diagnosticQuiz": "Diagnostic Quiz",
+  "diagnosticDescription": "Take a quick diagnostic to assess your prerequisite knowledge before starting the course. This is optional and won't block your progress.",
+  "generateDiagnosticQuiz": "Generate Diagnostic Quiz",
+  "generatingDiagnostic": "Generating Diagnostic...",
+  "diagnosticGenerated": "Diagnostic quiz generated!",
+  "skipGoToCourse": "Skip — Go to Course",
+  "failedToLoadCourse": "Failed to load course"
+}
