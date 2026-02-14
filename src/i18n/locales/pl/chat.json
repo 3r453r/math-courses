@@ -5,5 +5,7 @@
   "emptyPrompt": "Zapytaj mnie o cokolwiek dotyczącego tej lekcji!",
   "emptyDescription": "Mogę wyjaśnić koncepcje, przeprowadzić przez zadania lub wyjaśnić notację.",
   "placeholder": "Zadaj pytanie...",
-  "send": "Wyślij"
+  "send": "Wyślij",
+  "dictateTooltip": "Dyktuj wiadomość",
+  "stopDictation": "Zatrzymaj dyktowanie"
 }

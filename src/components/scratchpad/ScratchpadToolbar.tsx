@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -14,27 +14,34 @@ import {
 import { getCommandsByCategory } from "@/lib/scratchpad/slashCommands";
 import { SymbolPicker } from "./SymbolPicker";
 import { VoiceKeywordConfig } from "./VoiceKeywordConfig";
+import { VoiceCalibrationPanel } from "./VoiceCalibrationPanel";
 import { useSpeechToText } from "@/hooks/useSpeechToText";
+import type { EditorContext } from "@/hooks/useSpeechToText";
+import { useAppStore } from "@/stores/appStore";
 
-type PanelMode = "none" | "help" | "symbols" | "voice";
+type PanelMode = "none" | "help" | "symbols" | "voice" | "calibrate";
 
 interface ScratchpadToolbarProps {
   onInsertSymbol: (text: string, cursorOffset: number) => void;
+  getEditorContext?: () => EditorContext;
 }
 
-export function ScratchpadToolbar({ onInsertSymbol }: ScratchpadToolbarProps) {
+export function ScratchpadToolbar({ onInsertSymbol, getEditorContext }: ScratchpadToolbarProps) {
   const { t } = useTranslation("scratchpad");
   const [panel, setPanel] = useState<PanelMode>("none");
   const grouped = getCommandsByCategory();
+  const voiceAiMode = useAppStore((s) => s.voiceAiMode);
+  const setVoiceAiMode = useAppStore((s) => s.setVoiceAiMode);
 
-  const { isSupported, isListening, interimTranscript, error, toggleListening } =
+  const { isSupported, isListening, interimTranscript, error, isProcessing, toggleListening } =
     useSpeechToText({
-      onResult: (processed: string) => {
+      onResult: (processed: string, cursorOffset?: number) => {
         if (processed.length > 0) {
           const prefix = processed.startsWith("\n") ? "" : " ";
-          onInsertSymbol(prefix + processed, 0);
+          onInsertSymbol(prefix + processed, cursorOffset ?? 0);
         }
       },
+      getEditorContext,
     });
 
   // Show errors as toasts
@@ -59,6 +66,12 @@ export function ScratchpadToolbar({ onInsertSymbol }: ScratchpadToolbarProps) {
     setPanel((prev) => (prev === mode ? "none" : mode));
   };
 
+  const statusText = useCallback(() => {
+    if (isProcessing) return t("interpreting");
+    if (interimTranscript) return interimTranscript;
+    return t("listening");
+  }, [isProcessing, interimTranscript, t]);
+
   return (
     <div className="border-t bg-muted/30">
       {/* Symbol Picker Panel */}
@@ -68,6 +81,9 @@ export function ScratchpadToolbar({ onInsertSymbol }: ScratchpadToolbarProps) {
 
       {/* Voice Keyword Config Panel */}
       {panel === "voice" && <VoiceKeywordConfig />}
+
+      {/* Voice Calibration Panel */}
+      {panel === "calibrate" && <VoiceCalibrationPanel />}
 
       {/* Help Panel */}
       {panel === "help" && (
@@ -110,6 +126,18 @@ export function ScratchpadToolbar({ onInsertSymbol }: ScratchpadToolbarProps) {
             </div>
           </div>
 
+          {/* Voice Dictation */}
+          <div>
+            <p className="font-medium text-foreground mb-1.5">{t("voiceDictationHelp")}</p>
+            <div className="text-muted-foreground space-y-1">
+              <p>{t("voiceDictationDesc")}</p>
+              <p>{t("voiceDictationKeywords")}</p>
+              <p>{t("voiceDictationMultiInput")}</p>
+              <p>{t("voiceDictationMathOnly")}</p>
+              <p>{t("voiceDictationCustom")}</p>
+            </div>
+          </div>
+
           {/* Slash Commands */}
           <div>
             <p className="font-medium text-foreground mb-1.5">{t("slashCommands")}</p>
@@ -138,10 +166,14 @@ export function ScratchpadToolbar({ onInsertSymbol }: ScratchpadToolbarProps) {
 
       {/* Button bar */}
       <div className="flex items-center justify-between px-3 py-1.5">
-        {isListening ? (
+        {isListening || isProcessing ? (
           <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-            <span className="inline-block h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-            {interimTranscript || t("listening")}
+            {isProcessing ? (
+              <span className="animate-spin inline-block">&#9696;</span>
+            ) : (
+              <span className="inline-block h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+            )}
+            {statusText()}
           </span>
         ) : (
           <span className="text-xs text-muted-foreground" dangerouslySetInnerHTML={{ __html: t("typeForCommands") }} />
@@ -166,6 +198,31 @@ export function ScratchpadToolbar({ onInsertSymbol }: ScratchpadToolbarProps) {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={voiceAiMode ? "default" : "ghost"}
+                      size="sm"
+                      className="h-6 text-xs px-2"
+                      onClick={() => setVoiceAiMode(!voiceAiMode)}
+                    >
+                      {t("aiModeButton")}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {t("aiModeTooltip")}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <Button
+                variant={panel === "calibrate" ? "secondary" : "ghost"}
+                size="sm"
+                className="h-6 text-xs px-2"
+                onClick={() => togglePanel("calibrate")}
+              >
+                {t("calibrateButton")}
+              </Button>
               <Button
                 variant={panel === "voice" ? "secondary" : "ghost"}
                 size="sm"

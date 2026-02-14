@@ -39,7 +39,11 @@
       "Bash(/c/Users/aswie/source/repos/3r453r/math-courses/src/i18n/locales/en/lessonContent.json:*)",
       "Bash(pnpm test:*)",
       "Bash(git stash:*)",
-      "Bash(pnpm test:integration:*)"
+      "Bash(pnpm test:integration:*)",
+      "Bash(find:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx shadcn@latest add:*)"
     ]
   }
 }

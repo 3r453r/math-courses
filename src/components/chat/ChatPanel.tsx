@@ -214,6 +214,7 @@ export function ChatPanel({ lessonId, courseId, onClose }: ChatPanelProps) {
         onChange={(e) => setInput(e.target.value)}
         onSubmit={handleChatSubmit}
         isLoading={isLoading}
+        onVoiceText={(text) => setInput((prev) => prev + (prev ? " " : "") + text)}
       />
     </div>
   );

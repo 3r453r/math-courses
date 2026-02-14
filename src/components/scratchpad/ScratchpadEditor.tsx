@@ -15,6 +15,7 @@ import { SlashCommandPopup } from "./SlashCommandPopup";
 
 export interface ScratchpadEditorHandle {
   insertAtCursor: (text: string, cursorOffset: number) => void;
+  getTextarea: () => HTMLTextAreaElement | null;
 }
 
 interface ScratchpadEditorProps {
@@ -50,6 +51,9 @@ export const ScratchpadEditor = forwardRef<ScratchpadEditorHandle, ScratchpadEdi
             textareaRef.current.focus();
           }
         });
+      },
+      getTextarea() {
+        return textareaRef.current;
       },
     }));
 

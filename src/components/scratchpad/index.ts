@@ -5,3 +5,4 @@ export { ScratchpadPreview } from "./ScratchpadPreview";
 export { ScratchpadToolbar } from "./ScratchpadToolbar";
 export { SlashCommandPopup } from "./SlashCommandPopup";
 export { SymbolPicker } from "./SymbolPicker";
+export { VoiceCalibrationPanel } from "./VoiceCalibrationPanel";

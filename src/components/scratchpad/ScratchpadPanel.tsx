@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useScratchpad } from "@/hooks/useScratchpad";
 import { ScratchpadEditor } from "./ScratchpadEditor";
@@ -90,6 +90,30 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
     editorRef.current?.insertAtCursor(text, cursorOffset);
   };
 
+  const getEditorContext = useCallback(() => {
+    const textarea = editorRef.current?.getTextarea();
+    if (!textarea) return { inMathMode: false, surroundingText: "" };
+
+    const pos = textarea.selectionStart;
+    const text = textarea.value;
+
+    // Count unescaped $ chars before cursor to determine math mode
+    let dollarCount = 0;
+    for (let i = 0; i < pos; i++) {
+      if (text[i] === "$" && (i === 0 || text[i - 1] !== "\\")) {
+        dollarCount++;
+      }
+    }
+    const inMathMode = dollarCount % 2 === 1;
+
+    // Extract ~50 chars of surrounding text
+    const start = Math.max(0, pos - 25);
+    const end = Math.min(text.length, pos + 25);
+    const surroundingText = text.slice(start, end);
+
+    return { inMathMode, surroundingText };
+  }, []);
+
   if (isLoading) {
     return (
       <div className="w-full border-l bg-background flex items-center justify-center">
@@ -171,7 +195,7 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
 
       {/* Toolbar */}
       <div className="shrink-0">
-        <ScratchpadToolbar onInsertSymbol={handleInsertSymbol} />
+        <ScratchpadToolbar onInsertSymbol={handleInsertSymbol} getEditorContext={getEditorContext} />
       </div>
     </div>
   );
