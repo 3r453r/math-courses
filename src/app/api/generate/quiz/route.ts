@@ -61,6 +61,7 @@ export async function POST(request: Request) {
         lessonSummary: lesson.summary,
         courseTopic: lesson.course.topic,
         difficulty: lesson.course.difficulty,
+        lessonContent: lesson.contentJson ? JSON.parse(lesson.contentJson) : undefined,
       });
 
       const { object } = await generateObject({

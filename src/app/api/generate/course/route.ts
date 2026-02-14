@@ -60,12 +60,13 @@ export async function POST(request: Request) {
 
     // If we have a courseId, save the generated structure to the database
     if (courseId) {
-      // Update course with generated title/description
+      // Update course with generated title/description/contextDoc
       await prisma.course.update({
         where: { id: courseId },
         data: {
           title: courseStructure.title,
           description: courseStructure.description,
+          contextDoc: courseStructure.contextDoc,
           status: "ready",
         },
       });

@@ -7,6 +7,7 @@ const STORE_DATA = JSON.stringify({
     sidebarOpen: true,
     chatSidebarOpen: false,
     scratchpadOpen: false,
+    notebookOpen: false,
     generationModel: "mock",
     chatModel: "mock",
   },

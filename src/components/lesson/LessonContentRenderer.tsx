@@ -11,6 +11,7 @@ import {
   DefinitionSectionRenderer,
   TheoremSectionRenderer,
   VisualizationSectionRenderer,
+  CodeBlockSectionRenderer,
 } from "./sections";
 import type { LessonContent, LessonSection } from "@/types/lesson";
 
@@ -30,6 +31,8 @@ function SectionRenderer({ section }: { section: LessonSection }) {
       return <TheoremSectionRenderer section={section} />;
     case "visualization":
       return <VisualizationSectionRenderer section={section} />;
+    case "code_block":
+      return <CodeBlockSectionRenderer section={section} />;
     default:
       return null;
   }

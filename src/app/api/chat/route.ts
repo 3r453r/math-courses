@@ -1,0 +1,100 @@
+import { streamText } from "ai";
+import { getAnthropicClient, getApiKeyFromRequest, MODELS } from "@/lib/ai/client";
+import { prisma } from "@/lib/db";
+
+export async function POST(request: Request) {
+  const apiKey = getApiKeyFromRequest(request);
+  if (!apiKey) {
+    return new Response("API key required", { status: 401 });
+  }
+
+  const { messages, lessonId, model } = await request.json();
+
+  if (!lessonId) {
+    return new Response("lessonId required", { status: 400 });
+  }
+
+  const lesson = await prisma.lesson.findUnique({
+    where: { id: lessonId },
+    include: { course: true },
+  });
+
+  if (!lesson) {
+    return new Response("Lesson not found", { status: 404 });
+  }
+
+  const lessonContent = lesson.contentJson ? JSON.parse(lesson.contentJson) : null;
+
+  const systemPrompt = buildChatSystemPrompt({
+    lessonTitle: lesson.title,
+    lessonSummary: lesson.summary,
+    courseTopic: lesson.course.topic,
+    courseTitle: lesson.course.title,
+    difficulty: lesson.course.difficulty,
+    contextDoc: lesson.course.contextDoc,
+    lessonContent,
+  });
+
+  const anthropic = getAnthropicClient(apiKey);
+
+  const result = streamText({
+    model: anthropic(model || MODELS.chat),
+    system: systemPrompt,
+    messages,
+  });
+
+  return result.toTextStreamResponse();
+}
+
+function buildChatSystemPrompt(params: {
+  lessonTitle: string;
+  lessonSummary: string;
+  courseTopic: string;
+  courseTitle: string;
+  difficulty: string;
+  contextDoc?: string | null;
+  lessonContent: Record<string, unknown> | null;
+}) {
+  let prompt = `You are a friendly, knowledgeable tutor helping a student study the lesson "${params.lessonTitle}" in the course "${params.courseTitle}" (topic: ${params.courseTopic}, difficulty: ${params.difficulty}).
+
+LESSON SUMMARY: ${params.lessonSummary}
+`;
+
+  if (params.contextDoc) {
+    prompt += `\nCOURSE PEDAGOGICAL GUIDE:\n${params.contextDoc}\n`;
+  }
+
+  if (params.lessonContent) {
+    prompt += `\nLESSON CONTENT SUMMARY:`;
+    if (params.lessonContent.learningObjectives) {
+      prompt += `\n- Learning Objectives: ${JSON.stringify(params.lessonContent.learningObjectives)}`;
+    }
+    if (params.lessonContent.keyTakeaways) {
+      prompt += `\n- Key Takeaways: ${JSON.stringify(params.lessonContent.keyTakeaways)}`;
+    }
+    if (Array.isArray(params.lessonContent.sections)) {
+      const sectionSummary = params.lessonContent.sections.map((s: Record<string, unknown>) => {
+        if (s.type === "definition") return `Definition: ${s.term}`;
+        if (s.type === "theorem") return `Theorem: ${s.name}`;
+        if (s.type === "text") return "Text section";
+        if (s.type === "math") return `Math: ${s.latex}`;
+        if (s.type === "visualization") return `Visualization: ${s.caption}`;
+        if (s.type === "code_block") return `Code (${s.language})`;
+        return `${s.type}`;
+      });
+      prompt += `\n- Sections: ${sectionSummary.join(", ")}`;
+    }
+    prompt += "\n";
+  }
+
+  prompt += `
+GUIDELINES:
+1. Use LaTeX notation: $...$ for inline math, $$...$$ for display math.
+2. Be encouraging and patient. Explain at the appropriate difficulty level.
+3. When the student asks about a concept, reference the lesson content when relevant.
+4. If asked about topics outside this lesson, briefly address it but guide back to the lesson material.
+5. Keep responses concise unless the student asks for detailed explanations.
+6. Use step-by-step reasoning for computational questions.`;
+
+  return prompt;
+}

@@ -1,130 +1,9 @@
 import { generateObject } from "ai";
 import { getAnthropicClient, getApiKeyFromRequest, MODELS } from "@/lib/ai/client";
-import { mockLessonContent } from "@/lib/ai/mockData";
+import { mockLessonContent, mockQuiz } from "@/lib/ai/mockData";
+import { lessonWithQuizSchema } from "@/lib/ai/schemas/lessonWithQuizSchema";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
-import { z } from "zod";
-
-// Lesson content Zod schema for structured AI output
-const lessonContentSchema = z.object({
-  title: z.string(),
-  summary: z.string(),
-  learningObjectives: z.array(z.string()),
-  sections: z.array(
-    z.union([
-      z.object({
-        type: z.literal("text"),
-        content: z.string().describe("Markdown with LaTeX ($...$ for inline, $$...$$ for display)"),
-      }),
-      z.object({
-        type: z.literal("math"),
-        latex: z.string().describe("Display LaTeX expression"),
-        explanation: z.string().optional(),
-      }),
-      z.object({
-        type: z.literal("definition"),
-        term: z.string(),
-        definition: z.string().describe("Markdown+LaTeX"),
-        intuition: z.string().optional(),
-      }),
-      z.object({
-        type: z.literal("theorem"),
-        name: z.string(),
-        statement: z.string().describe("Markdown+LaTeX"),
-        proof: z.string().optional(),
-        intuition: z.string().optional(),
-      }),
-      z.object({
-        type: z.literal("visualization"),
-        vizType: z.enum([
-          "function_plot",
-          "parametric_plot",
-          "vector_field",
-          "geometry",
-          "3d_surface",
-          "manifold",
-          "tangent_space",
-          "coordinate_transform",
-        ]),
-        spec: z.object({
-          xRange: z.tuple([z.number(), z.number()]).optional(),
-          yRange: z.tuple([z.number(), z.number()]).optional(),
-          functions: z
-            .array(
-              z.object({
-                expression: z.string().describe("JavaScript Math expression of x"),
-                color: z.string().optional(),
-                label: z.string().optional(),
-              })
-            )
-            .optional(),
-          parametricSurface: z
-            .object({
-              xExpr: z.string(),
-              yExpr: z.string(),
-              zExpr: z.string(),
-              uRange: z.tuple([z.number(), z.number()]),
-              vRange: z.tuple([z.number(), z.number()]),
-            })
-            .optional(),
-          points: z
-            .array(
-              z.object({
-                x: z.number(),
-                y: z.number(),
-                label: z.string().optional(),
-              })
-            )
-            .optional(),
-          vectors: z
-            .array(
-              z.object({
-                origin: z.tuple([z.number(), z.number()]),
-                direction: z.tuple([z.number(), z.number()]),
-                color: z.string().optional(),
-                label: z.string().optional(),
-              })
-            )
-            .optional(),
-        }),
-        caption: z.string(),
-        interactionHint: z.string().optional(),
-      }),
-    ])
-  ),
-  workedExamples: z.array(
-    z.object({
-      title: z.string(),
-      problemStatement: z.string(),
-      steps: z.array(
-        z.object({
-          description: z.string(),
-          math: z.string().optional(),
-        })
-      ),
-      finalAnswer: z.string(),
-    })
-  ),
-  practiceExercises: z.array(
-    z.object({
-      id: z.string(),
-      problemStatement: z.string(),
-      hints: z.array(z.string()),
-      solution: z.string(),
-      answerType: z.enum(["free_response", "multiple_choice", "numeric"]),
-      expectedAnswer: z.string().optional(),
-      choices: z
-        .array(
-          z.object({
-            label: z.string(),
-            correct: z.boolean(),
-          })
-        )
-        .optional(),
-    })
-  ),
-  keyTakeaways: z.array(z.string()),
-});
 
 export async function POST(request: Request) {
   const apiKey = getApiKeyFromRequest(request);
@@ -165,10 +44,12 @@ export async function POST(request: Request) {
 
     const model = body.model || MODELS.generation;
 
-    let content;
+    let lessonContent;
+    let quizContent;
     let generationPrompt = "mock";
     if (model === "mock") {
-      content = mockLessonContent();
+      lessonContent = mockLessonContent();
+      quizContent = mockQuiz();
     } else {
       const anthropic = getAnthropicClient(apiKey);
 
@@ -178,7 +59,7 @@ export async function POST(request: Request) {
 
       const focusAreas = JSON.parse(lesson.course.focusAreas || "[]") as string[];
 
-      let prompt = `You are a mathematics educator creating a detailed lesson.
+      let prompt = `You are an educator specializing in ${lesson.course.topic}, creating a detailed lesson with an accompanying quiz.
 
 LESSON: ${lesson.title}
 SUMMARY: ${lesson.summary}
@@ -187,8 +68,9 @@ DIFFICULTY: ${lesson.course.difficulty}
 FOCUS AREAS: ${focusAreas.join(", ") || "General coverage"}
 
 ${prerequisiteSummaries ? `PREREQUISITES COMPLETED:\n${prerequisiteSummaries}` : "This is a starting lesson with no prerequisites."}
+${lesson.course.contextDoc ? `\nCOURSE CONTEXT DOCUMENT:\n${lesson.course.contextDoc}\n\nFollow the notation conventions, pedagogical approach, and style guidelines above when generating this lesson.\n` : ""}
 
-CONTENT GUIDELINES:
+LESSON CONTENT GUIDELINES:
 1. Use Markdown with LaTeX for all mathematical notation.
    - Inline math: $...$
    - Display math: $$...$$
@@ -198,7 +80,17 @@ CONTENT GUIDELINES:
 5. Include at least TWO practice exercises with hints and solutions.
 6. For practice exercises: mirror the worked example pattern but change the specific values.
 7. Aim for 8-15 sections of varied types (text, math, definition, theorem, visualization).
-8. Make the content thorough but accessible - explain the "why" not just the "what".`;
+8. Make the content thorough but accessible - explain the "why" not just the "what".
+
+QUIZ GUIDELINES:
+After creating the lesson content, also generate 10-20 quiz questions that:
+1. Directly reference definitions, theorems, and examples from the lesson content.
+2. Test understanding at varying difficulty levels (easy, medium, hard).
+3. Include conceptual, computational, and application questions.
+4. Tag each question with the specific sub-topic it covers.
+5. Provide detailed explanations for every choice (why correct or incorrect).
+6. Ensure at least one question has multiple correct answers.
+7. Use Markdown with LaTeX notation for all math in questions and choices.`;
 
       if (body.weakTopics && body.weakTopics.length > 0) {
         prompt += `\n\nIMPORTANT - QUIZ FEEDBACK:
@@ -209,29 +101,46 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
 - Add more detailed explanations and intuition for the weak topics
 - Include additional worked examples specifically targeting these areas
 - Add more practice exercises for the weak topics
-- Consider alternative explanations or approaches that might resonate better`;
+- Consider alternative explanations or approaches that might resonate better
+
+For the quiz: include a higher proportion of questions (at least 50%) targeting these weak topics: ${body.weakTopics.join(", ")}`;
       }
 
       const { object } = await generateObject({
         model: anthropic(model),
-        schema: lessonContentSchema,
+        schema: lessonWithQuizSchema,
         prompt,
       });
-      content = object;
+      lessonContent = object.lesson;
+      quizContent = object.quiz;
       generationPrompt = prompt;
     }
 
-    // Save generated content
+    // Delete any existing quiz for this lesson (handles regeneration)
+    await prisma.quiz.deleteMany({
+      where: { lessonId },
+    });
+
+    // Save generated content and quiz
     await prisma.lesson.update({
       where: { id: lessonId },
       data: {
-        contentJson: JSON.stringify(content),
+        contentJson: JSON.stringify(lessonContent),
         generationPrompt,
         status: "ready",
       },
     });
 
-    return NextResponse.json(content);
+    await prisma.quiz.create({
+      data: {
+        lessonId,
+        questionsJson: JSON.stringify(quizContent.questions),
+        questionCount: quizContent.questions.length,
+        status: "ready",
+      },
+    });
+
+    return NextResponse.json({ lesson: lessonContent, quiz: quizContent });
   } catch (error) {
     console.error("Failed to generate lesson:", error);
     if (body.lessonId) {

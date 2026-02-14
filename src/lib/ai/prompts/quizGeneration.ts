@@ -3,14 +3,21 @@ export function buildQuizPrompt(params: {
   lessonSummary: string;
   courseTopic: string;
   difficulty: string;
+  lessonContent?: unknown;
 }) {
-  return `You are a mathematics assessment designer creating a quiz for a specific lesson.
+  let prompt = `You are an assessment designer for ${params.courseTopic}, creating a quiz for a specific lesson.
 
 LESSON TITLE: ${params.lessonTitle}
 LESSON SUMMARY: ${params.lessonSummary}
 COURSE TOPIC: ${params.courseTopic}
 DIFFICULTY LEVEL: ${params.difficulty}
+`;
 
+  if (params.lessonContent) {
+    prompt += `\nLESSON CONTENT (generate questions that directly test this material):\n${JSON.stringify(params.lessonContent, null, 2)}\n`;
+  }
+
+  prompt += `
 REQUIREMENTS:
 1. Generate 10-20 multiple-choice questions testing the lesson content.
 2. Each question should have 4-6 choices, with one or more correct answers.
@@ -25,6 +32,8 @@ REQUIREMENTS:
 8. Ensure at least one question has multiple correct answers.
 9. Each question ID should be unique (e.g., "q1", "q2", etc.).
 10. Each choice ID should be unique within its question (e.g., "a", "b", "c", "d").`;
+
+  return prompt;
 }
 
 export function buildDiagnosticPrompt(params: {
@@ -34,7 +43,7 @@ export function buildDiagnosticPrompt(params: {
   difficulty: string;
   lessonTitles: string[];
 }) {
-  return `You are a mathematics assessment designer creating a diagnostic prerequisite quiz.
+  return `You are an assessment designer for ${params.courseTopic}, creating a diagnostic prerequisite quiz.
 
 COURSE: ${params.courseTitle}
 TOPIC: ${params.courseTopic}

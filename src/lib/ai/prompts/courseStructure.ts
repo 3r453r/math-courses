@@ -5,7 +5,7 @@ export function buildCourseStructurePrompt(params: {
   lessonCount?: number;
   difficulty: string;
 }) {
-  return `You are a mathematics curriculum designer creating a structured course.
+  return `You are a curriculum designer specializing in ${params.topic}, creating a structured course.
 
 TOPIC: ${params.topic}
 DESCRIPTION: ${params.description}
@@ -24,9 +24,19 @@ CRITICAL RULES:
 7. Every lesson after index 0 must have at least one prerequisite edge.
 8. The graph must be connected - every lesson must be reachable from at least one starting lesson.
 
-IMPORTANT FOR MATH COURSES:
+PEDAGOGICAL GUIDELINES:
 - Start with foundational/intuitive concepts before formal definitions.
 - Build complexity gradually.
-- Include lessons that connect different threads (e.g., applying algebra concepts to geometric problems).
-- For advanced topics like differential geometry, ensure proper prerequisite chains (topology basics → smooth manifolds → tangent spaces → etc.).`;
+- Include lessons that connect different threads (e.g., applying concepts from one area to problems in another).
+- For advanced topics, ensure proper prerequisite chains so students build understanding incrementally.
+
+CONTEXT DOCUMENT GUIDELINES:
+In addition to the course structure, generate a pedagogical context document (the contextDoc field).
+This document will be used as a style guide when generating individual lessons. It should include:
+1. NOTATION CONVENTIONS: Define all notation standards for the course (e.g., variable naming, symbols, formatting conventions specific to the subject).
+2. PEDAGOGICAL APPROACH: State the teaching philosophy (e.g., "intuition before formalism", "computational examples first", "theory-driven", etc.).
+3. KEY THEMES: Identify recurring themes and connections between lessons.
+4. DIFFICULTY CALIBRATION: Describe the expected level of rigor and complexity.
+5. STYLE GUIDELINES: How to structure explanations, what level of detail in proofs or derivations, how to balance theory and practice.
+Keep it 500-1000 words. Use Markdown formatting.`;
 }

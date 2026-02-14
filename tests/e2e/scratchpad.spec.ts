@@ -86,4 +86,47 @@ test.describe("Scratchpad", () => {
     // Content should be preserved
     await expect(editor2).toHaveValue("Persistent note content");
   });
+
+  test("scratchpad stays fixed while scrolling lesson content", async ({ page }) => {
+    const { courseId, lessonId } = await createReadyLesson(page);
+    await page.goto(`/courses/${courseId}/lessons/${lessonId}`);
+    await expect(page.getByText("mock generated content")).toBeVisible({
+      timeout: 15000,
+    });
+
+    // Open scratchpad
+    await page.getByRole("button", { name: /Scratchpad/i }).click();
+    const aside = page.locator("[data-testid='scratchpad-aside']");
+    await aside.waitFor({ timeout: 5000 });
+
+    // Get initial position
+    const initialTop = await aside.evaluate((el) => el.getBoundingClientRect().top);
+
+    // Scroll the lesson content (main element is now the scroll container)
+    await page.locator("main").evaluate((el) => el.scrollTop = 200);
+    await page.waitForTimeout(100);
+
+    // Scratchpad should remain at the same position
+    const afterScrollTop = await aside.evaluate((el) => el.getBoundingClientRect().top);
+    expect(afterScrollTop).toBe(initialTop);
+  });
+
+  test("no outer scrollbar when scratchpad is open", async ({ page }) => {
+    const { courseId, lessonId } = await createReadyLesson(page);
+    await page.goto(`/courses/${courseId}/lessons/${lessonId}`);
+    await expect(page.getByText("mock generated content")).toBeVisible({
+      timeout: 15000,
+    });
+
+    // Open scratchpad
+    await page.getByRole("button", { name: /Scratchpad/i }).click();
+    await page.locator("[data-testid='scratchpad-aside']").waitFor({ timeout: 5000 });
+
+    // The outer container should NOT have overflow-y (no outer scrollbar)
+    const containerOverflow = await page.locator("[data-testid='lesson-scroll-container']").evaluate((el) =>
+      window.getComputedStyle(el).overflowY
+    );
+    expect(containerOverflow).not.toBe("auto");
+    expect(containerOverflow).not.toBe("scroll");
+  });
 });

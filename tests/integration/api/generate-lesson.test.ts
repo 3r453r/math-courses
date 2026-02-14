@@ -57,9 +57,13 @@ describe("POST /api/generate/lesson", () => {
     const response = await POST(request);
     const data = await response.json();
     expect(response.status).toBe(200);
-    expect(data.title).toBeTruthy();
-    expect(data.sections).toBeDefined();
-    expect(Array.isArray(data.sections)).toBe(true);
+    expect(data.lesson).toBeDefined();
+    expect(data.lesson.title).toBeTruthy();
+    expect(data.lesson.sections).toBeDefined();
+    expect(Array.isArray(data.lesson.sections)).toBe(true);
+    expect(data.quiz).toBeDefined();
+    expect(data.quiz.questions).toBeDefined();
+    expect(Array.isArray(data.quiz.questions)).toBe(true);
   });
 
   it("stores contentJson and updates status to ready", async () => {
@@ -86,5 +90,13 @@ describe("POST /api/generate/lesson", () => {
     expect(updated?.contentJson).toBeTruthy();
     const content = JSON.parse(updated!.contentJson!);
     expect(content.title).toBeTruthy();
+
+    // Verify co-generated quiz was saved
+    const quiz = await prisma.quiz.findFirst({
+      where: { lessonId: lesson.id },
+    });
+    expect(quiz).toBeTruthy();
+    expect(quiz?.status).toBe("ready");
+    expect(quiz?.questionCount).toBeGreaterThan(0);
   });
 });

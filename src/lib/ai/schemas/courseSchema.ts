@@ -4,6 +4,15 @@ export const courseStructureSchema = z.object({
   title: z.string().describe("Course title"),
   description: z.string().describe("2-3 sentence course description"),
   suggestedLessonCount: z.number().min(3).max(30),
+  contextDoc: z.string().describe(
+    "A pedagogical guide document (500-1000 words, Markdown) covering: " +
+    "1) Notation conventions used throughout the course, " +
+    "2) Pedagogical approach and philosophy, " +
+    "3) Key themes and connections between topics, " +
+    "4) Difficulty calibration notes for content generation, " +
+    "5) Style guidelines for explanations, proofs, and examples. " +
+    "This document will be provided as context when generating each lesson."
+  ),
   lessons: z.array(
     z.object({
       title: z.string(),

@@ -13,7 +13,8 @@ export type LessonSection =
   | MathSection
   | DefinitionSection
   | TheoremSection
-  | VisualizationSection;
+  | VisualizationSection
+  | CodeBlockSection;
 
 export interface TextSection {
   type: "text";
@@ -91,6 +92,13 @@ export interface VisualizationSpec {
     type: "line" | "circle" | "polygon" | "angle" | "plane";
     params: Record<string, unknown>;
   }>;
+}
+
+export interface CodeBlockSection {
+  type: "code_block";
+  language: string;
+  code: string;
+  explanation?: string;
 }
 
 export interface WorkedExample {

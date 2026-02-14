@@ -6,12 +6,14 @@ interface AppState {
   sidebarOpen: boolean;
   chatSidebarOpen: boolean;
   scratchpadOpen: boolean;
+  notebookOpen: boolean;
   generationModel: string;
   chatModel: string;
   setApiKey: (key: string | null) => void;
   setSidebarOpen: (open: boolean) => void;
   setChatSidebarOpen: (open: boolean) => void;
   setScratchpadOpen: (open: boolean) => void;
+  setNotebookOpen: (open: boolean) => void;
   setGenerationModel: (model: string) => void;
   setChatModel: (model: string) => void;
 }
@@ -23,12 +25,14 @@ export const useAppStore = create<AppState>()(
       sidebarOpen: true,
       chatSidebarOpen: false,
       scratchpadOpen: false,
+      notebookOpen: false,
       generationModel: "claude-opus-4-20250514",
       chatModel: "claude-sonnet-4-20250514",
       setApiKey: (key) => set({ apiKey: key }),
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
       setChatSidebarOpen: (open) => set({ chatSidebarOpen: open }),
       setScratchpadOpen: (open) => set({ scratchpadOpen: open }),
+      setNotebookOpen: (open) => set({ notebookOpen: open }),
       setGenerationModel: (model) => set({ generationModel: model }),
       setChatModel: (model) => set({ chatModel: model }),
     }),
