@@ -12,6 +12,9 @@ function createStripeClient() {
   return new Stripe(key);
 }
 
-export const stripe = globalForStripe.stripe ?? createStripeClient();
-
-if (process.env.NODE_ENV !== "production") globalForStripe.stripe = stripe;
+export function getStripe() {
+  if (!globalForStripe.stripe) {
+    globalForStripe.stripe = createStripeClient();
+  }
+  return globalForStripe.stripe;
+}
