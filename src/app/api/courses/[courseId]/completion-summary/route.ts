@@ -1,17 +1,24 @@
 import { generateObject } from "ai";
-import { getAnthropicClient, getApiKeyFromRequest, MODELS } from "@/lib/ai/client";
+import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
 import { completionSummarySchema } from "@/lib/ai/schemas/completionSummarySchema";
 import { buildCompletionSummaryPrompt } from "@/lib/ai/prompts/completionSummary";
+import { mockCompletionSummary } from "@/lib/ai/mockData";
 import { evaluateCourseCompletion } from "@/lib/quiz/courseCompletion";
 import { prisma } from "@/lib/db";
+import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ courseId: string }> }
 ) {
+  const { userId, error: authError } = await getAuthUser();
+  if (authError) return authError;
+
   try {
     const { courseId } = await params;
+    const { error: ownerError } = await verifyCourseOwnership(courseId, userId);
+    if (ownerError) return ownerError;
     const summary = await prisma.courseCompletionSummary.findUnique({
       where: { courseId },
     });
@@ -36,13 +43,18 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ courseId: string }> }
 ) {
-  const apiKey = getApiKeyFromRequest(request);
-  if (!apiKey) {
+  const { userId, error: authError } = await getAuthUser();
+  if (authError) return authError;
+
+  const apiKeys = getApiKeysFromRequest(request);
+  if (!hasAnyApiKey(apiKeys)) {
     return NextResponse.json({ error: "API key required" }, { status: 401 });
   }
 
   try {
     const { courseId } = await params;
+    const { error: ownerError } = await verifyCourseOwnership(courseId, userId);
+    if (ownerError) return ownerError;
 
     // Gather all completion data
     const course = await prisma.course.findUnique({
@@ -133,26 +145,33 @@ export async function POST(
     const focusAreas = JSON.parse(course.focusAreas || "[]") as string[];
 
     // AI-generate narrative summary + recommendation
-    const anthropic = getAnthropicClient(apiKey);
-    const model = request.headers.get("x-model") || MODELS.generation;
+    const body = await request.json().catch(() => ({}));
+    const model = body.model || MODELS.generation;
 
-    const { object } = await generateObject({
-      model: anthropic(model),
-      schema: completionSummarySchema,
-      prompt: buildCompletionSummaryPrompt({
-        courseTitle: course.title,
-        courseTopic: course.topic,
-        difficulty: course.difficulty,
-        contextDoc: course.contextDoc,
-        focusAreas,
-        summaryData,
-        passThreshold: course.passThreshold,
-        noLessonCanFail: course.noLessonCanFail,
-        lessonFailureThreshold: course.lessonFailureThreshold,
-        passed: completionResult.passed,
-        language: course.language,
-      }),
-    });
+    let object;
+    if (model === "mock") {
+      object = mockCompletionSummary();
+    } else {
+      const modelInstance = getModelInstance(model, apiKeys);
+      const result = await generateObject({
+        model: modelInstance,
+        schema: completionSummarySchema,
+        prompt: buildCompletionSummaryPrompt({
+          courseTitle: course.title,
+          courseTopic: course.topic,
+          difficulty: course.difficulty,
+          contextDoc: course.contextDoc,
+          focusAreas,
+          summaryData,
+          passThreshold: course.passThreshold,
+          noLessonCanFail: course.noLessonCanFail,
+          lessonFailureThreshold: course.lessonFailureThreshold,
+          passed: completionResult.passed,
+          language: course.language,
+        }),
+      });
+      object = result.object;
+    }
 
     // Save to database (upsert to handle regeneration)
     await prisma.courseCompletionSummary.upsert({

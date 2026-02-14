@@ -2,14 +2,26 @@ import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { scoreQuiz } from "@/lib/quiz/scoring";
 import type { QuizQuestion, QuizAnswers } from "@/types/quiz";
+import { getAuthUser } from "@/lib/auth-utils";
 
 export async function POST(request: Request) {
+  const { userId, error } = await getAuthUser();
+  if (error) return error;
+
   try {
     const body = await request.json();
     const { quizId, answers } = body as { quizId?: string; answers?: QuizAnswers };
 
     if (!quizId || !answers) {
       return NextResponse.json({ error: "quizId and answers required" }, { status: 400 });
+    }
+
+    const quizWithOwner = await prisma.quiz.findUnique({
+      where: { id: quizId },
+      select: { lesson: { select: { course: { select: { userId: true } } } } },
+    });
+    if (!quizWithOwner || quizWithOwner.lesson.course.userId !== userId) {
+      return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
     }
 
     const quiz = await prisma.quiz.findUnique({ where: { id: quizId } });

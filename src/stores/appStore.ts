@@ -1,9 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CustomKeyword, KeywordOverride } from "@/lib/speech/voiceKeywords";
+import type { AIProvider, ProviderApiKeys } from "@/lib/ai/client";
 
 interface AppState {
-  apiKey: string | null;
+  apiKeys: ProviderApiKeys;
   sidebarOpen: boolean;
   chatSidebarOpen: boolean;
   scratchpadOpen: boolean;
@@ -17,7 +18,7 @@ interface AppState {
   voiceAiMode: boolean;
   voiceTriggerEnabled: boolean;
   voiceTriggerWord: string;
-  setApiKey: (key: string | null) => void;
+  setProviderApiKey: (provider: AIProvider, key: string | null) => void;
   setSidebarOpen: (open: boolean) => void;
   setChatSidebarOpen: (open: boolean) => void;
   setScratchpadOpen: (open: boolean) => void;
@@ -33,18 +34,19 @@ interface AppState {
   setVoiceAiMode: (enabled: boolean) => void;
   setVoiceTriggerEnabled: (enabled: boolean) => void;
   setVoiceTriggerWord: (word: string) => void;
+  setApiKeys: (keys: ProviderApiKeys) => void;
 }
 
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
-      apiKey: null,
+      apiKeys: {},
       sidebarOpen: true,
       chatSidebarOpen: false,
       scratchpadOpen: false,
       notebookOpen: false,
-      generationModel: "claude-opus-4-20250514",
-      chatModel: "claude-sonnet-4-20250514",
+      generationModel: "claude-opus-4-6",
+      chatModel: "claude-sonnet-4-5-20250929",
       language: "en",
       customVoiceKeywords: [],
       voiceKeywordOverrides: {},
@@ -52,7 +54,13 @@ export const useAppStore = create<AppState>()(
       voiceAiMode: false,
       voiceTriggerEnabled: false,
       voiceTriggerWord: "",
-      setApiKey: (key) => set({ apiKey: key }),
+      setProviderApiKey: (provider, key) =>
+        set((state) => ({
+          apiKeys: {
+            ...state.apiKeys,
+            [provider]: key ?? undefined,
+          },
+        })),
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
       setChatSidebarOpen: (open) => set({ chatSidebarOpen: open }),
       setScratchpadOpen: (open) => set({ scratchpadOpen: open }),
@@ -87,9 +95,16 @@ export const useAppStore = create<AppState>()(
       setVoiceAiMode: (enabled) => set({ voiceAiMode: enabled }),
       setVoiceTriggerEnabled: (enabled) => set({ voiceTriggerEnabled: enabled }),
       setVoiceTriggerWord: (word) => set({ voiceTriggerWord: word }),
+      setApiKeys: (keys) => set({ apiKeys: keys }),
     }),
     {
       name: "math-courses-app",
     }
   )
 );
+
+/** Returns true if at least one provider API key is configured */
+export function useHasAnyApiKey(): boolean {
+  const apiKeys = useAppStore((s) => s.apiKeys);
+  return !!(apiKeys.anthropic || apiKeys.openai || apiKeys.google);
+}

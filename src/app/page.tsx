@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "@/stores/appStore";
 import { useHydrated } from "@/stores/useHydrated";
@@ -39,22 +40,35 @@ interface CourseWithProgress {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const hydrated = useHydrated();
-  const apiKey = useAppStore((s) => s.apiKey);
   const language = useAppStore((s) => s.language);
   const setLanguage = useAppStore((s) => s.setLanguage);
   const [courses, setCourses] = useState<CourseWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
-  const { t } = useTranslation(["dashboard", "common"]);
+  const { t } = useTranslation(["dashboard", "common", "login"]);
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!apiKey) {
-      router.push("/setup");
-      return;
-    }
-    fetchCourses();
-  }, [hydrated, apiKey, router]);
+    // Check access status before anything else
+    fetch("/api/user/status")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.accessStatus === "pending") {
+          router.push("/redeem");
+          return;
+        }
+        if (data.accessStatus === "suspended") {
+          router.push("/redeem");
+          return;
+        }
+        fetchCourses();
+      })
+      .catch(() => {
+        // If status check fails (e.g. not logged in), proceed normally
+        fetchCourses();
+      });
+  }, [hydrated, router]);
 
   async function fetchCourses() {
     try {
@@ -100,7 +114,7 @@ export default function DashboardPage() {
     return { completed, inProgress, totalLessons, completedLessons };
   }, [courses]);
 
-  if (!hydrated || !apiKey) return null;
+  if (!hydrated) return null;
 
   const hasReadyCourses = courses.some((c) => c.status === "ready");
 
@@ -113,6 +127,11 @@ export default function DashboardPage() {
             <p className="text-sm text-muted-foreground">{t("dashboard:subtitle")}</p>
           </div>
           <div className="flex gap-2 items-center">
+            {session?.user && (
+              <span className="text-sm text-muted-foreground mr-1">
+                {session.user.name || session.user.email}
+              </span>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -121,6 +140,23 @@ export default function DashboardPage() {
             >
               {language === "en" ? "PL" : "EN"}
             </Button>
+            <Button variant="outline" onClick={() => router.push("/gallery")}>
+              {t("dashboard:gallery")}
+            </Button>
+            {process.env.NEXT_PUBLIC_DISCORD_INVITE_URL && (
+              <Button
+                variant="outline"
+                asChild
+              >
+                <a
+                  href={process.env.NEXT_PUBLIC_DISCORD_INVITE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {t("dashboard:joinDiscord")}
+                </a>
+              </Button>
+            )}
             {hasReadyCourses && (
               <Button variant="outline" onClick={() => router.push("/progress")}>
                 {t("dashboard:viewProgress")}
@@ -131,6 +167,13 @@ export default function DashboardPage() {
             </Button>
             <Button onClick={() => router.push("/courses/new")}>
               {t("dashboard:newCourse")}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => signOut({ callbackUrl: "/login" })}
+            >
+              {t("login:signOut")}
             </Button>
           </div>
         </div>

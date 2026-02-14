@@ -27,7 +27,7 @@ pnpm test:all         # All of the above
 
 ## Architecture
 
-**Monorepo (single package):** Next.js App Router with API routes, SQLite via Prisma + libsql adapter, Vercel AI SDK for Claude integration.
+**Monorepo (single package):** Next.js App Router with API routes, SQLite via Prisma + libsql adapter (supports both local `file:` and remote Turso `libsql://` URLs), Vercel AI SDK for Claude integration.
 
 ### Key Directories
 
@@ -42,7 +42,17 @@ pnpm test:all         # All of the above
 - `src/components/chat/` — AI tutor chat sidebar (ChatPanel, ChatMessage, ChatInput)
 - `src/components/scratchpad/` — Per-lesson scratchpad with LaTeX slash-commands
 - `src/components/lesson/` — Lesson content renderer, section renderers, MathMarkdown
-- `prisma/schema.prisma` — Database schema (Course, Lesson, CourseEdge, Quiz, Note, ChatMessage)
+- `src/lib/auth.ts` — Auth.js v5 configuration (OAuth providers, JWT sessions, Credentials dev bypass)
+- `src/lib/auth-utils.ts` — `getAuthUser()`, `getAuthUserAnyStatus()`, `requireAdmin()`, `verifyCourseOwnership()`, `verifyLessonOwnership()` helpers
+- `src/lib/stripe.ts` — Stripe client singleton for payment processing
+- `src/components/admin/` — Admin panel components (AccessCodeManager, UserManager, GalleryManager)
+- `src/components/gallery/` — Gallery components (GalleryCard, StarRating, GalleryFilters)
+- `src/lib/crypto.ts` — AES-256-GCM encryption for server-side API key storage
+- `src/lib/export/` — Export utilities: `courseData.ts` (shared data layer), `toMarkdown.ts`, `toJson.ts`
+- `src/components/export/` — ExportDialog (Markdown/JSON/Print), ShareDialog (share link CRUD)
+- `src/app/shared/[shareToken]/` — Public read-only course viewer (no auth required)
+- `src/app/courses/[courseId]/print/` — Print-optimized page for browser Print-to-PDF
+- `prisma/schema.prisma` — Database schema (User, Account, Session, VerificationToken, Course, Lesson, CourseEdge, Quiz, Note, ChatMessage, CourseShare, AccessCode, AccessCodeRedemption, CourseRating, Payment)
 
 ### AI Generation Flow
 
@@ -60,22 +70,36 @@ pnpm test:all         # All of the above
 
 ### Routes
 
-- `/` — Dashboard with course list
-- `/setup` — API key and model configuration
+- `/login` — Login page (OAuth + dev credentials)
+- `/` — Dashboard with course list (requires auth + API key)
+- `/setup` — API key, model configuration, account info
 - `/courses/new` — Course creation wizard
 - `/courses/[courseId]` — Course overview with dependency graph
 - `/courses/[courseId]/lessons/[lessonId]` — Lesson viewer with scratchpad and AI chat panels (mutually exclusive)
 - `/courses/[courseId]/lessons/[lessonId]/quiz` — Lesson quiz
+- `/courses/[courseId]/print` — Print-optimized full-course page (browser Print-to-PDF)
+- `/shared/[shareToken]` — Public read-only course viewer (no auth required)
+- `/redeem` — Access code redemption (pending users)
+- `/admin` — Admin panel: access codes, users, gallery management (admin only)
+- `/gallery` — Public course gallery with search, filters, ratings, clone
+- `/pricing` — Pricing/landing page with Stripe checkout
+- `/payment/success` — Post-payment confirmation
+- `/payment/cancel` — Payment cancelled page
 
 ## Tech Stack
 
-Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Zustand 5, Zod 4, Vercel AI SDK (`@ai-sdk/anthropic`, `ai`), KaTeX, mathjs, shadcn/ui, reagraph
+Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Auth.js v5 (next-auth@beta), Zustand 5, Zod 4, Vercel AI SDK (`@ai-sdk/anthropic`, `ai`), Stripe, KaTeX, mathjs, shadcn/ui, reagraph
 
 ## Key Patterns
 
 - Most pages are client components (`"use client"`); API routes are server-side
 - Prisma client uses singleton pattern (`src/lib/db.ts`) to avoid multiple instances in dev
-- Users supply their own Anthropic API key, stored in browser localStorage via Zustand — never persisted server-side
+- **Authentication**: Auth.js v5 with JWT sessions, OAuth providers (Google, GitHub, Discord), Credentials provider in dev/test
+- **Access gating**: Users have `accessStatus` ("pending" | "active" | "suspended") and `role` ("user" | "admin"). `getAuthUser()` returns 403 for non-active users. `getAuthUserAnyStatus()` for routes accessible to pending users (redeem, payment). `requireAdmin()` for admin-only routes
+- **Data isolation**: Every `Course` belongs to a `User` via `userId`. All API routes call `getAuthUser()` then verify ownership
+- **Dev bypass**: `AUTH_DEV_BYPASS=true` env var auto-creates/returns a dev user with active status, skipping real auth (used by E2E tests)
+- **No middleware file** — auth is enforced per-route via `getAuthUser()` in each API handler and client-side redirects on pages. `src/proxy.ts` checks session tokens and routes pending users to redeem/payment paths
+- Users supply their own Anthropic API key, stored in browser localStorage via Zustand; optionally synced to server (encrypted with AES-256-GCM)
 - Lesson content is a structured JSON schema with typed sections: text, math, definitions, theorems, visualizations, worked examples, practice exercises, code_block
 - CourseEdge model defines prerequisite relationships between lessons with types: "prerequisite", "recommended", "related"
 - **Full-viewport pages** (lesson page, course overview) use `fixed inset-0` wrapper — NOT `h-dvh`. This takes the page completely out of document flow, preventing the browser from creating a document-level scrollbar. Internal areas use `overflow-y-auto` for scrolling. The header is `shrink-0` and always visible; the content area is `flex-1 min-h-0`. When side panels (chat/scratchpad) are open, `main` gets `overflow-y-auto w-1/2`; when closed, the outer container gets `overflow-y-auto` instead. Switching between panels preserves the lesson content scroll position.
@@ -83,7 +107,7 @@ Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Zu
 ## Conventions
 
 - **Client components** use `"use client"` directive, fetch data in `useEffect`, manage local state with `useState`
-- **API routes** follow try/catch pattern with `NextResponse.json()` and consistent error shape `{ error: string }`
+- **API routes** follow try/catch pattern with `NextResponse.json()` and consistent error shape `{ error: string }`. Every route starts with `const { userId, error } = await getAuthUser(); if (error) return error;` — exceptions: `/api/shared/[shareToken]` and `/api/gallery` are public (no auth); `/api/access-codes/redeem` and `/api/payment/checkout` use `getAuthUserAnyStatus()` (pending users OK); admin routes use `requireAdmin()`
 - **Prisma singleton** via `src/lib/db.ts` — always import `prisma` from there, never instantiate directly
 - **Zustand store** (`src/stores/appStore.ts`) for global persisted state (API key, sidebar toggles, model selection); use custom hooks for local/transient state (e.g., `useScratchpad`)
 - **Toast notifications** via `sonner` — `toast.success()`, `toast.error()`
@@ -91,6 +115,14 @@ Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Zu
 - **API key** passed to generation endpoints via `x-api-key` header
 - **Content format**: lesson content stored as JSON string in `contentJson` field, parsed at render time
 - **AI SDK v6**: `useChat` uses transport-based API — `TextStreamChatTransport` for text streaming, `sendMessage()` instead of `handleSubmit()`, `status` instead of `isLoading`, messages are `UIMessage` with `parts` array (not `content` string)
+- **Turso/libsql**: `src/lib/db.ts` supports both local `file:` URLs (dev/test) and remote `libsql://` (Turso production). Set `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` for production
+- **Export**: `getFullCourseData()` is the shared data layer. `toMarkdown()` and `toExportJson()` are pure converters. JSON export includes `version` field for forward compat
+- **Sharing**: `CourseShare` model with `shareToken` (UUID). Public routes at `/shared/[token]` and `/api/shared/[token]` skip auth. Cloning creates a deep copy under the current user
+- **Print**: `/courses/[courseId]/print` renders all lessons with `@media print` stylesheet. KaTeX prints natively
+- **Access codes**: `AccessCode` model with unique codes, `maxUses`/`currentUses` tracking, `isActive` flag. `AccessCodeRedemption` links codes to users. Redemption activates user (`accessStatus = "active"`)
+- **Gallery**: Gallery listings are `CourseShare` records with `isGalleryListed = true`. Admin-only curation — regular users create share links, admins promote to gallery. `CourseRating` model for star ratings, `starCount`/`cloneCount` denormalized on `CourseShare`
+- **Stripe payment**: One-time payment via Stripe Checkout. Webhook auto-generates an access code, redeems it, and activates the user. `Payment` model for audit trail. BLIK + card support
+- **Admin panel**: `/admin` page with tabs for access codes, users, gallery management. Only `role === "admin"` users can access
 
 ## Roadmap
 
@@ -99,6 +131,9 @@ Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Zu
 - Phase 3: Assessment System — quizzes, diagnostics, scoring, adaptive recommendations (DONE)
 - Phase 4: Lesson Scratchpad — per-lesson notes editor with LaTeX slash-commands, autosave (DONE)
 - Phase 5: Context doc, co-generation, AI chat sidebar, topic-agnostic rebranding (DONE)
-- Phase 6: Progress Tracking & Dashboard — completion status, score history, course progress
-- Phase 7: Polish & UX — animations, responsive design, dark mode, keyboard navigation
-- Phase 8: Export/Sharing — export courses as PDF/markdown, share between users
+- Phase 6: Progress Tracking & Dashboard — completion status, score history, course progress (DONE)
+- Phase 7: Multi-user auth (Auth.js v5), data isolation, middleware, server-side API key storage (DONE)
+- Phase 8: Export/Sharing — Markdown/JSON export, JSON import, share links, course cloning, print-to-PDF (DONE)
+- Phase 9: Access Gating, Payment & Course Gallery — access codes, roles, Stripe payment, admin panel, public course gallery (DONE)
+- Phase 10: Polish & UX — animations, responsive design, dark mode, keyboard navigation
+

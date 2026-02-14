@@ -3,6 +3,11 @@ import { z } from "zod";
 export const courseStructureSchema = z.object({
   title: z.string().describe("Course title"),
   description: z.string().describe("2-3 sentence course description"),
+  subject: z.enum([
+    "Mathematics", "Physics", "Computer Science", "Chemistry",
+    "Biology", "Engineering", "Economics", "Statistics",
+    "Earth Science", "Other"
+  ]).describe("Broad academic subject area this course belongs to"),
   suggestedLessonCount: z.number().min(3).max(30),
   contextDoc: z.string().describe(
     "A pedagogical guide document (500-1000 words, Markdown) covering: " +

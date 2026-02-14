@@ -1,11 +1,15 @@
 import { generateText } from "ai";
-import { getAnthropicClient, getApiKeyFromRequest, MODELS } from "@/lib/ai/client";
+import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
 import { buildVoiceInterpretationPrompt } from "@/lib/ai/prompts/voiceInterpretation";
 import { NextResponse } from "next/server";
+import { getAuthUser } from "@/lib/auth-utils";
 
 export async function POST(request: Request) {
-  const apiKey = getApiKeyFromRequest(request);
-  if (!apiKey) {
+  const { userId, error } = await getAuthUser();
+  if (error) return error;
+
+  const apiKeys = getApiKeysFromRequest(request);
+  if (!hasAnyApiKey(apiKeys)) {
     return NextResponse.json({ error: "API key required" }, { status: 401 });
   }
 
@@ -23,10 +27,11 @@ export async function POST(request: Request) {
   };
 
   const systemPrompt = buildVoiceInterpretationPrompt(interpreterContext);
-  const anthropic = getAnthropicClient(apiKey);
+  const voiceModelId = model || MODELS.chat;
+  const modelInstance = getModelInstance(voiceModelId, apiKeys);
 
   const { text } = await generateText({
-    model: anthropic(model || MODELS.chat),
+    model: modelInstance,
     system: systemPrompt,
     prompt: transcript,
   });

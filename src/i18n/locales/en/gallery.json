@@ -1,0 +1,35 @@
+{
+  "title": "Course Gallery",
+  "subtitle": "Browse and clone community courses",
+  "search": "Search courses...",
+  "filters": {
+    "subject": "Subject",
+    "topic": "Topic",
+    "difficulty": "Difficulty",
+    "sort": "Sort by",
+    "allSubjects": "All Subjects",
+    "allTopics": "All Topics",
+    "allDifficulties": "All Difficulties",
+    "sortRecent": "Most Recent",
+    "sortStars": "Highest Rated",
+    "sortClones": "Most Cloned"
+  },
+  "card": {
+    "by": "by",
+    "lessons": "{{count}} lessons",
+    "clone": "Clone to My Courses",
+    "cloning": "Cloning...",
+    "cloned": "Course cloned!",
+    "loginToClone": "Log in to clone",
+    "featured": "Featured",
+    "rating": "{{rating}} / 5",
+    "cloneCount": "{{count}} clones"
+  },
+  "empty": "No courses found. Check back later!",
+  "loading": "Loading courses...",
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {{current}} of {{total}}"
+  }
+}

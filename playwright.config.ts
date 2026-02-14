@@ -33,6 +33,8 @@ export default defineConfig({
     env: {
       DATABASE_URL: `file:${E2E_DB}`,
       NEXT_TEST_MODE: "1",
+      AUTH_DEV_BYPASS: "true",
+      AUTH_SECRET: "e2e-test-secret-at-least-32-chars-long",
     },
   },
 });

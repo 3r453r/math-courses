@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useMemo, use } from "react";
 import { useRouter } from "next/navigation";
-import { useAppStore } from "@/stores/appStore";
+import { useAppStore, useHasAnyApiKey } from "@/stores/appStore";
 import { useHydrated } from "@/stores/useHydrated";
+import { useApiHeaders } from "@/hooks/useApiHeaders";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,9 +17,14 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { NotebookPanel } from "@/components/notebook";
 import { MathMarkdown } from "@/components/lesson/MathMarkdown";
-import { evaluateCourseCompletion } from "@/lib/quiz/courseCompletion";
+import { ExportDialog, ShareDialog } from "@/components/export";
+import { evaluateCourseCompletion, DEFAULT_THRESHOLDS } from "@/lib/quiz/courseCompletion";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
@@ -95,28 +101,34 @@ export default function CourseOverviewPage({
   params: Promise<{ courseId: string }>;
 }) {
   const { courseId } = use(params);
-  const { t } = useTranslation(["courseOverview", "common", "notebook"]);
+  const { t } = useTranslation(["courseOverview", "common", "notebook", "export"]);
   const router = useRouter();
   const hydrated = useHydrated();
-  const apiKey = useAppStore((s) => s.apiKey);
+  const hasAnyApiKey = useHasAnyApiKey();
+  const generationModel = useAppStore((s) => s.generationModel);
+  const apiHeaders = useApiHeaders();
   const notebookOpen = useAppStore((s) => s.notebookOpen);
   const setNotebookOpen = useAppStore((s) => s.setNotebookOpen);
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [editingContextDoc, setEditingContextDoc] = useState(false);
   const [contextDocDraft, setContextDocDraft] = useState("");
   const [savingContextDoc, setSavingContextDoc] = useState(false);
   const [generatingSummary, setGeneratingSummary] = useState(false);
+  const [editingThresholds, setEditingThresholds] = useState(false);
+  const [savingThresholds, setSavingThresholds] = useState(false);
+  const [draftPassThreshold, setDraftPassThreshold] = useState(80);
+  const [draftNoLessonCanFail, setDraftNoLessonCanFail] = useState(true);
+  const [draftLessonFailureThreshold, setDraftLessonFailureThreshold] = useState(50);
+  const [draftWeights, setDraftWeights] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!apiKey) {
-      router.push("/setup");
-      return;
-    }
     fetchCourse();
-  }, [hydrated, apiKey, courseId, router]);
+  }, [hydrated, courseId]);
 
   async function fetchCourse() {
     try {
@@ -252,10 +264,8 @@ export default function CourseOverviewPage({
     try {
       const res = await fetch(`/api/courses/${courseId}/completion-summary`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey || "",
-        },
+        headers: apiHeaders,
+        body: JSON.stringify({ model: generationModel }),
       });
       if (!res.ok) throw new Error("Failed to generate summary");
       router.push(`/courses/${courseId}/completion`);
@@ -263,6 +273,65 @@ export default function CourseOverviewPage({
       toast.error(err instanceof Error ? err.message : "Failed to generate summary");
     } finally {
       setGeneratingSummary(false);
+    }
+  }
+
+  function enterThresholdsEditMode() {
+    setDraftPassThreshold(Math.round((course!.passThreshold ?? DEFAULT_THRESHOLDS.passThreshold) * 100));
+    setDraftNoLessonCanFail(course!.noLessonCanFail ?? DEFAULT_THRESHOLDS.noLessonCanFail);
+    setDraftLessonFailureThreshold(Math.round((course!.lessonFailureThreshold ?? DEFAULT_THRESHOLDS.lessonFailureThreshold) * 100));
+    const weights: Record<string, number> = {};
+    for (const l of course!.lessons) {
+      weights[l.id] = l.weight ?? 1.0;
+    }
+    setDraftWeights(weights);
+    setEditingThresholds(true);
+  }
+
+  function handleResetDefaults() {
+    setDraftPassThreshold(Math.round(DEFAULT_THRESHOLDS.passThreshold * 100));
+    setDraftNoLessonCanFail(DEFAULT_THRESHOLDS.noLessonCanFail);
+    setDraftLessonFailureThreshold(Math.round(DEFAULT_THRESHOLDS.lessonFailureThreshold * 100));
+    const weights: Record<string, number> = {};
+    for (const l of course!.lessons) {
+      weights[l.id] = 1.0;
+    }
+    setDraftWeights(weights);
+  }
+
+  async function handleSaveThresholds() {
+    setSavingThresholds(true);
+    try {
+      const res = await fetch(`/api/courses/${courseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          passThreshold: draftPassThreshold / 100,
+          noLessonCanFail: draftNoLessonCanFail,
+          lessonFailureThreshold: draftLessonFailureThreshold / 100,
+          lessonWeights: draftWeights,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to save");
+      setCourse((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          passThreshold: draftPassThreshold / 100,
+          noLessonCanFail: draftNoLessonCanFail,
+          lessonFailureThreshold: draftLessonFailureThreshold / 100,
+          lessons: prev.lessons.map((l) => ({
+            ...l,
+            weight: draftWeights[l.id] ?? l.weight,
+          })),
+        };
+      });
+      setEditingThresholds(false);
+      toast.success(t("courseOverview:settingsSaved"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("courseOverview:failedToSave"));
+    } finally {
+      setSavingThresholds(false);
     }
   }
 
@@ -295,6 +364,26 @@ export default function CourseOverviewPage({
             <h1 className="text-xl font-bold">{course.title}</h1>
             <p className="text-sm text-muted-foreground">{course.description}</p>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setExportDialogOpen(true)}
+          >
+            <svg className="size-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            {t("export:export")}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShareDialogOpen(true)}
+          >
+            <svg className="size-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+            </svg>
+            {t("export:share")}
+          </Button>
           <Button
             variant={notebookOpen ? "secondary" : "outline"}
             size="sm"
@@ -458,7 +547,18 @@ export default function CourseOverviewPage({
             {course.status === "ready" && totalLessons > 0 && (
               <Card className="mb-8">
                 <CardHeader>
-                  <CardTitle className="text-base">{t("courseOverview:courseProgress")}</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">{t("courseOverview:courseProgress")}</CardTitle>
+                    {!editingThresholds && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={enterThresholdsEditMode}
+                      >
+                        {t("courseOverview:editSettings")}
+                      </Button>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -504,12 +604,17 @@ export default function CourseOverviewPage({
                         </p>
                         <Button
                           onClick={handleGenerateCompletionSummary}
-                          disabled={generatingSummary}
+                          disabled={generatingSummary || !hasAnyApiKey}
                         >
                           {generatingSummary
                             ? t("courseOverview:generatingSummary")
                             : t("courseOverview:generateCompletionSummary")}
                         </Button>
+                        {!hasAnyApiKey && (
+                          <p className="text-xs text-muted-foreground">
+                            {t("common:apiKeyRequiredHint")}
+                          </p>
+                        )}
                       </div>
                     )}
                     {course.completionSummary && (
@@ -521,6 +626,124 @@ export default function CourseOverviewPage({
                           {t("courseOverview:viewCompletionSummary")}
                         </Button>
                       </div>
+                    )}
+
+                    {/* Editable completion settings */}
+                    {editingThresholds && (
+                      <>
+                        <Separator className="my-4" />
+                        <div className="space-y-5">
+                          {/* Pass Threshold */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label>{t("courseOverview:passThresholdLabel")}</Label>
+                              <span className="text-sm font-medium tabular-nums">{draftPassThreshold}%</span>
+                            </div>
+                            <Slider
+                              value={[draftPassThreshold]}
+                              onValueChange={([v]) => setDraftPassThreshold(v)}
+                              min={50}
+                              max={100}
+                              step={5}
+                            />
+                            <p className="text-xs text-muted-foreground">{t("courseOverview:passThresholdNote")}</p>
+                          </div>
+
+                          {/* No Lesson Can Fail */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="no-lesson-fail-switch">{t("courseOverview:noLessonCanFailLabel")}</Label>
+                              <Switch
+                                id="no-lesson-fail-switch"
+                                checked={draftNoLessonCanFail}
+                                onCheckedChange={setDraftNoLessonCanFail}
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground">{t("courseOverview:noLessonCanFailNote")}</p>
+                          </div>
+
+                          {/* Lesson Failure Threshold — only shown when noLessonCanFail is on */}
+                          {draftNoLessonCanFail && (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <Label>{t("courseOverview:lessonFailureThresholdLabel")}</Label>
+                                <span className="text-sm font-medium tabular-nums">{draftLessonFailureThreshold}%</span>
+                              </div>
+                              <Slider
+                                value={[draftLessonFailureThreshold]}
+                                onValueChange={([v]) => setDraftLessonFailureThreshold(v)}
+                                min={20}
+                                max={80}
+                                step={5}
+                              />
+                              <p className="text-xs text-muted-foreground">{t("courseOverview:lessonFailureThresholdNote")}</p>
+                            </div>
+                          )}
+
+                          {/* Lesson Weights */}
+                          <div className="space-y-2">
+                            <Label>{t("courseOverview:lessonWeightsLabel")}</Label>
+                            <div className="rounded-md border">
+                              {course.lessons.map((lesson, idx) => (
+                                <div
+                                  key={lesson.id}
+                                  className={`flex items-center gap-3 px-3 py-2 ${idx > 0 ? "border-t" : ""}`}
+                                >
+                                  <span className="text-xs font-mono text-muted-foreground w-6 shrink-0">
+                                    {lesson.orderIndex}
+                                  </span>
+                                  <span className="flex-1 text-sm truncate min-w-0">
+                                    {lesson.title}
+                                  </span>
+                                  {lesson.quizzes?.[0]?.attempts?.[0] && (
+                                    <Badge
+                                      variant={
+                                        lesson.quizzes[0].attempts[0].score >= 0.8
+                                          ? "default"
+                                          : lesson.quizzes[0].attempts[0].score >= 0.5
+                                            ? "secondary"
+                                            : "destructive"
+                                      }
+                                      className="text-[10px] shrink-0"
+                                    >
+                                      {Math.round(lesson.quizzes[0].attempts[0].score * 100)}%
+                                    </Badge>
+                                  )}
+                                  <Input
+                                    type="number"
+                                    min={0.1}
+                                    max={5.0}
+                                    step={0.1}
+                                    value={draftWeights[lesson.id] ?? 1.0}
+                                    onChange={(e) => {
+                                      const val = parseFloat(e.target.value);
+                                      if (!isNaN(val) && val >= 0.1 && val <= 5.0) {
+                                        setDraftWeights((prev) => ({ ...prev, [lesson.id]: Math.round(val * 10) / 10 }));
+                                      }
+                                    }}
+                                    className="w-20 h-8 text-sm shrink-0"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Action buttons */}
+                          <div className="flex justify-between pt-2">
+                            <Button variant="ghost" size="sm" onClick={handleResetDefaults}>
+                              {t("courseOverview:resetToDefaults")}
+                            </Button>
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm" onClick={() => setEditingThresholds(false)}>
+                                {t("common:cancel")}
+                              </Button>
+                              <Button size="sm" disabled={savingThresholds} onClick={handleSaveThresholds}>
+                                {savingThresholds ? t("courseOverview:savingSettings") : t("common:save")}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </>
                     )}
                   </div>
                 </CardContent>
@@ -676,6 +899,17 @@ export default function CourseOverviewPage({
             </aside>
           )}
       </div>
+
+      <ExportDialog
+        courseId={courseId}
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+      />
+      <ShareDialog
+        courseId={courseId}
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+      />
     </div>
   );
 }

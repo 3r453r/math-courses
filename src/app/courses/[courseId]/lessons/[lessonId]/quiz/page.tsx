@@ -2,8 +2,9 @@
 
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
-import { useAppStore } from "@/stores/appStore";
+import { useAppStore, useHasAnyApiKey } from "@/stores/appStore";
 import { useHydrated } from "@/stores/useHydrated";
+import { useApiHeaders } from "@/hooks/useApiHeaders";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -41,7 +42,9 @@ export default function LessonQuizPage({
   const { t } = useTranslation(["quiz", "common", "lesson"]);
   const router = useRouter();
   const hydrated = useHydrated();
-  const { apiKey, generationModel } = useAppStore();
+  const hasAnyApiKey = useHasAnyApiKey();
+  const generationModel = useAppStore((s) => s.generationModel);
+  const apiHeaders = useApiHeaders();
 
   const [lesson, setLesson] = useState<LessonData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,12 +58,8 @@ export default function LessonQuizPage({
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!apiKey) {
-      router.push("/setup");
-      return;
-    }
     fetchData();
-  }, [hydrated, apiKey, lessonId, router]);
+  }, [hydrated, lessonId]);
 
   async function fetchData() {
     try {
@@ -119,15 +118,12 @@ export default function LessonQuizPage({
   }
 
   async function handleGenerate() {
-    if (!apiKey) return;
+    if (!hasAnyApiKey) return;
     setGenerating(true);
     try {
       const res = await fetch("/api/generate/quiz", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-        },
+        headers: apiHeaders,
         body: JSON.stringify({
           lessonId,
           courseId,
@@ -172,15 +168,12 @@ export default function LessonQuizPage({
   }
 
   async function handleRegenerateLesson() {
-    if (!apiKey || !result) return;
+    if (!hasAnyApiKey || !result) return;
     setRegenerating(true);
     try {
       const res = await fetch("/api/generate/lesson", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-        },
+        headers: apiHeaders,
         body: JSON.stringify({
           lessonId,
           courseId,
@@ -247,7 +240,7 @@ export default function LessonQuizPage({
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">
-              <Button onClick={handleGenerate} disabled={generating}>
+              <Button onClick={handleGenerate} disabled={generating || !hasAnyApiKey}>
                 {generating ? (
                   <>
                     <span className="animate-spin mr-2">&#9696;</span>
@@ -257,6 +250,11 @@ export default function LessonQuizPage({
                   t("quiz:generateQuiz")
                 )}
               </Button>
+              {!hasAnyApiKey && (
+                <p className="text-xs text-muted-foreground">
+                  {t("common:apiKeyRequiredHint")}
+                </p>
+              )}
             </CardContent>
           </Card>
         ) : result ? (

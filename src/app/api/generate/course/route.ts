@@ -1,14 +1,18 @@
 import { generateObject } from "ai";
-import { getAnthropicClient, getApiKeyFromRequest, MODELS } from "@/lib/ai/client";
+import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
 import { courseStructureSchema } from "@/lib/ai/schemas/courseSchema";
 import { buildCourseStructurePrompt } from "@/lib/ai/prompts/courseStructure";
 import { mockCourseStructure } from "@/lib/ai/mockData";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
 
 export async function POST(request: Request) {
-  const apiKey = getApiKeyFromRequest(request);
-  if (!apiKey) {
+  const { userId, error } = await getAuthUser();
+  if (error) return error;
+
+  const apiKeys = getApiKeysFromRequest(request);
+  if (!hasAnyApiKey(apiKeys)) {
     return NextResponse.json({ error: "API key required" }, { status: 401 });
   }
 
@@ -25,6 +29,12 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
     const { courseId, topic, description, focusAreas, lessonCount, difficulty } = body;
+
+    // Verify course ownership if courseId provided
+    if (courseId) {
+      const { error: ownershipError } = await verifyCourseOwnership(courseId, userId);
+      if (ownershipError) return ownershipError;
+    }
 
     // Update course status to generating
     if (courseId) {
@@ -47,7 +57,7 @@ export async function POST(request: Request) {
     if (model === "mock") {
       courseStructure = mockCourseStructure();
     } else {
-      const anthropic = getAnthropicClient(apiKey);
+      const modelInstance = getModelInstance(model, apiKeys);
 
       const systemPrompt = buildCourseStructurePrompt({
         topic: topic || "",
@@ -59,7 +69,7 @@ export async function POST(request: Request) {
       });
 
       const { object } = await generateObject({
-        model: anthropic(model),
+        model: modelInstance,
         schema: courseStructureSchema,
         prompt: systemPrompt,
       });
@@ -74,6 +84,7 @@ export async function POST(request: Request) {
         data: {
           title: courseStructure.title,
           description: courseStructure.description,
+          subject: courseStructure.subject,
           contextDoc: courseStructure.contextDoc,
           status: "ready",
         },

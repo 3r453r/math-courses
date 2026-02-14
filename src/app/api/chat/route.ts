@@ -1,11 +1,15 @@
 import { streamText } from "ai";
-import { getAnthropicClient, getApiKeyFromRequest, MODELS } from "@/lib/ai/client";
+import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
 import { buildLanguageInstruction } from "@/lib/ai/prompts/languageInstruction";
 import { prisma } from "@/lib/db";
+import { getAuthUser, verifyLessonOwnership } from "@/lib/auth-utils";
 
 export async function POST(request: Request) {
-  const apiKey = getApiKeyFromRequest(request);
-  if (!apiKey) {
+  const { userId, error } = await getAuthUser();
+  if (error) return error;
+
+  const apiKeys = getApiKeysFromRequest(request);
+  if (!hasAnyApiKey(apiKeys)) {
     return new Response("API key required", { status: 401 });
   }
 
@@ -14,6 +18,9 @@ export async function POST(request: Request) {
   if (!lessonId) {
     return new Response("lessonId required", { status: 400 });
   }
+
+  const { error: ownershipError } = await verifyLessonOwnership(lessonId, userId);
+  if (ownershipError) return ownershipError;
 
   const lesson = await prisma.lesson.findUnique({
     where: { id: lessonId },
@@ -37,10 +44,11 @@ export async function POST(request: Request) {
     language: lesson.course.language,
   });
 
-  const anthropic = getAnthropicClient(apiKey);
+  const chatModelId = model || MODELS.chat;
+  const modelInstance = getModelInstance(chatModelId, apiKeys);
 
   const result = streamText({
-    model: anthropic(model || MODELS.chat),
+    model: modelInstance,
     system: systemPrompt,
     messages,
   });

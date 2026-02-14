@@ -2,8 +2,9 @@
 
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
-import { useAppStore } from "@/stores/appStore";
+import { useAppStore, useHasAnyApiKey } from "@/stores/appStore";
 import { useHydrated } from "@/stores/useHydrated";
+import { useApiHeaders } from "@/hooks/useApiHeaders";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -54,7 +55,9 @@ export default function DiagnosticPage({
   const { t } = useTranslation(["diagnostic", "quiz", "common"]);
   const router = useRouter();
   const hydrated = useHydrated();
-  const { apiKey, generationModel } = useAppStore();
+  const hasAnyApiKey = useHasAnyApiKey();
+  const generationModel = useAppStore((s) => s.generationModel);
+  const apiHeaders = useApiHeaders();
 
   const [courseTitle, setCourseTitle] = useState("");
   const [diagnosticId, setDiagnosticId] = useState<string | null>(null);
@@ -69,12 +72,8 @@ export default function DiagnosticPage({
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!apiKey) {
-      router.push("/setup");
-      return;
-    }
     fetchData();
-  }, [hydrated, apiKey, courseId, router]);
+  }, [hydrated, courseId]);
 
   function mapDiagnosticQuestions(raw: DiagnosticQuestion[]): QuizQuestion[] {
     return raw.map((q) => ({
@@ -145,15 +144,12 @@ export default function DiagnosticPage({
   }
 
   async function handleGenerate() {
-    if (!apiKey) return;
+    if (!hasAnyApiKey) return;
     setGenerating(true);
     try {
       const res = await fetch("/api/generate/diagnostic", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-        },
+        headers: apiHeaders,
         body: JSON.stringify({
           courseId,
           model: generationModel,
@@ -267,7 +263,7 @@ export default function DiagnosticPage({
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">
-              <Button onClick={handleGenerate} disabled={generating}>
+              <Button onClick={handleGenerate} disabled={generating || !hasAnyApiKey}>
                 {generating ? (
                   <>
                     <span className="animate-spin mr-2">&#9696;</span>
@@ -277,6 +273,11 @@ export default function DiagnosticPage({
                   t("diagnostic:generateDiagnosticQuiz")
                 )}
               </Button>
+              {!hasAnyApiKey && (
+                <p className="text-xs text-muted-foreground">
+                  {t("common:apiKeyRequiredHint")}
+                </p>
+              )}
               <Button
                 variant="ghost"
                 onClick={() => router.push(`/courses/${courseId}`)}

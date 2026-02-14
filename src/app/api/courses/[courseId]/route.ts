@@ -1,12 +1,19 @@
 import { prisma } from "@/lib/db";
+import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ courseId: string }> }
 ) {
+  const { userId, error: authError } = await getAuthUser();
+  if (authError) return authError;
+
   try {
     const { courseId } = await params;
+    const { error: ownerError } = await verifyCourseOwnership(courseId, userId);
+    if (ownerError) return ownerError;
+
     const course = await prisma.course.findUnique({
       where: { id: courseId },
       include: {
@@ -54,8 +61,13 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ courseId: string }> }
 ) {
+  const { userId, error: authError } = await getAuthUser();
+  if (authError) return authError;
+
   try {
     const { courseId } = await params;
+    const { error: ownerError } = await verifyCourseOwnership(courseId, userId);
+    if (ownerError) return ownerError;
     const body = await request.json();
     const { contextDoc, passThreshold, noLessonCanFail, lessonFailureThreshold, lessonWeights } = body;
 
@@ -99,8 +111,13 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ courseId: string }> }
 ) {
+  const { userId, error: authError } = await getAuthUser();
+  if (authError) return authError;
+
   try {
     const { courseId } = await params;
+    const { error: ownerError } = await verifyCourseOwnership(courseId, userId);
+    if (ownerError) return ownerError;
     await prisma.course.delete({ where: { id: courseId } });
     return NextResponse.json({ success: true });
   } catch (error) {

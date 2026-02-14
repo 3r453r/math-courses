@@ -9,5 +9,7 @@
   "viewProgress": "Progress",
   "completedBadge": "Completed",
   "lessonsCompleted": "{{completed}}/{{total}} lessons",
-  "avgScore": "Avg: {{score}}%"
+  "avgScore": "Avg: {{score}}%",
+  "joinDiscord": "Discord",
+  "gallery": "Gallery"
 }

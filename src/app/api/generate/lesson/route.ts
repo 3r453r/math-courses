@@ -1,14 +1,18 @@
 import { generateObject } from "ai";
-import { getAnthropicClient, getApiKeyFromRequest, MODELS } from "@/lib/ai/client";
+import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
 import { mockLessonContent, mockQuiz } from "@/lib/ai/mockData";
 import { lessonWithQuizSchema } from "@/lib/ai/schemas/lessonWithQuizSchema";
 import { buildLanguageInstruction } from "@/lib/ai/prompts/languageInstruction";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
 
 export async function POST(request: Request) {
-  const apiKey = getApiKeyFromRequest(request);
-  if (!apiKey) {
+  const { userId, error } = await getAuthUser();
+  if (error) return error;
+
+  const apiKeys = getApiKeysFromRequest(request);
+  if (!hasAnyApiKey(apiKeys)) {
     return NextResponse.json({ error: "API key required" }, { status: 401 });
   }
 
@@ -21,6 +25,10 @@ export async function POST(request: Request) {
     if (!lessonId || !courseId) {
       return NextResponse.json({ error: "lessonId and courseId required" }, { status: 400 });
     }
+
+    // Verify course ownership
+    const { error: ownershipError } = await verifyCourseOwnership(courseId, userId);
+    if (ownershipError) return ownershipError;
 
     // Get lesson and course info
     const lesson = await prisma.lesson.findUnique({
@@ -52,7 +60,7 @@ export async function POST(request: Request) {
       lessonContent = mockLessonContent();
       quizContent = mockQuiz();
     } else {
-      const anthropic = getAnthropicClient(apiKey);
+      const modelInstance = getModelInstance(model, apiKeys);
 
       const prerequisiteSummaries = lesson.dependsOn
         .map((e) => `- ${e.fromLesson.title}: ${e.fromLesson.summary}`)
@@ -110,7 +118,7 @@ For the quiz: include a higher proportion of questions (at least 50%) targeting 
       prompt += buildLanguageInstruction(lesson.course.language);
 
       const { object } = await generateObject({
-        model: anthropic(model),
+        model: modelInstance,
         schema: lessonWithQuizSchema,
         prompt,
       });

@@ -26,5 +26,16 @@
   "weightedScore": "Wynik ważony",
   "blockedByFailedLesson": "{{count}} lekcja(e) z wynikiem poniżej {{threshold}}%. Wszystkie lekcje muszą być zaliczone.",
   "weight": "Waga",
-  "coursePassed": "Kurs zaliczony!"
+  "coursePassed": "Kurs zaliczony!",
+  "editSettings": "Edytuj ustawienia",
+  "passThresholdLabel": "Próg zaliczenia",
+  "passThresholdNote": "Minimalny wynik ważony wymagany do zaliczenia kursu.",
+  "noLessonCanFailLabel": "Żadna lekcja nie może nie zdać",
+  "noLessonCanFailNote": "Gdy włączone, każda lekcja musi przekroczyć próg niezaliczenia.",
+  "lessonFailureThresholdLabel": "Próg niezaliczenia lekcji",
+  "lessonFailureThresholdNote": "Minimalny wynik każdej lekcji, gdy opcja \"żadna lekcja nie może nie zdać\" jest włączona.",
+  "lessonWeightsLabel": "Wagi lekcji",
+  "resetToDefaults": "Przywróć domyślne",
+  "settingsSaved": "Ustawienia zaliczenia zapisane",
+  "savingSettings": "Zapisywanie..."
 }

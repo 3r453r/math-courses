@@ -1,11 +1,15 @@
 import { prisma } from "@/lib/db";
 import { evaluateCourseCompletion } from "@/lib/quiz/courseCompletion";
+import { getAuthUser } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 
 export async function GET() {
+  const { userId, error } = await getAuthUser();
+  if (error) return error;
+
   try {
     const courses = await prisma.course.findMany({
-      where: { status: "ready" },
+      where: { status: "ready", userId },
       orderBy: { createdAt: "desc" },
       include: {
         lessons: {

@@ -1,0 +1,35 @@
+{
+  "title": "Uzyskaj pełny dostęp",
+  "subtitle": "Jednorazowa opłata. Dożywotni dostęp. Własny klucz API.",
+  "price": "{{amount}} {{currency}}",
+  "features": {
+    "title": "Co otrzymujesz",
+    "generate": "Generuj nieograniczone kursy AI",
+    "clone": "Klonuj kursy społeczności",
+    "quiz": "Quizy i diagnostyki generowane przez AI",
+    "chat": "Czat z tutorem AI do każdej lekcji",
+    "export": "Eksportuj i udostępniaj kursy",
+    "gallery": "Przeglądaj i oceniaj galerię kursów"
+  },
+  "byok": {
+    "title": "Własny klucz API",
+    "description": "Dostarczasz własny klucz Anthropic API do generowania AI. Dzięki temu platforma jest bezkosztowa, a Ty masz pełną kontrolę nad wykorzystaniem i rozliczeniami."
+  },
+  "cta": "Kup dostęp",
+  "processing": "Przetwarzanie...",
+  "haveCode": "Masz kod dostępu?",
+  "redeemLink": "Aktywuj tutaj",
+  "paymentMethods": "Obsługuje karty, BLIK i inne",
+  "success": {
+    "title": "Płatność zakończona!",
+    "description": "Twoje konto zostało aktywowane. Witaj na platformie!",
+    "goToDashboard": "Przejdź do panelu",
+    "goToSetup": "Ustaw klucz API"
+  },
+  "cancel": {
+    "title": "Płatność anulowana",
+    "description": "Płatność nie została zrealizowana. Nie pobrano żadnych opłat.",
+    "tryAgain": "Spróbuj ponownie",
+    "goBack": "Wróć"
+  }
+}

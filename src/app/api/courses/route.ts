@@ -1,10 +1,15 @@
 import { prisma } from "@/lib/db";
 import { evaluateCourseCompletion } from "@/lib/quiz/courseCompletion";
+import { getAuthUser } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 
 export async function GET() {
+  const { userId, error } = await getAuthUser();
+  if (error) return error;
+
   try {
     const courses = await prisma.course.findMany({
+      where: { userId },
       orderBy: { createdAt: "desc" },
       include: {
         _count: { select: { lessons: true } },
@@ -59,6 +64,7 @@ export async function GET() {
         description: course.description,
         topic: course.topic,
         difficulty: course.difficulty,
+        language: course.language,
         status: course.status,
         createdAt: course.createdAt,
         _count: course._count,
@@ -82,6 +88,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const { userId, error: authError } = await getAuthUser();
+  if (authError) return authError;
+
   try {
     const body = await request.json();
     const {
@@ -91,6 +100,7 @@ export async function POST(request: Request) {
 
     const course = await prisma.course.create({
       data: {
+        userId,
         title,
         description,
         topic,

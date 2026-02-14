@@ -1,0 +1,35 @@
+{
+  "title": "Get Full Access",
+  "subtitle": "One-time payment. Lifetime access. Bring your own API key.",
+  "price": "{{amount}} {{currency}}",
+  "features": {
+    "title": "What you get",
+    "generate": "Generate unlimited AI courses",
+    "clone": "Clone community courses",
+    "quiz": "AI-generated quizzes & diagnostics",
+    "chat": "AI tutor chat for every lesson",
+    "export": "Export & share your courses",
+    "gallery": "Browse & rate the course gallery"
+  },
+  "byok": {
+    "title": "Bring Your Own Key",
+    "description": "You provide your own Anthropic API key for AI generation. This keeps the platform cost-free for us and gives you full control over your usage and billing."
+  },
+  "cta": "Get Access Now",
+  "processing": "Processing...",
+  "haveCode": "Have an access code?",
+  "redeemLink": "Redeem it here",
+  "paymentMethods": "Supports credit cards, BLIK, and more",
+  "success": {
+    "title": "Payment Successful!",
+    "description": "Your account has been activated. Welcome to the platform!",
+    "goToDashboard": "Go to Dashboard",
+    "goToSetup": "Set Up API Key"
+  },
+  "cancel": {
+    "title": "Payment Cancelled",
+    "description": "Your payment was not completed. No charges were made.",
+    "tryAgain": "Try Again",
+    "goBack": "Go Back"
+  }
+}

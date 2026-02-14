@@ -7,11 +7,76 @@ datasource db {
   provider = "sqlite"
 }
 
+// ── Auth.js models ──────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  encryptedApiKeys String?
+  role            String    @default("user")
+  accessStatus    String    @default("pending")
+  accessGrantedAt DateTime?
+  accessSource    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts            Account[]
+  sessions            Session[]
+  courses             Course[]
+  accessCodeRedemptions AccessCodeRedemption[]
+  courseRatings        CourseRating[]
+  payments            Payment[]
+  createdAccessCodes  AccessCode[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ── Application models ──────────────────────────────────────────
+
 model Course {
   id                String   @id @default(cuid())
+  userId            String
   title             String
   description       String
   topic             String
+  subject           String   @default("Other")
   focusAreas        String   @default("[]")
   targetLessonCount Int      @default(10)
   difficulty        String   @default("intermediate")
@@ -24,11 +89,17 @@ model Course {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  clonedFromId      String?
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   lessons           Lesson[]
   edges             CourseEdge[]
   notes             Note[]
   diagnosticQuiz    DiagnosticQuiz?
   completionSummary CourseCompletionSummary?
+  shares            CourseShare[]
+
+  @@index([userId])
 }
 
 model Lesson {
@@ -167,4 +238,83 @@ model CourseCompletionSummary {
   completedAt        DateTime @default(now())
 
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model CourseShare {
+  id         String    @id @default(cuid())
+  courseId    String
+  shareToken String    @unique
+  isActive   Boolean   @default(true)
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  // Gallery fields
+  isGalleryListed    Boolean   @default(false)
+  galleryTitle       String?
+  galleryDescription String?
+  tags               String    @default("[]")
+  starCount          Int       @default(0)
+  cloneCount         Int       @default(0)
+  featuredAt         DateTime?
+
+  course  Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  ratings CourseRating[]
+
+  @@index([courseId])
+}
+
+// ── Access & Payment models ──────────────────────────────────────
+
+model AccessCode {
+  id         String    @id @default(cuid())
+  code       String    @unique
+  type       String    @default("general")
+  maxUses    Int       @default(1)
+  currentUses Int      @default(0)
+  isActive   Boolean   @default(true)
+  expiresAt  DateTime?
+  createdBy  String?
+  createdAt  DateTime  @default(now())
+
+  creator     User?                 @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  redemptions AccessCodeRedemption[]
+}
+
+model AccessCodeRedemption {
+  id           String   @id @default(cuid())
+  accessCodeId String
+  userId       String
+  redeemedAt   DateTime @default(now())
+
+  accessCode AccessCode @relation(fields: [accessCodeId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([accessCodeId, userId])
+}
+
+model CourseRating {
+  id            String   @id @default(cuid())
+  courseShareId  String
+  userId        String
+  rating        Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  courseShare CourseShare @relation(fields: [courseShareId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseShareId, userId])
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  userId          String
+  stripeSessionId String   @unique
+  amount          Int
+  currency        String
+  status          String
+  accessCodeId    String?
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

@@ -1,0 +1,11 @@
+{
+  "title": "Redeem Access Code",
+  "description": "Enter your access code to unlock full platform access.",
+  "codePlaceholder": "Enter access code",
+  "submit": "Redeem Code",
+  "submitting": "Redeeming...",
+  "success": "Access granted! Redirecting...",
+  "orPurchase": "Don't have a code?",
+  "getPricing": "View Pricing",
+  "alreadyActive": "Your account is already active."
+}

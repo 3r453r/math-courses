@@ -16,6 +16,11 @@ FOCUS AREAS: ${params.focusAreas.join(", ") || "General coverage"}
 DIFFICULTY LEVEL: ${params.difficulty}
 ${params.lessonCount ? `TARGET LESSON COUNT: ${params.lessonCount}` : "LESSON COUNT: Suggest the optimal number based on topic breadth (typically 8-20 lessons)"}
 
+SUBJECT CLASSIFICATION:
+Classify this course into the most appropriate subject from this fixed list:
+Mathematics, Physics, Computer Science, Chemistry, Biology, Engineering, Economics, Statistics, Earth Science, Other.
+Choose the single best fit based on the course topic and content.
+
 CRITICAL RULES:
 1. Lessons should form a DIRECTED ACYCLIC GRAPH, not a linear sequence.
    Some lessons can be studied in parallel if they share the same prerequisites.

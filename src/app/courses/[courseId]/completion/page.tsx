@@ -3,7 +3,6 @@
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { useAppStore } from "@/stores/appStore";
 import { useHydrated } from "@/stores/useHydrated";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,19 +54,14 @@ export default function CompletionPage({
   const { courseId } = use(params);
   const router = useRouter();
   const hydrated = useHydrated();
-  const apiKey = useAppStore((s) => s.apiKey);
   const [data, setData] = useState<CompletionData | null>(null);
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation(["completion", "common"]);
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!apiKey) {
-      router.push("/setup");
-      return;
-    }
     fetchSummary();
-  }, [hydrated, apiKey, courseId, router]);
+  }, [hydrated, courseId]);
 
   async function fetchSummary() {
     try {
@@ -96,7 +90,7 @@ export default function CompletionPage({
     router.push(`/courses/new?${params.toString()}`);
   }
 
-  if (!hydrated || !apiKey) return null;
+  if (!hydrated) return null;
 
   if (loading) {
     return (

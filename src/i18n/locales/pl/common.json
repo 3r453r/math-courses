@@ -21,5 +21,6 @@
   "saving": "Zapisywanie...",
   "language": "Język",
   "yes": "Tak",
-  "no": "Nie"
+  "no": "Nie",
+  "apiKeyRequiredHint": "Skonfiguruj klucz API w Ustawieniach, aby korzystać z tej funkcji."
 }

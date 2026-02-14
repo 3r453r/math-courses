@@ -1,12 +1,18 @@
 import { prisma } from "@/lib/db";
+import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ courseId: string; noteId: string }> }
 ) {
+  const { userId, error: authError } = await getAuthUser();
+  if (authError) return authError;
+
   try {
-    const { noteId } = await params;
+    const { courseId, noteId } = await params;
+    const { error: ownerError } = await verifyCourseOwnership(courseId, userId);
+    if (ownerError) return ownerError;
     const body = await request.json();
     const { title, content } = body as { title?: string; content?: string };
 
@@ -52,8 +58,13 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ courseId: string; noteId: string }> }
 ) {
+  const { userId, error: authError } = await getAuthUser();
+  if (authError) return authError;
+
   try {
-    const { noteId } = await params;
+    const { courseId, noteId } = await params;
+    const { error: ownerError } = await verifyCourseOwnership(courseId, userId);
+    if (ownerError) return ownerError;
 
     const note = await prisma.note.findUnique({ where: { id: noteId } });
     if (!note) {

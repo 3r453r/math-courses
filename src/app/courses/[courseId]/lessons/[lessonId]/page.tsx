@@ -2,8 +2,9 @@
 
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
-import { useAppStore } from "@/stores/appStore";
+import { useAppStore, useHasAnyApiKey } from "@/stores/appStore";
 import { useHydrated } from "@/stores/useHydrated";
+import { useApiHeaders } from "@/hooks/useApiHeaders";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -47,26 +48,21 @@ export default function LessonPage({
   const { t } = useTranslation(["lesson", "common"]);
   const router = useRouter();
   const hydrated = useHydrated();
-  const {
-    apiKey,
-    generationModel,
-    scratchpadOpen,
-    setScratchpadOpen,
-    chatSidebarOpen,
-    setChatSidebarOpen,
-  } = useAppStore();
+  const hasAnyApiKey = useHasAnyApiKey();
+  const generationModel = useAppStore((s) => s.generationModel);
+  const scratchpadOpen = useAppStore((s) => s.scratchpadOpen);
+  const setScratchpadOpen = useAppStore((s) => s.setScratchpadOpen);
+  const chatSidebarOpen = useAppStore((s) => s.chatSidebarOpen);
+  const setChatSidebarOpen = useAppStore((s) => s.setChatSidebarOpen);
+  const apiHeaders = useApiHeaders();
   const [lesson, setLesson] = useState<LessonDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!apiKey) {
-      router.push("/setup");
-      return;
-    }
     fetchLesson();
-  }, [hydrated, apiKey, lessonId, router]);
+  }, [hydrated, lessonId]);
 
   async function fetchLesson() {
     try {
@@ -85,15 +81,12 @@ export default function LessonPage({
   }
 
   async function handleGenerate() {
-    if (!apiKey || !lesson) return;
+    if (!hasAnyApiKey || !lesson) return;
     setGenerating(true);
     try {
       const res = await fetch("/api/generate/lesson", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-        },
+        headers: apiHeaders,
         body: JSON.stringify({
           lessonId: lesson.id,
           courseId,
@@ -245,7 +238,7 @@ export default function LessonPage({
                   <p className="text-sm text-muted-foreground text-center">
                     {t("lesson:generateDescription")}
                   </p>
-                  <Button onClick={handleGenerate} disabled={generating}>
+                  <Button onClick={handleGenerate} disabled={generating || !hasAnyApiKey}>
                     {generating ? (
                       <>
                         <span className="animate-spin mr-2">&#9696;</span>
@@ -255,6 +248,11 @@ export default function LessonPage({
                       t("lesson:generateLessonContent")
                     )}
                   </Button>
+                  {!hasAnyApiKey && (
+                    <p className="text-xs text-muted-foreground">
+                      {t("common:apiKeyRequiredHint")}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             ) : (
@@ -270,7 +268,7 @@ export default function LessonPage({
                     variant="outline"
                     size="sm"
                     onClick={handleGenerate}
-                    disabled={generating}
+                    disabled={generating || !hasAnyApiKey}
                   >
                     {generating ? t("lesson:regenerating") : t("lesson:regenerate")}
                   </Button>

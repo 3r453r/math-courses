@@ -30,7 +30,7 @@ export function useSpeechToText({ onResult, onRawTranscript, getEditorContext, r
   const voiceAiMode = useAppStore((s) => s.voiceAiMode);
   const voiceTriggerEnabled = useAppStore((s) => s.voiceTriggerEnabled);
   const voiceTriggerWord = useAppStore((s) => s.voiceTriggerWord);
-  const apiKey = useAppStore((s) => s.apiKey);
+  const apiKeys = useAppStore((s) => s.apiKeys);
   const chatModel = useAppStore((s) => s.chatModel);
   const managerRef = useRef<SpeechManager | null>(null);
   const [isListening, setIsListening] = useState(false);
@@ -70,8 +70,8 @@ export function useSpeechToText({ onResult, onRawTranscript, getEditorContext, r
   const voiceTriggerWordRef = useRef(voiceTriggerWord);
   voiceTriggerWordRef.current = voiceTriggerWord;
 
-  const apiKeyRef = useRef(apiKey);
-  apiKeyRef.current = apiKey;
+  const apiKeysRef = useRef(apiKeys);
+  apiKeysRef.current = apiKeys;
 
   const chatModelRef = useRef(chatModel);
   chatModelRef.current = chatModel;
@@ -93,8 +93,9 @@ export function useSpeechToText({ onResult, onRawTranscript, getEditorContext, r
     aiBufferRef.current = [];
 
     const transcript = buffer.join(" ");
-    const key = apiKeyRef.current;
-    if (!key) {
+    const keys = apiKeysRef.current;
+    const hasKey = !!(keys.anthropic || keys.openai || keys.google);
+    if (!hasKey) {
       // Fall back to keyword mode if no API key
       const config = buildVoiceConfig();
       const { text, cursorOffset } = processTranscriptWithCursor(transcript, langRef.current, config);
@@ -109,7 +110,7 @@ export function useSpeechToText({ onResult, onRawTranscript, getEditorContext, r
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": key,
+          "x-api-keys": JSON.stringify(keys),
         },
         body: JSON.stringify({
           transcript,

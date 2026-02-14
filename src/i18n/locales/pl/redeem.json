@@ -1,0 +1,11 @@
+{
+  "title": "Aktywuj kod dostępu",
+  "description": "Wprowadź kod dostępu, aby odblokować pełny dostęp do platformy.",
+  "codePlaceholder": "Wprowadź kod dostępu",
+  "submit": "Aktywuj kod",
+  "submitting": "Aktywowanie...",
+  "success": "Dostęp przyznany! Przekierowywanie...",
+  "orPurchase": "Nie masz kodu?",
+  "getPricing": "Zobacz cennik",
+  "alreadyActive": "Twoje konto jest już aktywne."
+}

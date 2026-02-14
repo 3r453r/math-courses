@@ -1,14 +1,18 @@
 import { generateObject } from "ai";
-import { getAnthropicClient, getApiKeyFromRequest, MODELS } from "@/lib/ai/client";
+import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
 import { mockDiagnostic } from "@/lib/ai/mockData";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { diagnosticSchema } from "@/lib/ai/schemas/diagnosticSchema";
 import { buildDiagnosticPrompt } from "@/lib/ai/prompts/quizGeneration";
+import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
 
 export async function POST(request: Request) {
-  const apiKey = getApiKeyFromRequest(request);
-  if (!apiKey) {
+  const { userId, error } = await getAuthUser();
+  if (error) return error;
+
+  const apiKeys = getApiKeysFromRequest(request);
+  if (!hasAnyApiKey(apiKeys)) {
     return NextResponse.json({ error: "API key required" }, { status: 401 });
   }
 
@@ -21,6 +25,10 @@ export async function POST(request: Request) {
     if (!courseId) {
       return NextResponse.json({ error: "courseId required" }, { status: 400 });
     }
+
+    // Verify course ownership
+    const { error: ownershipError } = await verifyCourseOwnership(courseId, userId);
+    if (ownershipError) return ownershipError;
 
     const course = await prisma.course.findUnique({
       where: { id: courseId },
@@ -58,7 +66,7 @@ export async function POST(request: Request) {
     if (model === "mock") {
       result = mockDiagnostic();
     } else {
-      const anthropic = getAnthropicClient(apiKey);
+      const modelInstance = getModelInstance(model, apiKeys);
 
       const prompt = buildDiagnosticPrompt({
         courseTitle: course.title,
@@ -70,7 +78,7 @@ export async function POST(request: Request) {
       });
 
       const { object } = await generateObject({
-        model: anthropic(model),
+        model: modelInstance,
         schema: diagnosticSchema,
         prompt,
       });

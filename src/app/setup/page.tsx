@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "@/stores/appStore";
 import { Button } from "@/components/ui/button";
@@ -17,60 +18,214 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { MODEL_REGISTRY } from "@/lib/ai/client";
+import type { AIProvider } from "@/lib/ai/client";
+
+interface ProviderConfig {
+  id: AIProvider;
+  label: string;
+  placeholder: string;
+  helpUrl: string;
+  helpSteps: string;
+}
+
+const PROVIDERS: ProviderConfig[] = [
+  {
+    id: "anthropic",
+    label: "Anthropic (Claude)",
+    placeholder: "sk-ant-api03-...",
+    helpUrl: "https://console.anthropic.com/settings/keys",
+    helpSteps: "console.anthropic.com",
+  },
+  {
+    id: "openai",
+    label: "OpenAI (GPT)",
+    placeholder: "sk-proj-...",
+    helpUrl: "https://platform.openai.com/api-keys",
+    helpSteps: "platform.openai.com",
+  },
+  {
+    id: "google",
+    label: "Google (Gemini)",
+    placeholder: "AI...",
+    helpUrl: "https://aistudio.google.com/apikey",
+    helpSteps: "aistudio.google.com",
+  },
+];
 
 export default function SetupPage() {
   const router = useRouter();
-  const { apiKey, setApiKey, generationModel, chatModel, setGenerationModel, setChatModel, language, setLanguage } = useAppStore();
-  const { t } = useTranslation(["setup", "common"]);
-  const [key, setKey] = useState(apiKey ?? "");
-  const [testing, setTesting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const { data: session } = useSession();
+  const {
+    apiKeys,
+    setProviderApiKey,
+    generationModel,
+    chatModel,
+    setGenerationModel,
+    setChatModel,
+    language,
+    setLanguage,
+  } = useAppStore();
+  const { t } = useTranslation(["setup", "common", "login"]);
 
-  async function handleTestKey() {
-    if (!key.trim()) {
-      setError(t("setup:pleaseEnterApiKey"));
-      return;
+  // Local draft keys (one per provider)
+  const [draftKeys, setDraftKeys] = useState<Record<string, string>>({
+    anthropic: apiKeys.anthropic ?? "",
+    openai: apiKeys.openai ?? "",
+    google: apiKeys.google ?? "",
+  });
+  const [testStatus, setTestStatus] = useState<Record<string, "idle" | "testing" | "valid" | "error">>({
+    anthropic: apiKeys.anthropic ? "valid" : "idle",
+    openai: apiKeys.openai ? "valid" : "idle",
+    google: apiKeys.google ? "valid" : "idle",
+  });
+  const [testErrors, setTestErrors] = useState<Record<string, string>>({});
+  const [openProviders, setOpenProviders] = useState<Record<string, boolean>>({
+    anthropic: true,
+    openai: !apiKeys.anthropic,
+    google: !apiKeys.anthropic && !apiKeys.openai,
+  });
+  const [syncToServer, setSyncToServer] = useState(false);
+
+  // On mount, try to fetch server-side API keys if none in localStorage
+  useEffect(() => {
+    const hasAnyKey = apiKeys.anthropic || apiKeys.openai || apiKeys.google;
+    if (hasAnyKey) return;
+    fetch("/api/user/api-key")
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (data?.apiKeys) {
+          const keys = data.apiKeys as Record<string, string>;
+          for (const [provider, key] of Object.entries(keys)) {
+            if (key) {
+              setProviderApiKey(provider as AIProvider, key);
+              setDraftKeys((prev) => ({ ...prev, [provider]: key }));
+              setTestStatus((prev) => ({ ...prev, [provider]: "valid" }));
+            }
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Available models: only from providers that have a key configured
+  const configuredProviders = useMemo(() => {
+    const providers = new Set<AIProvider>();
+    if (draftKeys.anthropic?.trim()) providers.add("anthropic");
+    if (draftKeys.openai?.trim()) providers.add("openai");
+    if (draftKeys.google?.trim()) providers.add("google");
+    return providers;
+  }, [draftKeys]);
+
+  const availableModels = useMemo(() => {
+    return MODEL_REGISTRY.filter((m) => configuredProviders.has(m.provider));
+  }, [configuredProviders]);
+
+  // Group models by provider for SelectGroup
+  const modelsByProvider = useMemo(() => {
+    const groups: Record<string, typeof MODEL_REGISTRY> = {};
+    for (const model of availableModels) {
+      const key = model.provider;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(model);
     }
-    setTesting(true);
-    setError(null);
-    setSuccess(false);
+    return groups;
+  }, [availableModels]);
+
+  async function handleTestKey(provider: AIProvider) {
+    const key = draftKeys[provider]?.trim();
+    if (!key) return;
+
+    setTestStatus((prev) => ({ ...prev, [provider]: "testing" }));
+    setTestErrors((prev) => ({ ...prev, [provider]: "" }));
 
     try {
       const res = await fetch("/api/test-key", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": key.trim(),
-        },
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider, apiKey: key }),
       });
       if (res.ok) {
-        setSuccess(true);
-        setApiKey(key.trim());
+        setTestStatus((prev) => ({ ...prev, [provider]: "valid" }));
+        setProviderApiKey(provider, key);
       } else {
         const data = await res.json();
-        setError(data.error || "Invalid API key");
+        setTestStatus((prev) => ({ ...prev, [provider]: "error" }));
+        setTestErrors((prev) => ({ ...prev, [provider]: data.error || "Invalid API key" }));
       }
     } catch {
-      // If the test endpoint doesn't exist yet, just save the key
-      setApiKey(key.trim());
-      setSuccess(true);
-    } finally {
-      setTesting(false);
+      setProviderApiKey(provider, key);
+      setTestStatus((prev) => ({ ...prev, [provider]: "valid" }));
     }
   }
 
-  function handleSave() {
-    if (!key.trim()) {
-      setError(t("setup:pleaseEnterApiKey"));
-      return;
+  function handleKeyChange(provider: AIProvider, value: string) {
+    setDraftKeys((prev) => ({ ...prev, [provider]: value }));
+    setTestStatus((prev) => ({ ...prev, [provider]: "idle" }));
+    setTestErrors((prev) => ({ ...prev, [provider]: "" }));
+  }
+
+  async function handleSave() {
+    // Save all non-empty keys to store
+    for (const provider of PROVIDERS) {
+      const key = draftKeys[provider.id]?.trim();
+      if (key) {
+        setProviderApiKey(provider.id, key);
+      } else {
+        setProviderApiKey(provider.id, null);
+      }
     }
-    setApiKey(key.trim());
+
+    // Optionally sync to server
+    if (syncToServer) {
+      const keysToSync: Record<string, string> = {};
+      for (const provider of PROVIDERS) {
+        const key = draftKeys[provider.id]?.trim();
+        if (key) keysToSync[provider.id] = key;
+      }
+      if (Object.keys(keysToSync).length > 0) {
+        try {
+          await fetch("/api/user/api-key", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ apiKeys: keysToSync }),
+          });
+        } catch {
+          // Non-blocking
+        }
+      }
+    }
+
     router.push("/");
+  }
+
+  const hasAnyKey = Object.values(draftKeys).some((k) => k?.trim());
+
+  function statusIndicator(provider: AIProvider) {
+    const status = testStatus[provider];
+    switch (status) {
+      case "valid":
+        return <span className="text-xs text-green-600 font-medium">{t("setup:keyVerified")}</span>;
+      case "error":
+        return <span className="text-xs text-destructive">{testErrors[provider] || t("setup:keyInvalid")}</span>;
+      case "testing":
+        return <span className="text-xs text-muted-foreground">{t("setup:testing")}</span>;
+      default:
+        return draftKeys[provider]?.trim()
+          ? <span className="text-xs text-muted-foreground">{t("setup:keyNotTested")}</span>
+          : <span className="text-xs text-muted-foreground">{t("setup:keyNotConfigured")}</span>;
+    }
   }
 
   return (
@@ -82,35 +237,96 @@ export default function SetupPage() {
             {t("setup:description")}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="api-key">{t("setup:apiKeyLabel")}</Label>
-            <Input
-              id="api-key"
-              type="password"
-              placeholder="sk-ant-api03-..."
-              value={key}
-              onChange={(e) => {
-                setKey(e.target.value);
-                setError(null);
-                setSuccess(false);
-              }}
-            />
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            {success && <p className="text-sm text-green-600">{t("setup:keySaved")}</p>}
-          </div>
+        <CardContent className="space-y-4">
+          {/* Provider cards */}
+          {PROVIDERS.map((provider) => (
+            <Collapsible
+              key={provider.id}
+              open={openProviders[provider.id]}
+              onOpenChange={(open) => setOpenProviders((prev) => ({ ...prev, [provider.id]: open }))}
+            >
+              <div className="rounded-lg border">
+                <CollapsibleTrigger asChild>
+                  <button className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors text-left">
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium text-sm">{provider.label}</span>
+                      {statusIndicator(provider.id)}
+                    </div>
+                    <svg
+                      className={`size-4 text-muted-foreground transition-transform ${openProviders[provider.id] ? "rotate-180" : ""}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="px-4 pb-4 pt-1 space-y-3 border-t">
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`key-${provider.id}`} className="text-xs">
+                        {t("setup:apiKeyLabel")}
+                      </Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id={`key-${provider.id}`}
+                          type="password"
+                          placeholder={provider.placeholder}
+                          value={draftKeys[provider.id] || ""}
+                          onChange={(e) => handleKeyChange(provider.id, e.target.value)}
+                          className="text-sm"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleTestKey(provider.id)}
+                          disabled={!draftKeys[provider.id]?.trim() || testStatus[provider.id] === "testing"}
+                        >
+                          {testStatus[provider.id] === "testing" ? t("setup:testing") : t("setup:testKey")}
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {t("setup:getApiKeyFrom")}{" "}
+                      <a
+                        href={provider.helpUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline text-foreground"
+                      >
+                        {provider.helpSteps}
+                      </a>
+                    </p>
+                  </div>
+                </CollapsibleContent>
+              </div>
+            </Collapsible>
+          ))}
 
-          <div className="space-y-2">
+          {/* Model selection */}
+          <div className="space-y-2 pt-2">
             <Label htmlFor="gen-model">{t("setup:generationModelLabel")}</Label>
             <Select value={generationModel} onValueChange={setGenerationModel}>
               <SelectTrigger id="gen-model">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="claude-opus-4-20250514">{t("setup:opus")}</SelectItem>
-                <SelectItem value="claude-sonnet-4-20250514">{t("setup:sonnet")}</SelectItem>
-                <SelectItem value="claude-haiku-4-20250514">{t("setup:haiku")}</SelectItem>
-                <SelectItem value="mock">{t("setup:mock")}</SelectItem>
+                {Object.entries(modelsByProvider).map(([provider, models]) => (
+                  <SelectGroup key={provider}>
+                    <SelectLabel className="capitalize">{provider}</SelectLabel>
+                    {models.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                ))}
+                <SelectGroup>
+                  <SelectLabel>{t("setup:other")}</SelectLabel>
+                  <SelectItem value="mock">{t("setup:mock")}</SelectItem>
+                </SelectGroup>
               </SelectContent>
             </Select>
           </div>
@@ -122,9 +338,16 @@ export default function SetupPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="claude-opus-4-20250514">{t("setup:opus")}</SelectItem>
-                <SelectItem value="claude-sonnet-4-20250514">{t("setup:sonnet")}</SelectItem>
-                <SelectItem value="claude-haiku-4-20250514">{t("setup:haiku")}</SelectItem>
+                {Object.entries(modelsByProvider).map(([provider, models]) => (
+                  <SelectGroup key={provider}>
+                    <SelectLabel className="capitalize">{provider}</SelectLabel>
+                    {models.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -143,26 +366,61 @@ export default function SetupPage() {
             <p className="text-xs text-muted-foreground">{t("setup:languageDescription")}</p>
           </div>
 
+          <div className="flex items-center gap-2">
+            <input
+              id="sync-key"
+              type="checkbox"
+              checked={syncToServer}
+              onChange={(e) => setSyncToServer(e.target.checked)}
+              className="h-4 w-4 rounded border-border"
+            />
+            <Label htmlFor="sync-key" className="text-sm font-normal">
+              {t("setup:syncApiKey")}
+            </Label>
+          </div>
+
           <div className="flex gap-3">
-            <Button variant="outline" onClick={handleTestKey} disabled={testing}>
-              {testing ? t("setup:testing") : t("setup:testKey")}
-            </Button>
-            <Button onClick={handleSave} disabled={!key.trim()}>
+            <Button onClick={handleSave}>
               {t("setup:saveAndContinue")}
             </Button>
           </div>
 
-          <p className="text-xs text-muted-foreground">
-            {t("setup:getApiKeyFrom")}{" "}
-            <a
-              href="https://console.anthropic.com/settings/keys"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline"
-            >
-              console.anthropic.com
-            </a>
-          </p>
+          {!hasAnyKey && (
+            <p className="text-xs text-muted-foreground">
+              {t("setup:configureAtLeastOne")}
+            </p>
+          )}
+
+          {process.env.NEXT_PUBLIC_DISCORD_INVITE_URL && (
+            <div className="rounded-lg border p-3 bg-muted/30">
+              <div className="text-xs text-muted-foreground">
+                <p>{t("setup:apiKeyHelp.needHelp")}</p>
+                <a
+                  href={process.env.NEXT_PUBLIC_DISCORD_INVITE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline text-foreground"
+                >
+                  {t("setup:apiKeyHelp.discordHelp")}
+                </a>
+              </div>
+            </div>
+          )}
+
+          {session?.user && (
+            <div className="pt-4 border-t space-y-2">
+              <p className="text-sm text-muted-foreground">
+                {t("setup:signedInAs")} <strong>{session.user.name || session.user.email}</strong>
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => signOut({ callbackUrl: "/login" })}
+              >
+                {t("login:signOut")}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

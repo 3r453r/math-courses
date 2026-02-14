@@ -15,6 +15,12 @@ import enNotebook from "./locales/en/notebook.json";
 import enLessonContent from "./locales/en/lessonContent.json";
 import enProgress from "./locales/en/progress.json";
 import enCompletion from "./locales/en/completion.json";
+import enLogin from "./locales/en/login.json";
+import enExport from "./locales/en/export.json";
+import enRedeem from "./locales/en/redeem.json";
+import enAdmin from "./locales/en/admin.json";
+import enGallery from "./locales/en/gallery.json";
+import enPricing from "./locales/en/pricing.json";
 
 import plCommon from "./locales/pl/common.json";
 import plDashboard from "./locales/pl/dashboard.json";
@@ -30,6 +36,12 @@ import plNotebook from "./locales/pl/notebook.json";
 import plLessonContent from "./locales/pl/lessonContent.json";
 import plProgress from "./locales/pl/progress.json";
 import plCompletion from "./locales/pl/completion.json";
+import plLogin from "./locales/pl/login.json";
+import plExport from "./locales/pl/export.json";
+import plRedeem from "./locales/pl/redeem.json";
+import plAdmin from "./locales/pl/admin.json";
+import plGallery from "./locales/pl/gallery.json";
+import plPricing from "./locales/pl/pricing.json";
 
 i18n.use(initReactI18next).init({
   resources: {
@@ -48,6 +60,12 @@ i18n.use(initReactI18next).init({
       lessonContent: enLessonContent,
       progress: enProgress,
       completion: enCompletion,
+      login: enLogin,
+      export: enExport,
+      redeem: enRedeem,
+      admin: enAdmin,
+      gallery: enGallery,
+      pricing: enPricing,
     },
     pl: {
       common: plCommon,
@@ -64,6 +82,12 @@ i18n.use(initReactI18next).init({
       lessonContent: plLessonContent,
       progress: plProgress,
       completion: plCompletion,
+      login: plLogin,
+      export: plExport,
+      redeem: plRedeem,
+      admin: plAdmin,
+      gallery: plGallery,
+      pricing: plPricing,
     },
   },
   lng: "en",

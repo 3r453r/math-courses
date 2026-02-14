@@ -1,0 +1,12 @@
+{
+  "title": "Sign In",
+  "description": "Sign in to access your learning courses",
+  "authError": "Authentication failed. Please try again.",
+  "signInGoogle": "Sign in with Google",
+  "signInGitHub": "Sign in with GitHub",
+  "signInDiscord": "Sign in with Discord",
+  "devOnly": "Dev only",
+  "emailLabel": "Email",
+  "devSignIn": "Dev Sign In",
+  "signOut": "Sign Out"
+}

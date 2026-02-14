@@ -4,15 +4,40 @@ function prisma() {
   return getTestPrisma();
 }
 
+export const TEST_USER_ID = "test-user-id";
+
+export async function createTestUser(overrides?: {
+  id?: string;
+  email?: string;
+  name?: string;
+  role?: string;
+  accessStatus?: string;
+}) {
+  return prisma().user.create({
+    data: {
+      id: overrides?.id ?? TEST_USER_ID,
+      email: overrides?.email ?? "test@example.com",
+      name: overrides?.name ?? "Test User",
+      emailVerified: new Date(),
+      role: overrides?.role ?? "user",
+      accessStatus: overrides?.accessStatus ?? "active",
+      accessGrantedAt: new Date(),
+      accessSource: "admin_grant",
+    },
+  });
+}
+
 export async function createTestCourse(overrides?: {
   title?: string;
   topic?: string;
   status?: string;
   difficulty?: string;
   language?: string;
+  userId?: string;
 }) {
   return prisma().course.create({
     data: {
+      userId: overrides?.userId ?? TEST_USER_ID,
       title: overrides?.title ?? "Test Course",
       description: "A test course for integration testing",
       topic: overrides?.topic ?? "Mathematics",

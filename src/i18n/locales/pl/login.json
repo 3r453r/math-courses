@@ -1,0 +1,12 @@
+{
+  "title": "Zaloguj sie",
+  "description": "Zaloguj sie, aby uzyskac dostep do kursow",
+  "authError": "Uwierzytelnianie nie powiodlo sie. Sprobuj ponownie.",
+  "signInGoogle": "Zaloguj przez Google",
+  "signInGitHub": "Zaloguj przez GitHub",
+  "signInDiscord": "Zaloguj przez Discord",
+  "devOnly": "Tylko dev",
+  "emailLabel": "Email",
+  "devSignIn": "Logowanie dev",
+  "signOut": "Wyloguj"
+}

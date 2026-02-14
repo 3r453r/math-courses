@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { useAppStore } from "@/stores/appStore";
+import { useAppStore, useHasAnyApiKey } from "@/stores/appStore";
+import { useHydrated } from "@/stores/useHydrated";
+import { useApiHeaders } from "@/hooks/useApiHeaders";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,10 +29,14 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
-export default function NewCoursePage() {
+function NewCourseForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { apiKey, generationModel, language } = useAppStore();
+  const hydrated = useHydrated();
+  const hasAnyApiKey = useHasAnyApiKey();
+  const generationModel = useAppStore((s) => s.generationModel);
+  const language = useAppStore((s) => s.language);
+  const apiHeaders = useApiHeaders();
   const { t } = useTranslation(["courseNew", "common"]);
 
   // Pre-fill from search params (used by follow-up course recommendations)
@@ -84,7 +90,7 @@ export default function NewCoursePage() {
   }
 
   async function handleGenerate() {
-    if (!apiKey) {
+    if (!hasAnyApiKey) {
       router.push("/setup");
       return;
     }
@@ -123,10 +129,7 @@ export default function NewCoursePage() {
       // Step 2: Generate the course structure with AI
       const genRes = await fetch("/api/generate/course", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-        },
+        headers: apiHeaders,
         body: JSON.stringify({
           courseId: course.id,
           topic,
@@ -152,6 +155,8 @@ export default function NewCoursePage() {
       setGenerating(false);
     }
   }
+
+  if (!hydrated) return null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -394,7 +399,7 @@ export default function NewCoursePage() {
                 <Button variant="outline" onClick={() => setStep(1)}>
                   {t("common:back")}
                 </Button>
-                <Button onClick={handleGenerate} disabled={generating}>
+                <Button onClick={handleGenerate} disabled={generating || !hasAnyApiKey}>
                   {generating ? (
                     <>
                       <span className="animate-spin mr-2">&#9696;</span>
@@ -404,11 +409,24 @@ export default function NewCoursePage() {
                     t("courseNew:generateCourse")
                   )}
                 </Button>
+                {!hasAnyApiKey && (
+                  <p className="text-xs text-muted-foreground">
+                    {t("common:apiKeyRequiredHint")}
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
         )}
       </main>
     </div>
+  );
+}
+
+export default function NewCoursePage() {
+  return (
+    <Suspense>
+      <NewCourseForm />
+    </Suspense>
   );
 }

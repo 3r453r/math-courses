@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { useAppStore } from "@/stores/appStore";
 import { useHydrated } from "@/stores/useHydrated";
 import { Button } from "@/components/ui/button";
 import {
@@ -64,19 +63,14 @@ interface ProgressData {
 export default function ProgressPage() {
   const router = useRouter();
   const hydrated = useHydrated();
-  const apiKey = useAppStore((s) => s.apiKey);
   const [data, setData] = useState<ProgressData | null>(null);
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation(["progress", "common"]);
 
   useEffect(() => {
     if (!hydrated) return;
-    if (!apiKey) {
-      router.push("/setup");
-      return;
-    }
     fetchProgress();
-  }, [hydrated, apiKey, router]);
+  }, [hydrated]);
 
   async function fetchProgress() {
     try {
@@ -92,7 +86,7 @@ export default function ProgressPage() {
     }
   }
 
-  if (!hydrated || !apiKey) return null;
+  if (!hydrated) return null;
 
   return (
     <div className="min-h-screen bg-background">

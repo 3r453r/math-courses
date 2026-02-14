@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { scoreQuiz } from "@/lib/quiz/scoring";
 import type { QuizQuestion, QuizAnswers } from "@/types/quiz";
+import { getAuthUser } from "@/lib/auth-utils";
 
 interface DiagnosticQuestion {
   id: string;
@@ -12,6 +13,9 @@ interface DiagnosticQuestion {
 }
 
 export async function POST(request: Request) {
+  const { userId, error } = await getAuthUser();
+  if (error) return error;
+
   try {
     const body = await request.json();
     const { diagnosticQuizId, answers } = body as {
@@ -24,6 +28,14 @@ export async function POST(request: Request) {
         { error: "diagnosticQuizId and answers required" },
         { status: 400 }
       );
+    }
+
+    const diagnosticWithOwner = await prisma.diagnosticQuiz.findUnique({
+      where: { id: diagnosticQuizId },
+      select: { course: { select: { userId: true } } },
+    });
+    if (!diagnosticWithOwner || diagnosticWithOwner.course.userId !== userId) {
+      return NextResponse.json({ error: "Diagnostic not found" }, { status: 404 });
     }
 
     const diagnostic = await prisma.diagnosticQuiz.findUnique({

@@ -4,6 +4,7 @@ export function mockCourseStructure(): CourseStructureOutput {
   return {
     title: "Mock Test Course",
     description: "This is a mock course generated for testing purposes. No API call was made.",
+    subject: "Mathematics",
     suggestedLessonCount: 3,
     contextDoc: "## Notation Conventions\n- Variables: lowercase italic ($x$, $y$)\n- Functions: standard notation ($f(x)$)\n\n## Pedagogical Approach\nIntuition before formalism. Start with concrete examples.\n\n## Key Themes\nTesting and mock data verification.\n\n## Difficulty Calibration\nIntroductory level, accessible to beginners.\n\n## Style Guidelines\nKeep explanations concise and use examples liberally.",
     lessons: [
@@ -16,8 +17,37 @@ export function mockCourseStructure(): CourseStructureOutput {
         estimatedDifficulty: "introductory",
         weight: 1.0,
       },
+      {
+        title: "Mock Lesson 2: Core Concepts",
+        summary: "Builds on the introduction with deeper mock concepts.",
+        orderIndex: 1,
+        prerequisites: [0],
+        keyTopics: ["arithmetic", "fundamentals"],
+        estimatedDifficulty: "foundational",
+        weight: 1.5,
+      },
+      {
+        title: "Mock Lesson 3: Advanced Topics",
+        summary: "Advanced mock content that depends on core concepts.",
+        orderIndex: 2,
+        prerequisites: [1],
+        keyTopics: ["algebra", "problem solving"],
+        estimatedDifficulty: "intermediate",
+        weight: 2.0,
+      },
     ],
-    edges: [],
+    edges: [
+      {
+        from: 0,
+        to: 1,
+        relationship: "prerequisite" as const,
+      },
+      {
+        from: 1,
+        to: 2,
+        relationship: "prerequisite" as const,
+      },
+    ],
   };
 }
 
@@ -130,6 +160,38 @@ export function mockLessonWithQuiz() {
   return {
     lesson: mockLessonContent(),
     quiz: mockQuiz(),
+  };
+}
+
+export function mockCompletionSummary() {
+  return {
+    narrative:
+      "## Course Completion Summary\n\n" +
+      "Congratulations on completing this course! You demonstrated strong understanding across all core topics. " +
+      "Your performance on **Mock Lesson 1: Introduction** was excellent, showing solid grasp of foundational concepts. " +
+      "In **Mock Lesson 2: Core Concepts**, you showed good progress with arithmetic fundamentals, " +
+      "though there is room to deepen your understanding of number relationships.\n\n" +
+      "**Mock Lesson 3: Advanced Topics** challenged you the most, which is expected given the higher difficulty level. " +
+      "Your persistence in working through the material paid off.\n\n" +
+      "Overall, your weighted score reflects consistent effort and meaningful learning. " +
+      "Keep building on these foundations as you move to more advanced topics.",
+    recommendation: {
+      type: "broader" as const,
+      suggestedTopic: "Applied Mathematics Fundamentals",
+      suggestedDescription:
+        "Explore how mathematical concepts connect to real-world applications. " +
+        "This course builds on your foundational knowledge and introduces practical problem-solving techniques.",
+      suggestedDifficulty: "intermediate" as const,
+      suggestedFocusAreas: [
+        "Problem modeling",
+        "Estimation techniques",
+        "Data interpretation",
+        "Mathematical reasoning",
+      ],
+      rationale:
+        "Based on your strong foundational performance, broadening into applied topics " +
+        "will reinforce your understanding while introducing practical skills.",
+    },
   };
 }
 

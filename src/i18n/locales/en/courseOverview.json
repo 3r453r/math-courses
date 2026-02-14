@@ -26,5 +26,16 @@
   "weightedScore": "Weighted Score",
   "blockedByFailedLesson": "{{count}} lesson(s) scored below {{threshold}}%. All lessons must pass.",
   "weight": "Weight",
-  "coursePassed": "Course passed!"
+  "coursePassed": "Course passed!",
+  "editSettings": "Edit Settings",
+  "passThresholdLabel": "Pass Threshold",
+  "passThresholdNote": "Minimum weighted score required to pass the course.",
+  "noLessonCanFailLabel": "No Lesson Can Fail",
+  "noLessonCanFailNote": "When enabled, every lesson must score above the failure threshold.",
+  "lessonFailureThresholdLabel": "Lesson Failure Threshold",
+  "lessonFailureThresholdNote": "Minimum score each lesson must achieve when no-lesson-can-fail is on.",
+  "lessonWeightsLabel": "Lesson Weights",
+  "resetToDefaults": "Reset to Defaults",
+  "settingsSaved": "Completion settings saved",
+  "savingSettings": "Saving..."
 }

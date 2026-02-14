@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 
 interface NotebookPage {
@@ -15,8 +16,13 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ courseId: string }> }
 ) {
+  const { userId, error: authError } = await getAuthUser();
+  if (authError) return authError;
+
   try {
     const { courseId } = await params;
+    const { error: ownerError } = await verifyCourseOwnership(courseId, userId);
+    if (ownerError) return ownerError;
 
     // Fetch lessons with their scratchpad notes (non-empty content only)
     const lessons = await prisma.lesson.findMany({
@@ -79,8 +85,13 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ courseId: string }> }
 ) {
+  const { userId, error: authError } = await getAuthUser();
+  if (authError) return authError;
+
   try {
     const { courseId } = await params;
+    const { error: ownerError } = await verifyCourseOwnership(courseId, userId);
+    if (ownerError) return ownerError;
     const body = await request.json();
     const { title, orderIndex } = body as { title?: string; orderIndex?: number };
 

@@ -9,5 +9,7 @@
   "viewProgress": "Post\u0119py",
   "completedBadge": "Uko\u0144czony",
   "lessonsCompleted": "{{completed}}/{{total}} lekcji",
-  "avgScore": "\u015ar.: {{score}}%"
+  "avgScore": "\u015ar.: {{score}}%",
+  "joinDiscord": "Discord",
+  "gallery": "Galeria"
 }

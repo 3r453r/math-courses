@@ -43,7 +43,14 @@
       "Bash(find:*)",
       "Bash(pnpm lint:*)",
       "Bash(npx eslint:*)",
-      "Bash(npx shadcn@latest add:*)"
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(pnpm view:*)",
+      "Bash(grep:*)",
+      "WebSearch",
+      "WebFetch(domain:platform.openai.com)",
+      "WebFetch(domain:ai.google.dev)",
+      "WebFetch(domain:ai-sdk.dev)",
+      "Bash(ls:*)"
     ]
   }
 }

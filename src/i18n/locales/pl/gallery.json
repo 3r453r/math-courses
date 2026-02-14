@@ -1,0 +1,35 @@
+{
+  "title": "Galeria kursów",
+  "subtitle": "Przeglądaj i klonuj kursy społeczności",
+  "search": "Szukaj kursów...",
+  "filters": {
+    "subject": "Dziedzina",
+    "topic": "Temat",
+    "difficulty": "Poziom",
+    "sort": "Sortuj",
+    "allSubjects": "Wszystkie dziedziny",
+    "allTopics": "Wszystkie tematy",
+    "allDifficulties": "Wszystkie poziomy",
+    "sortRecent": "Najnowsze",
+    "sortStars": "Najwyżej oceniane",
+    "sortClones": "Najczęściej klonowane"
+  },
+  "card": {
+    "by": "autor:",
+    "lessons": "{{count}} lekcji",
+    "clone": "Klonuj do moich kursów",
+    "cloning": "Klonowanie...",
+    "cloned": "Kurs sklonowany!",
+    "loginToClone": "Zaloguj się, aby klonować",
+    "featured": "Wyróżniony",
+    "rating": "{{rating}} / 5",
+    "cloneCount": "{{count}} klonów"
+  },
+  "empty": "Brak kursów. Sprawdź później!",
+  "loading": "Ładowanie kursów...",
+  "pagination": {
+    "previous": "Poprzednia",
+    "next": "Następna",
+    "page": "Strona {{current}} z {{total}}"
+  }
+}

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport } from "ai";
 import type { UIMessage } from "ai";
-import { useAppStore } from "@/stores/appStore";
+import { useAppStore, useHasAnyApiKey } from "@/stores/appStore";
 import { Button } from "@/components/ui/button";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
@@ -24,8 +24,9 @@ function getTextFromMessage(message: UIMessage): string {
 }
 
 export function ChatPanel({ lessonId, courseId, onClose }: ChatPanelProps) {
-  const { t } = useTranslation("chat");
-  const apiKey = useAppStore((s) => s.apiKey);
+  const { t } = useTranslation(["chat", "common"]);
+  const hasAnyApiKey = useHasAnyApiKey();
+  const apiKeys = useAppStore((s) => s.apiKeys);
   const chatModel = useAppStore((s) => s.chatModel);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const historyLoadedRef = useRef(false);
@@ -36,7 +37,7 @@ export function ChatPanel({ lessonId, courseId, onClose }: ChatPanelProps) {
       new TextStreamChatTransport({
         api: "/api/chat",
         headers: {
-          "x-api-key": apiKey || "",
+          "x-api-keys": JSON.stringify(apiKeys),
         },
         body: {
           lessonId,
@@ -44,7 +45,7 @@ export function ChatPanel({ lessonId, courseId, onClose }: ChatPanelProps) {
           model: chatModel,
         },
       }),
-    [apiKey, lessonId, courseId, chatModel]
+    [apiKeys, lessonId, courseId, chatModel]
   );
 
   const {
@@ -209,13 +210,21 @@ export function ChatPanel({ lessonId, courseId, onClose }: ChatPanelProps) {
       </div>
 
       {/* Input */}
-      <ChatInput
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onSubmit={handleChatSubmit}
-        isLoading={isLoading}
-        onVoiceText={(text) => setInput((prev) => prev + (prev ? " " : "") + text)}
-      />
+      {!hasAnyApiKey ? (
+        <div className="border-t px-3 py-3">
+          <p className="text-xs text-muted-foreground text-center">
+            {t("common:apiKeyRequiredHint")}
+          </p>
+        </div>
+      ) : (
+        <ChatInput
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onSubmit={handleChatSubmit}
+          isLoading={isLoading}
+          onVoiceText={(text) => setInput((prev) => prev + (prev ? " " : "") + text)}
+        />
+      )}
     </div>
   );
 }

@@ -19,5 +19,6 @@
   "saving": "Saving...",
   "language": "Language",
   "yes": "Yes",
-  "no": "No"
+  "no": "No",
+  "apiKeyRequiredHint": "Configure an API key in Settings to use this feature."
 }
