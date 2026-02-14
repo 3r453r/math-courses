@@ -183,18 +183,18 @@ describe("access code redemption", () => {
   });
 });
 
-describe("admin access code management", () => {
+describe("owner access code management", () => {
   beforeEach(() => {
-    // Mock admin auth for these tests
-    vi.mocked(authUtils.requireAdmin).mockResolvedValue({
+    // Mock owner auth for these tests
+    vi.mocked(authUtils.requireOwner).mockResolvedValue({
       userId: TEST_USER_ID,
-      role: "admin",
+      role: "owner",
       accessStatus: "active",
       error: null,
     });
   });
 
-  it("generates access codes (admin)", async () => {
+  it("generates access codes (owner)", async () => {
     const response = await generateCodes(
       new Request("http://localhost/api/access-codes", {
         method: "POST",
@@ -211,7 +211,7 @@ describe("admin access code management", () => {
     expect(codes[0].code).toHaveLength(8);
   });
 
-  it("lists access codes with usage stats (admin)", async () => {
+  it("lists access codes with usage stats (owner)", async () => {
     const prisma = getTestPrisma();
     await prisma.accessCode.create({
       data: { code: "LISTTEST", type: "general", maxUses: 1, createdBy: TEST_USER_ID },
@@ -226,7 +226,7 @@ describe("admin access code management", () => {
     expect(found).toBeDefined();
   });
 
-  it("deactivates an access code (admin)", async () => {
+  it("deactivates an access code (owner)", async () => {
     const prisma = getTestPrisma();
     const code = await prisma.accessCode.create({
       data: { code: "DEACT001", type: "general", maxUses: 1 },

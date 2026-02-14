@@ -30,10 +30,12 @@ export async function createTestUser(overrides?: {
 export async function createTestCourse(overrides?: {
   title?: string;
   topic?: string;
+  subject?: string;
   status?: string;
   difficulty?: string;
   language?: string;
   userId?: string;
+  clonedFromId?: string;
 }) {
   return prisma().course.create({
     data: {
@@ -41,11 +43,13 @@ export async function createTestCourse(overrides?: {
       title: overrides?.title ?? "Test Course",
       description: "A test course for integration testing",
       topic: overrides?.topic ?? "Mathematics",
+      subject: overrides?.subject ?? "Mathematics",
       focusAreas: JSON.stringify(["Algebra", "Calculus"]),
       targetLessonCount: 5,
       difficulty: overrides?.difficulty ?? "intermediate",
       language: overrides?.language ?? "en",
       status: overrides?.status ?? "draft",
+      clonedFromId: overrides?.clonedFromId,
     },
   });
 }

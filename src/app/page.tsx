@@ -46,6 +46,7 @@ export default function DashboardPage() {
   const setLanguage = useAppStore((s) => s.setLanguage);
   const [courses, setCourses] = useState<CourseWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { t } = useTranslation(["dashboard", "common", "login"]);
 
   useEffect(() => {
@@ -61,6 +62,9 @@ export default function DashboardPage() {
         if (data.accessStatus === "suspended") {
           router.push("/redeem");
           return;
+        }
+        if (["admin", "owner"].includes(data.role)) {
+          setIsAdmin(true);
         }
         fetchCourses();
       })
@@ -140,6 +144,11 @@ export default function DashboardPage() {
             >
               {language === "en" ? "PL" : "EN"}
             </Button>
+            {isAdmin && (
+              <Button variant="outline" onClick={() => router.push("/admin")}>
+                Admin
+              </Button>
+            )}
             <Button variant="outline" onClick={() => router.push("/gallery")}>
               {t("dashboard:gallery")}
             </Button>

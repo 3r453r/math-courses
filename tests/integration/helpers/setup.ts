@@ -23,6 +23,10 @@ vi.mock("@/lib/auth-utils", () => ({
     const { NextResponse } = await import("next/server");
     return { userId: null, role: null, accessStatus: null, error: NextResponse.json({ error: "Admin access required" }, { status: 403 }) };
   }),
+  requireOwner: vi.fn().mockImplementation(async () => {
+    const { NextResponse } = await import("next/server");
+    return { userId: null, role: null, accessStatus: null, error: NextResponse.json({ error: "Owner access required" }, { status: 403 }) };
+  }),
   verifyCourseOwnership: vi.fn().mockImplementation(async (courseId: string) => {
     const prisma = getTestPrisma();
     const course = await prisma.course.findUnique({

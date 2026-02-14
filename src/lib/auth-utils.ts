@@ -49,6 +49,7 @@ export async function getAuthUserAnyStatus(): Promise<AuthResultAnyStatus> {
         data: {
           email: DEV_USER_EMAIL,
           name: "Dev User",
+          role: "admin",
           emailVerified: new Date(),
           accessStatus: "active",
           accessGrantedAt: new Date(),

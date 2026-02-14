@@ -50,7 +50,21 @@
       "WebFetch(domain:platform.openai.com)",
       "WebFetch(domain:ai.google.dev)",
       "WebFetch(domain:ai-sdk.dev)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npx prisma db execute:*)",
+      "Bash(1:*)",
+      "Bash(npm install:*)",
+      "Bash(where:*)",
+      "Bash(curl:*)",
+      "Bash(bash)",
+      "Bash(TURSO_DATABASE_URL=\"libsql://learning-courses-3r53r.aws-eu-west-1.turso.io\" TURSO_AUTH_TOKEN=\"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJnaWQiOiJiMTczODBmMS0yOThhLTQ2YzAtOTg0Mi04MDNmNjhmZTMxMGQiLCJpYXQiOjE3NzExMDkzMTgsInJpZCI6IjNkNDQ3MjQyLTdmYjMtNDcxZC1iMDZjLWFhZjRlZGRkOWY0OSJ9.NRXkChMstQZknsqGAFHsDZQV8zGGVZADmrwCnMSM3wq-xASiE-588l4-DbvudMPOpf2SEwSRCOcX_bxRfVOHAg\" npx prisma db push:*)",
+      "Bash(DATABASE_URL=\"libsql://learning-courses-3r53r.aws-eu-west-1.turso.io?authToken=eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJnaWQiOiJiMTczODBmMS0yOThhLTQ2YzAtOTg0Mi04MDNmNjhmZTMxMGQiLCJpYXQiOjE3NzExMDkzMTgsInJpZCI6IjNkNDQ3MjQyLTdmYjMtNDcxZC1iMDZjLWFhZjRlZGRkOWY0OSJ9.NRXkChMstQZknsqGAFHsDZQV8zGGVZADmrwCnMSM3wq-xASiE-588l4-DbvudMPOpf2SEwSRCOcX_bxRfVOHAg\" npx prisma db push:*)",
+      "WebFetch(domain:docs.turso.tech)",
+      "Bash(TURSO_DATABASE_URL=\"libsql://learning-courses-3r53r.aws-eu-west-1.turso.io\" TURSO_AUTH_TOKEN=\"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJnaWQiOiJiMTczODBmMS0yOThhLTQ2YzAtOTg0Mi04MDNmNjhmZTMxMGQiLCJpYXQiOjE3NzExMDkzMTgsInJpZCI6IjNkNDQ3MjQyLTdmYjMtNDcxZC1iMDZjLWFhZjRlZGRkOWY0OSJ9.NRXkChMstQZknsqGAFHsDZQV8zGGVZADmrwCnMSM3wq-xASiE-588l4-DbvudMPOpf2SEwSRCOcX_bxRfVOHAg\" node:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git diff:*)"
     ]
   }
 }
