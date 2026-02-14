@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "@/stores/appStore";
 import { Button } from "@/components/ui/button";
@@ -27,16 +27,33 @@ import { toast } from "sonner";
 
 export default function NewCoursePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { apiKey, generationModel, language } = useAppStore();
   const { t } = useTranslation(["courseNew", "common"]);
 
+  // Pre-fill from search params (used by follow-up course recommendations)
+  const prefillTopic = searchParams.get("topic");
+  const prefillDescription = searchParams.get("description");
+  const prefillDifficulty = searchParams.get("difficulty");
+  const prefillFocusAreas = searchParams.get("focusAreas");
+  const isPreFilled = !!prefillTopic;
+
   const [step, setStep] = useState(1);
-  const [topic, setTopic] = useState("");
-  const [description, setDescription] = useState("");
+  const [topic, setTopic] = useState(prefillTopic || "");
+  const [description, setDescription] = useState(prefillDescription || "");
   const [focusInput, setFocusInput] = useState("");
-  const [focusAreas, setFocusAreas] = useState<string[]>([]);
+  const [focusAreas, setFocusAreas] = useState<string[]>(() => {
+    if (prefillFocusAreas) {
+      try {
+        return JSON.parse(prefillFocusAreas);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
   const [lessonCount, setLessonCount] = useState<string>("");
-  const [difficulty, setDifficulty] = useState("intermediate");
+  const [difficulty, setDifficulty] = useState(prefillDifficulty || "intermediate");
   const [generating, setGenerating] = useState(false);
 
   function addFocusArea() {
@@ -133,6 +150,13 @@ export default function NewCoursePage() {
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-2xl">
+        {isPreFilled && (
+          <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-300">
+            {t("courseNew:prefilledFromRecommendation", {
+              defaultValue: "Pre-filled from a course completion recommendation. Adjust any fields before generating.",
+            })}
+          </div>
+        )}
         {step === 1 && (
           <Card>
             <CardHeader>

@@ -5,5 +5,9 @@
   "loadingCourses": "Ładowanie kursów...",
   "welcomeTitle": "Witaj w Kursach",
   "welcomeDescription": "Utwórz swój pierwszy kurs, aby rozpocząć. AI pomoże zaprojektować ustrukturyzowaną ścieżkę nauki z lekcjami, quizami i interaktywnymi wizualizacjami.",
-  "createFirstCourse": "Utwórz pierwszy kurs"
+  "createFirstCourse": "Utw\u00f3rz pierwszy kurs",
+  "viewProgress": "Post\u0119py",
+  "completedBadge": "Uko\u0144czony",
+  "lessonsCompleted": "{{completed}}/{{total}} lekcji",
+  "avgScore": "\u015ar.: {{score}}%"
 }

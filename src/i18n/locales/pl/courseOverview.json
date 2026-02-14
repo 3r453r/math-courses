@@ -16,5 +16,11 @@
   "courseStructureDescription": "Lekcje są zorganizowane jako graf zależności. Kliknij lekcję, aby zobaczyć jej treść. Lekcje w tym samym rzędzie można studiować równolegle.",
   "noLessonsYet": "Brak wygenerowanych lekcji.",
   "allLessons": "Wszystkie lekcje ({{count}})",
-  "quizScore": "Quiz: {{score}}%"
+  "quizScore": "Quiz: {{score}}%",
+  "courseProgress": "Post\u0119p kursu",
+  "lessonsCompleted": "{{completed}} z {{total}} lekcji uko\u0144czonych",
+  "generateCompletionSummary": "Wygeneruj podsumowanie",
+  "viewCompletionSummary": "Zobacz podsumowanie",
+  "allLessonsCompleted": "Wszystkie lekcje uko\u0144czone!",
+  "generatingSummary": "Generowanie..."
 }

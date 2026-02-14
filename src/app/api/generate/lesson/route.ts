@@ -119,10 +119,18 @@ For the quiz: include a higher proportion of questions (at least 50%) targeting 
       generationPrompt = prompt;
     }
 
-    // Delete any existing quiz for this lesson (handles regeneration)
-    await prisma.quiz.deleteMany({
-      where: { lessonId },
+    // Deactivate existing quizzes (preserve history instead of deleting)
+    await prisma.quiz.updateMany({
+      where: { lessonId, isActive: true },
+      data: { isActive: false },
     });
+
+    // Determine next generation number
+    const maxGen = await prisma.quiz.aggregate({
+      where: { lessonId },
+      _max: { generation: true },
+    });
+    const nextGeneration = (maxGen._max.generation ?? 0) + 1;
 
     // Save generated content and quiz
     await prisma.lesson.update({
@@ -140,6 +148,8 @@ For the quiz: include a higher proportion of questions (at least 50%) targeting 
         questionsJson: JSON.stringify(quizContent.questions),
         questionCount: quizContent.questions.length,
         status: "ready",
+        generation: nextGeneration,
+        isActive: true,
       },
     });
 

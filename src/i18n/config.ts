@@ -13,6 +13,8 @@ import enChat from "./locales/en/chat.json";
 import enScratchpad from "./locales/en/scratchpad.json";
 import enNotebook from "./locales/en/notebook.json";
 import enLessonContent from "./locales/en/lessonContent.json";
+import enProgress from "./locales/en/progress.json";
+import enCompletion from "./locales/en/completion.json";
 
 import plCommon from "./locales/pl/common.json";
 import plDashboard from "./locales/pl/dashboard.json";
@@ -26,6 +28,8 @@ import plChat from "./locales/pl/chat.json";
 import plScratchpad from "./locales/pl/scratchpad.json";
 import plNotebook from "./locales/pl/notebook.json";
 import plLessonContent from "./locales/pl/lessonContent.json";
+import plProgress from "./locales/pl/progress.json";
+import plCompletion from "./locales/pl/completion.json";
 
 i18n.use(initReactI18next).init({
   resources: {
@@ -42,6 +46,8 @@ i18n.use(initReactI18next).init({
       scratchpad: enScratchpad,
       notebook: enNotebook,
       lessonContent: enLessonContent,
+      progress: enProgress,
+      completion: enCompletion,
     },
     pl: {
       common: plCommon,
@@ -56,6 +62,8 @@ i18n.use(initReactI18next).init({
       scratchpad: plScratchpad,
       notebook: plNotebook,
       lessonContent: plLessonContent,
+      progress: plProgress,
+      completion: plCompletion,
     },
   },
   lng: "en",
