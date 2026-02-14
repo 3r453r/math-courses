@@ -17,5 +17,7 @@
   "supplementary": "supplementary",
   "edit": "Edit",
   "saving": "Saving...",
-  "language": "Language"
+  "language": "Language",
+  "yes": "Yes",
+  "no": "No"
 }

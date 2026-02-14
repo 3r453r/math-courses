@@ -30,6 +30,15 @@ export const courseStructureSchema = z.object({
         "intermediate",
         "advanced",
       ]),
+      weight: z
+        .number()
+        .min(0.1)
+        .max(5.0)
+        .describe(
+          "Relative importance weight for course completion scoring. " +
+            "Capstone/synthesis lessons: 2.0-3.0. Standard lessons: 1.0. " +
+            "Introductory/foundational: 0.5-1.0. Weights are normalized."
+        ),
     })
   ),
   edges: z.array(

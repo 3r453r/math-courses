@@ -23,6 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 export default function NewCoursePage() {
@@ -54,6 +56,19 @@ export default function NewCoursePage() {
   });
   const [lessonCount, setLessonCount] = useState<string>("");
   const [difficulty, setDifficulty] = useState(prefillDifficulty || "intermediate");
+  const [passThreshold, setPassThreshold] = useState(() => {
+    const prefill = searchParams.get("passThreshold");
+    return prefill ? Math.round(parseFloat(prefill) * 100) : 80;
+  });
+  const [noLessonCanFail, setNoLessonCanFail] = useState(() => {
+    const prefill = searchParams.get("noLessonCanFail");
+    return prefill ? prefill === "true" : true;
+  });
+  const [lessonFailureThreshold, setLessonFailureThreshold] = useState(() => {
+    const prefill = searchParams.get("lessonFailureThreshold");
+    return prefill ? Math.round(parseFloat(prefill) * 100) : 50;
+  });
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [generating, setGenerating] = useState(false);
 
   function addFocusArea() {
@@ -93,6 +108,9 @@ export default function NewCoursePage() {
           targetLessonCount: lessonCount ? parseInt(lessonCount) : 10,
           difficulty,
           language,
+          passThreshold: passThreshold / 100,
+          noLessonCanFail,
+          lessonFailureThreshold: lessonFailureThreshold / 100,
         }),
       });
 
@@ -291,6 +309,65 @@ export default function NewCoursePage() {
                 </p>
               </div>
 
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                >
+                  {showAdvanced ? "\u25BC" : "\u25B6"} {t("courseNew:advancedSettings")}
+                </button>
+
+                {showAdvanced && (
+                  <div className="space-y-6 rounded-lg border p-4">
+                    <div className="space-y-2">
+                      <Label>{t("courseNew:passThresholdLabel")}</Label>
+                      <div className="flex items-center gap-4">
+                        <Slider
+                          value={[passThreshold]}
+                          onValueChange={([val]) => setPassThreshold(val)}
+                          min={50}
+                          max={100}
+                          step={5}
+                          className="flex-1"
+                        />
+                        <span className="text-sm font-mono w-12 text-right">{passThreshold}%</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{t("courseNew:passThresholdNote")}</p>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>{t("courseNew:noLessonCanFailLabel")}</Label>
+                        <p className="text-xs text-muted-foreground">{t("courseNew:noLessonCanFailNote")}</p>
+                      </div>
+                      <Switch
+                        checked={noLessonCanFail}
+                        onCheckedChange={setNoLessonCanFail}
+                      />
+                    </div>
+
+                    {noLessonCanFail && (
+                      <div className="space-y-2">
+                        <Label>{t("courseNew:lessonFailureThresholdLabel")}</Label>
+                        <div className="flex items-center gap-4">
+                          <Slider
+                            value={[lessonFailureThreshold]}
+                            onValueChange={([val]) => setLessonFailureThreshold(val)}
+                            min={20}
+                            max={80}
+                            step={5}
+                            className="flex-1"
+                          />
+                          <span className="text-sm font-mono w-12 text-right">{lessonFailureThreshold}%</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{t("courseNew:lessonFailureThresholdNote")}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div className="rounded-md bg-muted p-4 space-y-2">
                 <p className="font-medium text-sm">{t("courseNew:courseSummary")}</p>
                 <p className="text-sm"><strong>{t("courseNew:topicSummary")}</strong> {topic}</p>
@@ -302,6 +379,15 @@ export default function NewCoursePage() {
                 <p className="text-sm">
                   <strong>{t("courseNew:lessonsSummary")}</strong> {lessonCount || t("courseNew:aiWillSuggest")}
                 </p>
+                {showAdvanced && (
+                  <>
+                    <p className="text-sm"><strong>{t("courseNew:passThresholdSummary")}</strong> {passThreshold}%</p>
+                    <p className="text-sm"><strong>{t("courseNew:noLessonCanFailSummary")}</strong> {noLessonCanFail ? t("common:yes") : t("common:no")}</p>
+                    {noLessonCanFail && (
+                      <p className="text-sm"><strong>{t("courseNew:lessonFailureThresholdSummary")}</strong> {lessonFailureThreshold}%</p>
+                    )}
+                  </>
+                )}
               </div>
 
               <div className="flex justify-between">

@@ -20,6 +20,7 @@ import { ScoreBar } from "@/components/progress";
 interface LessonPerformance {
   title: string;
   bestScore: number;
+  weight: number;
   quizGenerations: number;
   weakTopicsAcrossAttempts: string[];
 }
@@ -162,7 +163,7 @@ export default function CompletionPage({
               {avgPct}%
             </div>
             <div>
-              <p className="font-medium">{t("completion:averageScore")}</p>
+              <p className="font-medium">{t("completion:weightedScore")}</p>
               <p className="text-sm text-muted-foreground">
                 {t("completion:lessonsCompletedOf", {
                   completed: summaryData.lessonsCompleted,
@@ -198,7 +199,14 @@ export default function CompletionPage({
                   className="flex items-center gap-3 rounded-md px-2 py-2"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{lesson.title}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium truncate">{lesson.title}</p>
+                      {lesson.weight != null && lesson.weight !== 1.0 && (
+                        <Badge variant="outline" className="text-[10px] shrink-0">
+                          {t("completion:lessonWeight")}: {lesson.weight}x
+                        </Badge>
+                      )}
+                    </div>
                     {lesson.quizGenerations > 1 && (
                       <p className="text-[11px] text-muted-foreground">
                         {t("completion:regenerations", { count: lesson.quizGenerations - 1 })}

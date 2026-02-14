@@ -88,6 +88,7 @@ export async function POST(request: Request) {
             title: lesson.title,
             summary: lesson.summary,
             orderIndex: lesson.orderIndex,
+            weight: lesson.weight ?? 1.0,
             status: "pending",
           },
         });

@@ -25,5 +25,7 @@
   "backToCourse": "Powr\u00f3t do kursu",
   "loading": "\u0141adowanie podsumowania...",
   "noSummary": "Nie wygenerowano jeszcze podsumowania.",
-  "lessonsCompletedOf": "{{completed}} z {{total}} lekcji uko\u0144czonych"
+  "lessonsCompletedOf": "{{completed}} z {{total}} lekcji uko\u0144czonych",
+  "weightedScore": "Wynik wa\u017cony",
+  "lessonWeight": "Waga"
 }
