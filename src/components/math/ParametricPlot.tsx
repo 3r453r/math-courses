@@ -44,7 +44,7 @@ export function ParametricPlot({ spec }: Props) {
       <Plot.Parametric
         xy={(t) => [parametric.xFn(t), parametric.yFn(t)]}
         t={parametric.tRange}
-        color={Theme.blue}
+        color={spec.functions?.[0]?.color || Theme.blue}
       />
     </Mafs>
   );

@@ -79,6 +79,7 @@ export interface VisualizationSpec {
     y: number;
     z?: number;
     label?: string;
+    color?: string;
     draggable?: boolean;
   }>;
   vectors?: Array<{
