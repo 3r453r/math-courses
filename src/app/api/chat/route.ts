@@ -1,3 +1,5 @@
+export const maxDuration = 120;
+
 import { streamText } from "ai";
 import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
 import { buildLanguageInstruction } from "@/lib/ai/prompts/languageInstruction";

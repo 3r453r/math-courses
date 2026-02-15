@@ -1,3 +1,5 @@
+export const maxDuration = 60;
+
 import { generateText } from "ai";
 import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
 import { buildVoiceInterpretationPrompt } from "@/lib/ai/prompts/voiceInterpretation";

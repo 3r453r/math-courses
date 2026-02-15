@@ -1,3 +1,5 @@
+export const maxDuration = 120;
+
 import { generateObject } from "ai";
 import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
 import { mockQuiz } from "@/lib/ai/mockData";
