@@ -30,7 +30,7 @@ const sectionSchema = z.object({
     'function_plot: {"xRange":[min,max],"yRange":[min,max],"functions":[{"expression":"Math.pow(x,2)","color":"blue","label":"x²"}]}. ' +
     'vector_field: {"xRange":[min,max],"yRange":[min,max],"vectors":[{"origin":[x,y],"direction":[dx,dy],"color":"red"}]}. ' +
     'parametric_plot/3d_surface: {"parametricSurface":{"xExpr":"...","yExpr":"...","zExpr":"...","uRange":[min,max],"vRange":[min,max]}}. ' +
-    'geometry: {"xRange":[min,max],"yRange":[min,max],"points":[{"x":0,"y":0,"label":"O"}]}.'
+    'geometry: {"xRange":[min,max],"yRange":[min,max],"points":[{"x":0,"y":0,"label":"O","color":"red"}],"shapes":[{"type":"line","params":{"from":[-5,-5],"to":[5,5],"color":"blue"}},{"type":"circle","params":{"center":[0,0],"radius":2,"color":"green"}}],"vectors":[{"origin":[0,0],"direction":[2,1],"color":"red","label":"v"}]}. For shapes, set "segment":true in params for finite line segments; lines extend infinitely by default.'
   ),
   caption: z.string().optional().describe("(visualization) Caption text"),
   interactionHint: z.string().optional().describe("(visualization) Interaction hint"),
