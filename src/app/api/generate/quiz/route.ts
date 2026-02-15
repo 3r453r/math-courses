@@ -1,7 +1,7 @@
 export const maxDuration = 300;
 
 import { generateObject } from "ai";
-import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
+import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, repairGeneratedText } from "@/lib/ai/client";
 import { mockQuiz } from "@/lib/ai/mockData";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
@@ -89,11 +89,17 @@ export async function POST(request: Request) {
 Include a higher proportion of questions (at least 50%) targeting these weak topics: ${body.weakTopics.join(", ")}`;
       }
 
+      const t0 = Date.now();
+      console.log(`[quiz-gen] Starting quiz generation for "${lesson.title}" with model ${model}`);
       const { object } = await generateObject({
         model: modelInstance,
         schema: quizSchema,
         prompt,
+        providerOptions: getProviderOptions(model),
+        experimental_repairText: repairGeneratedText,
       });
+      const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+      console.log(`[quiz-gen] Quiz generation completed in ${elapsed}s`);
       result = object;
     }
 

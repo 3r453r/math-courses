@@ -1,7 +1,7 @@
 export const maxDuration = 300;
 
 import { generateObject } from "ai";
-import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
+import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, repairGeneratedText } from "@/lib/ai/client";
 import { mockLessonContent } from "@/lib/ai/mockData";
 import { lessonContentSchema } from "@/lib/ai/schemas/lessonSchema";
 import { buildLanguageInstruction } from "@/lib/ai/prompts/languageInstruction";
@@ -105,11 +105,17 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
 
       prompt += buildLanguageInstruction(lesson.course.language);
 
+      const t0 = Date.now();
+      console.log(`[lesson-gen] Starting lesson generation for "${lesson.title}" with model ${model}`);
       const { object } = await generateObject({
         model: modelInstance,
         schema: lessonContentSchema,
         prompt,
+        providerOptions: getProviderOptions(model),
+        experimental_repairText: repairGeneratedText,
       });
+      const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+      console.log(`[lesson-gen] Lesson generation completed in ${elapsed}s`);
       lessonContent = object;
       generationPrompt = prompt;
 

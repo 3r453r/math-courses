@@ -1,7 +1,7 @@
 export const maxDuration = 300;
 
 import { generateObject } from "ai";
-import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
+import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, repairGeneratedText } from "@/lib/ai/client";
 import { mockDiagnostic } from "@/lib/ai/mockData";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
@@ -83,6 +83,8 @@ export async function POST(request: Request) {
         model: modelInstance,
         schema: diagnosticSchema,
         prompt,
+        providerOptions: getProviderOptions(model),
+        experimental_repairText: repairGeneratedText,
       });
       result = object;
     }
