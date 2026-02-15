@@ -20,6 +20,7 @@ import { LessonContentRenderer } from "@/components/lesson/LessonContentRenderer
 import { ScratchpadPanel } from "@/components/scratchpad";
 import { ChatPanel } from "@/components/chat";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { generateLessonStream } from "@/lib/generateLessonStream";
 import type { LessonContent } from "@/types/lesson";
 
 interface QuizInfo {
@@ -86,19 +87,11 @@ export default function LessonPage({
     if (!hasAnyApiKey || !lesson) return;
     setGenerating(true);
     try {
-      const res = await fetch("/api/generate/lesson", {
-        method: "POST",
-        headers: apiHeaders,
-        body: JSON.stringify({
-          lessonId: lesson.id,
-          courseId,
-          model: generationModel,
-        }),
+      await generateLessonStream(apiHeaders, {
+        lessonId: lesson.id,
+        courseId,
+        model: generationModel,
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to generate lesson");
-      }
       toast.success(t("lesson:lessonGenerated"));
       await fetchLesson();
     } catch (err) {

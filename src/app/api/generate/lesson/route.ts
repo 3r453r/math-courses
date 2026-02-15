@@ -1,6 +1,6 @@
 export const maxDuration = 300;
 
-import { generateObject } from "ai";
+import { streamObject } from "ai";
 import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
 import { mockLessonContent, mockQuiz } from "@/lib/ai/mockData";
 import { lessonContentSchema } from "@/lib/ai/schemas/lessonSchema";
@@ -19,60 +19,59 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "API key required" }, { status: 401 });
   }
 
-  let body: { lessonId?: string; courseId?: string; model?: string; weakTopics?: string[] } = {};
+  const body: { lessonId?: string; courseId?: string; model?: string; weakTopics?: string[] } =
+    await request.json();
+  const { lessonId, courseId } = body;
 
-  try {
-    body = await request.json();
-    const { lessonId, courseId } = body;
+  if (!lessonId || !courseId) {
+    return NextResponse.json({ error: "lessonId and courseId required" }, { status: 400 });
+  }
 
-    if (!lessonId || !courseId) {
-      return NextResponse.json({ error: "lessonId and courseId required" }, { status: 400 });
-    }
+  // Verify course ownership
+  const { error: ownershipError } = await verifyCourseOwnership(courseId, userId);
+  if (ownershipError) return ownershipError;
 
-    // Verify course ownership
-    const { error: ownershipError } = await verifyCourseOwnership(courseId, userId);
-    if (ownershipError) return ownershipError;
-
-    // Get lesson and course info
-    const lesson = await prisma.lesson.findUnique({
-      where: { id: lessonId },
-      include: {
-        course: true,
-        dependsOn: {
-          include: { fromLesson: true },
-        },
+  // Get lesson and course info
+  const lesson = await prisma.lesson.findUnique({
+    where: { id: lessonId },
+    include: {
+      course: true,
+      dependsOn: {
+        include: { fromLesson: true },
       },
-    });
+    },
+  });
 
-    if (!lesson) {
-      return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
-    }
+  if (!lesson) {
+    return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
+  }
 
-    // Update status
-    await prisma.lesson.update({
-      where: { id: lessonId },
-      data: { status: "generating" },
-    });
+  // Update status
+  await prisma.lesson.update({
+    where: { id: lessonId },
+    data: { status: "generating" },
+  });
 
-    const model = body.model || MODELS.generation;
+  const model = body.model || MODELS.generation;
 
-    let lessonContent;
-    let quizContent;
-    let generationPrompt = "mock";
-    if (model === "mock") {
-      lessonContent = mockLessonContent();
-      quizContent = mockQuiz();
-    } else {
-      const modelInstance = getModelInstance(model, apiKeys);
+  // Mock path — non-streaming, returns JSON immediately
+  if (model === "mock") {
+    const lessonContent = mockLessonContent();
+    const quizContent = mockQuiz();
+    await saveResults(lessonId, lessonContent, quizContent, "mock");
+    return NextResponse.json({ lesson: lessonContent, quiz: quizContent });
+  }
 
-      const prerequisiteSummaries = lesson.dependsOn
-        .map((e) => `- ${e.fromLesson.title}: ${e.fromLesson.summary}`)
-        .join("\n");
+  // Real AI path — stream to keep Vercel function alive
+  const modelInstance = getModelInstance(model, apiKeys);
 
-      const focusAreas = JSON.parse(lesson.course.focusAreas || "[]") as string[];
+  const prerequisiteSummaries = lesson.dependsOn
+    .map((e) => `- ${e.fromLesson.title}: ${e.fromLesson.summary}`)
+    .join("\n");
 
-      // --- Step 1: Generate lesson content ---
-      let lessonPrompt = `You are an educator specializing in ${lesson.course.topic}, creating a detailed lesson.
+  const focusAreas = JSON.parse(lesson.course.focusAreas || "[]") as string[];
+
+  let lessonPrompt = `You are an educator specializing in ${lesson.course.topic}, creating a detailed lesson.
 
 LESSON: ${lesson.title}
 SUMMARY: ${lesson.summary}
@@ -95,8 +94,8 @@ LESSON CONTENT GUIDELINES:
 7. Aim for 8-15 sections of varied types (text, math, definition, theorem, visualization).
 8. Make the content thorough but accessible - explain the "why" not just the "what".`;
 
-      if (body.weakTopics && body.weakTopics.length > 0) {
-        lessonPrompt += `\n\nIMPORTANT - WEAK AREAS FEEDBACK:
+  if (body.weakTopics && body.weakTopics.length > 0) {
+    lessonPrompt += `\n\nIMPORTANT - WEAK AREAS FEEDBACK:
 The student previously studied this lesson and scored poorly on these topics:
 ${body.weakTopics.map((t) => `- ${t}`).join("\n")}
 
@@ -105,20 +104,49 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
 - Include additional worked examples specifically targeting these areas
 - Add more practice exercises for the weak topics
 - Consider alternative explanations or approaches that might resonate better`;
-      }
+  }
 
-      lessonPrompt += buildLanguageInstruction(lesson.course.language);
+  lessonPrompt += buildLanguageInstruction(lesson.course.language);
 
-      const { object: lessonObject } = await generateObject({
-        model: modelInstance,
-        schema: lessonContentSchema,
-        prompt: lessonPrompt,
-      });
-      lessonContent = lessonObject;
-      generationPrompt = lessonPrompt;
+  // Stream lesson generation to keep the Vercel function alive.
+  // The client reads this stream; the final line is JSON with both lesson + quiz.
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        // Step 1: Stream lesson content generation
+        controller.enqueue(encoder.encode("event:status\ndata:generating_lesson\n\n"));
 
-      // --- Step 2: Generate quiz based on the lesson content ---
-      let quizPrompt = `You are an assessment designer for ${lesson.course.topic}, creating a quiz for a lesson that has just been generated.
+        const lessonStream = streamObject({
+          model: modelInstance,
+          schema: lessonContentSchema,
+          prompt: lessonPrompt,
+        });
+
+        // Pipe partial text to keep the connection alive
+        for await (const chunk of lessonStream.textStream) {
+          controller.enqueue(encoder.encode(`event:chunk\ndata:${chunk.length}\n\n`));
+        }
+
+        const lessonContent = await lessonStream.object;
+
+        // Normalize visualization specs
+        if (lessonContent.sections) {
+          for (const section of lessonContent.sections) {
+            if (section.type === "visualization" && typeof section.spec === "string") {
+              try {
+                (section as Record<string, unknown>).spec = JSON.parse(section.spec);
+              } catch {
+                // Keep as-is
+              }
+            }
+          }
+        }
+
+        // Step 2: Generate quiz (smaller output, uses generateObject)
+        controller.enqueue(encoder.encode("event:status\ndata:generating_quiz\n\n"));
+
+        let quizPrompt = `You are an assessment designer for ${lesson.course.topic}, creating a quiz for a lesson that has just been generated.
 
 LESSON TITLE: ${lesson.title}
 LESSON SUMMARY: ${lesson.summary}
@@ -140,82 +168,94 @@ QUIZ GUIDELINES:
 9. Each question ID should be unique (e.g., "q1", "q2", etc.).
 10. Each choice ID should be unique within its question (e.g., "a", "b", "c", "d").`;
 
-      if (body.weakTopics && body.weakTopics.length > 0) {
-        quizPrompt += `\n\nIMPORTANT - WEAK AREAS:
+        if (body.weakTopics && body.weakTopics.length > 0) {
+          quizPrompt += `\n\nIMPORTANT - WEAK AREAS:
 Include a higher proportion of questions (at least 50%) targeting these weak topics: ${body.weakTopics.join(", ")}`;
-      }
-
-      quizPrompt += buildLanguageInstruction(lesson.course.language);
-
-      const { object: quizObject } = await generateObject({
-        model: modelInstance,
-        schema: quizSchema,
-        prompt: quizPrompt,
-      });
-      quizContent = quizObject;
-
-      // Normalize: AI returns visualization spec as JSON string, parse to object
-      if (lessonContent.sections) {
-        for (const section of lessonContent.sections) {
-          if (section.type === "visualization" && typeof section.spec === "string") {
-            try {
-              section.spec = JSON.parse(section.spec);
-            } catch {
-              // Keep as-is if not valid JSON
-            }
-          }
         }
+
+        quizPrompt += buildLanguageInstruction(lesson.course.language);
+
+        // Stream quiz too to keep alive during generation
+        const quizStream = streamObject({
+          model: modelInstance,
+          schema: quizSchema,
+          prompt: quizPrompt,
+        });
+
+        for await (const chunk of quizStream.textStream) {
+          controller.enqueue(encoder.encode(`event:chunk\ndata:${chunk.length}\n\n`));
+        }
+
+        const quizContent = await quizStream.object;
+
+        // Step 3: Save to database
+        controller.enqueue(encoder.encode("event:status\ndata:saving\n\n"));
+        await saveResults(lessonId, lessonContent, quizContent, lessonPrompt);
+
+        // Final event: send the complete result as JSON
+        const result = JSON.stringify({ lesson: lessonContent, quiz: quizContent });
+        controller.enqueue(encoder.encode(`event:result\ndata:${result}\n\n`));
+        controller.close();
+      } catch (err) {
+        console.error("Failed to generate lesson:", err);
+        // Reset lesson status
+        await prisma.lesson
+          .update({ where: { id: lessonId }, data: { status: "pending" } })
+          .catch(() => {});
+        const errorMsg = err instanceof Error ? err.message : "Failed to generate lesson";
+        controller.enqueue(encoder.encode(`event:error\ndata:${JSON.stringify({ error: errorMsg })}\n\n`));
+        controller.close();
       }
-    }
+    },
+  });
 
-    // Deactivate existing quizzes (preserve history instead of deleting)
-    await prisma.quiz.updateMany({
-      where: { lessonId, isActive: true },
-      data: { isActive: false },
-    });
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
+}
 
-    // Determine next generation number
-    const maxGen = await prisma.quiz.aggregate({
-      where: { lessonId },
-      _max: { generation: true },
-    });
-    const nextGeneration = (maxGen._max.generation ?? 0) + 1;
+async function saveResults(
+  lessonId: string,
+  lessonContent: Record<string, unknown>,
+  quizContent: { questions: unknown[] },
+  generationPrompt: string
+) {
+  // Deactivate existing quizzes
+  await prisma.quiz.updateMany({
+    where: { lessonId, isActive: true },
+    data: { isActive: false },
+  });
 
-    // Save generated content and quiz
-    await prisma.lesson.update({
-      where: { id: lessonId },
-      data: {
-        contentJson: JSON.stringify(lessonContent),
-        generationPrompt,
-        status: "ready",
-      },
-    });
+  // Determine next generation number
+  const maxGen = await prisma.quiz.aggregate({
+    where: { lessonId },
+    _max: { generation: true },
+  });
+  const nextGeneration = (maxGen._max.generation ?? 0) + 1;
 
-    await prisma.quiz.create({
-      data: {
-        lessonId,
-        questionsJson: JSON.stringify(quizContent.questions),
-        questionCount: quizContent.questions.length,
-        status: "ready",
-        generation: nextGeneration,
-        isActive: true,
-      },
-    });
+  // Save lesson content
+  await prisma.lesson.update({
+    where: { id: lessonId },
+    data: {
+      contentJson: JSON.stringify(lessonContent),
+      generationPrompt,
+      status: "ready",
+    },
+  });
 
-    return NextResponse.json({ lesson: lessonContent, quiz: quizContent });
-  } catch (error) {
-    console.error("Failed to generate lesson:", error);
-    if (body.lessonId) {
-      await prisma.lesson
-        .update({
-          where: { id: body.lessonId },
-          data: { status: "pending" },
-        })
-        .catch(() => {});
-    }
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to generate lesson" },
-      { status: 500 }
-    );
-  }
+  // Save quiz
+  await prisma.quiz.create({
+    data: {
+      lessonId,
+      questionsJson: JSON.stringify(quizContent.questions),
+      questionCount: quizContent.questions.length,
+      status: "ready",
+      generation: nextGeneration,
+      isActive: true,
+    },
+  });
 }
