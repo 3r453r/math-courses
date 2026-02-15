@@ -1,13 +1,14 @@
 export const maxDuration = 300;
 
-import { generateObject } from "ai";
-import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, repairGeneratedText } from "@/lib/ai/client";
+import { generateObject, NoObjectGeneratedError } from "ai";
+import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, createRepairFunction } from "@/lib/ai/client";
 import { mockQuiz } from "@/lib/ai/mockData";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
-import { quizSchema } from "@/lib/ai/schemas/quizSchema";
+import { quizSchema, type QuizOutput } from "@/lib/ai/schemas/quizSchema";
 import { buildQuizPrompt } from "@/lib/ai/prompts/quizGeneration";
 import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
+import { getCheapestModel, repackWithAI, tryCoerceAndValidate } from "@/lib/ai/repairSchema";
 
 export async function POST(request: Request) {
   const { userId, error } = await getAuthUser();
@@ -91,16 +92,46 @@ Include a higher proportion of questions (at least 50%) targeting these weak top
 
       const t0 = Date.now();
       console.log(`[quiz-gen] Starting quiz generation for "${lesson.title}" with model ${model}`);
-      const { object } = await generateObject({
-        model: modelInstance,
-        schema: quizSchema,
-        prompt,
-        providerOptions: getProviderOptions(model),
-        experimental_repairText: repairGeneratedText,
-      });
+      try {
+        const { object } = await generateObject({
+          model: modelInstance,
+          schema: quizSchema,
+          prompt,
+          providerOptions: getProviderOptions(model),
+          experimental_repairText: createRepairFunction(quizSchema),
+        });
+        result = object;
+      } catch (genErr) {
+        if (NoObjectGeneratedError.isInstance(genErr) && genErr.text) {
+          console.log(`[quiz-gen] Schema mismatch, attempting recovery...`);
+          try {
+            const parsed = JSON.parse(genErr.text);
+            const coerced = tryCoerceAndValidate(parsed, quizSchema);
+            if (coerced) {
+              console.log(`[quiz-gen] Direct coercion succeeded`);
+              result = coerced;
+            }
+          } catch { /* not valid JSON */ }
+
+          if (!result) {
+            const cheapModel = getCheapestModel(apiKeys);
+            if (cheapModel) {
+              console.log(`[quiz-gen] Attempting AI repack with ${cheapModel}`);
+              const repacked = await repackWithAI(genErr.text, quizSchema, apiKeys, cheapModel);
+              if (repacked) {
+                console.log(`[quiz-gen] AI repack succeeded`);
+                result = repacked as QuizOutput;
+              }
+            }
+          }
+
+          if (!result) throw genErr;
+        } else {
+          throw genErr;
+        }
+      }
       const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
       console.log(`[quiz-gen] Quiz generation completed in ${elapsed}s`);
-      result = object;
     }
 
     await prisma.quiz.update({
