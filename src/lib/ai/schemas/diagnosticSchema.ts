@@ -22,14 +22,12 @@ export const diagnosticSchema = z.object({
               explanation: z.string(),
             })
           )
-          .min(4)
-          .max(6),
+          .describe("4-6 answer choices"),
         prerequisiteTopic: z.string(),
         difficulty: z.enum(["easy", "medium", "hard"]),
       })
     )
-    .min(10)
-    .max(20),
+    .describe("10-20 diagnostic questions"),
 });
 
 export type DiagnosticOutput = z.infer<typeof diagnosticSchema>;

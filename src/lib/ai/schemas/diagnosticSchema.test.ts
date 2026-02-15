@@ -9,11 +9,11 @@ describe("diagnosticSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  it("rejects fewer than 10 questions", () => {
+  it("accepts any number of questions", () => {
     const data = mockDiagnostic();
     data.questions = data.questions.slice(0, 5);
     const result = diagnosticSchema.safeParse(data);
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it("rejects invalid importance enum", () => {
@@ -41,11 +41,11 @@ describe("diagnosticSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejects question with fewer than 4 choices", () => {
+  it("accepts any number of choices", () => {
     const data = mockDiagnostic();
     data.questions[0].choices = data.questions[0].choices.slice(0, 2);
     const result = diagnosticSchema.safeParse(data);
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it("validates diagnostic question has prerequisiteTopic", () => {

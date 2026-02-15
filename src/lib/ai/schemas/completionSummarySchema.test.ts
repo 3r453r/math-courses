@@ -49,13 +49,13 @@ describe("completionSummarySchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejects fewer than 3 focus areas", () => {
+  it("accepts any number of focus areas", () => {
     const data = {
       ...validData,
       recommendation: { ...validData.recommendation, suggestedFocusAreas: ["one", "two"] },
     };
     const result = completionSummarySchema.safeParse(data);
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it("accepts all valid recommendation types", () => {

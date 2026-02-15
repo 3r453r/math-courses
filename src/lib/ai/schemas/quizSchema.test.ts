@@ -9,18 +9,18 @@ describe("quizSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  it("rejects fewer than 10 questions", () => {
+  it("accepts any number of questions", () => {
     const data = mockQuiz();
     data.questions = data.questions.slice(0, 5);
     const result = quizSchema.safeParse(data);
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
-  it("rejects question with fewer than 4 choices", () => {
+  it("accepts any number of choices", () => {
     const data = mockQuiz();
     data.questions[0].choices = data.questions[0].choices.slice(0, 2);
     const result = quizSchema.safeParse(data);
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it("rejects invalid difficulty enum", () => {
