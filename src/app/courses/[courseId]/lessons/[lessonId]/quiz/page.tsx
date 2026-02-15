@@ -18,7 +18,7 @@ import { useTranslation } from "react-i18next";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { QuizRunner } from "@/components/quiz/QuizRunner";
 import { QuizResults } from "@/components/quiz/QuizResults";
-import { generateLessonStream } from "@/lib/generateLessonStream";
+import { generateLessonWithQuiz } from "@/lib/generateLessonStream";
 import type { QuizQuestion, QuizAnswers, QuizResult } from "@/types/quiz";
 
 interface QuizData {
@@ -174,7 +174,7 @@ export default function LessonQuizPage({
     if (!hasAnyApiKey || !result) return;
     setRegenerating(true);
     try {
-      await generateLessonStream(apiHeaders, {
+      await generateLessonWithQuiz(apiHeaders, {
         lessonId,
         courseId,
         model: generationModel,
