@@ -17,16 +17,14 @@ export const quizSchema = z.object({
                 .describe("Why this choice is correct/incorrect"),
             })
           )
-          .min(4)
-          .max(6),
+          .describe("4-6 answer choices"),
         topic: z
           .string()
           .describe("The specific sub-topic this question tests"),
         difficulty: z.enum(["easy", "medium", "hard"]),
       })
     )
-    .min(10)
-    .max(20),
+    .describe("10-20 quiz questions"),
 });
 
 export type QuizOutput = z.infer<typeof quizSchema>;

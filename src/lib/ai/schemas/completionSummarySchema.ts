@@ -16,7 +16,7 @@ export const completionSummarySchema = z.object({
     suggestedTopic: z.string().describe("Recommended topic for the next course"),
     suggestedDescription: z.string().describe("2-3 sentence description for the recommended course"),
     suggestedDifficulty: z.enum(["beginner", "intermediate", "advanced"]),
-    suggestedFocusAreas: z.array(z.string()).min(3).max(5).describe(
+    suggestedFocusAreas: z.array(z.string()).describe(
       "3-5 focus areas for the recommended course"
     ),
     rationale: z.string().describe(
