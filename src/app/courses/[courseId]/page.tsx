@@ -129,6 +129,7 @@ export default function CourseOverviewPage({
   useEffect(() => {
     if (!hydrated) return;
     fetchCourse();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, courseId]);
 
   async function fetchCourse() {

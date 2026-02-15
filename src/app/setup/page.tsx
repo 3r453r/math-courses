@@ -122,6 +122,7 @@ export default function SetupPage() {
         }
       })
       .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Available models: only from providers that have a key configured

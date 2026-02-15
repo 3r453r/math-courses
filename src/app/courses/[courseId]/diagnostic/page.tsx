@@ -74,6 +74,7 @@ export default function DiagnosticPage({
   useEffect(() => {
     if (!hydrated) return;
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, courseId]);
 
   function mapDiagnosticQuestions(raw: DiagnosticQuestion[]): QuizQuestion[] {

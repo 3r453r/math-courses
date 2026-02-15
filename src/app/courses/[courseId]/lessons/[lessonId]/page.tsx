@@ -63,6 +63,7 @@ export default function LessonPage({
   useEffect(() => {
     if (!hydrated) return;
     fetchLesson();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, lessonId]);
 
   async function fetchLesson() {

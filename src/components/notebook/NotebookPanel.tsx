@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNotebook } from "@/hooks/useNotebook";
 import { ScratchpadEditor } from "@/components/scratchpad/ScratchpadEditor";
@@ -44,6 +44,7 @@ export function NotebookPanel({ courseId, onClose }: NotebookPanelProps) {
 
   useEffect(() => {
     if (activeTab === "preview") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPreviewContent(content);
       return;
     }

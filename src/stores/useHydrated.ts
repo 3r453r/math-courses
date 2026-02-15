@@ -17,6 +17,7 @@ export function useHydrated() {
     const persist = useAppStore.persist;
     if (!persist) {
       // No persist middleware (shouldn't happen, but be safe)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHydrated(true);
       return;
     }
@@ -24,9 +25,7 @@ export function useHydrated() {
       setHydrated(true);
       return;
     }
-    const unsub = persist.onFinishHydration(() => {
-      setHydrated(true);
-    });
+    const unsub = persist.onFinishHydration(() => setHydrated(true));
     return unsub;
   }, []);
 

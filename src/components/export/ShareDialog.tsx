@@ -37,6 +37,7 @@ export function ShareDialog({ courseId, open, onOpenChange }: ShareDialogProps) 
     if (open) {
       fetchLinks();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, courseId]);
 
   async function fetchLinks() {

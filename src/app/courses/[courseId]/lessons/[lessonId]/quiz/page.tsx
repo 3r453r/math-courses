@@ -60,6 +60,7 @@ export default function LessonQuizPage({
   useEffect(() => {
     if (!hydrated) return;
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, lessonId]);
 
   async function fetchData() {

@@ -3,7 +3,7 @@ import { getAuthUser } from "@/lib/auth-utils";
 import type { AIProvider } from "@/lib/ai/client";
 
 export async function POST(request: Request) {
-  const { userId, error } = await getAuthUser();
+  const { error } = await getAuthUser();
   if (error) return error;
 
   const body = await request.json();

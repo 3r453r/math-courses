@@ -62,6 +62,7 @@ export default function CompletionPage({
   useEffect(() => {
     if (!hydrated) return;
     fetchSummary();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, courseId]);
 
   async function fetchSummary() {

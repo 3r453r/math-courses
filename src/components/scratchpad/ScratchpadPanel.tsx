@@ -75,6 +75,7 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
   useEffect(() => {
     // In preview-only mode, update immediately
     if (activeTab === "preview") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPreviewContent(content);
       return;
     }

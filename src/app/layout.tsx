@@ -6,8 +6,18 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Learning Courses",
-  description: "AI-powered learning platform",
+  title: {
+    default: "Learning Courses",
+    template: "%s | Learning Courses",
+  },
+  description:
+    "AI-powered learning platform that generates structured courses with lessons organized as a prerequisite graph. Supports math, physics, CS, and any STEM subject.",
+  openGraph: {
+    title: "Learning Courses",
+    description:
+      "AI-powered learning platform with structured courses, quizzes, and adaptive recommendations.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

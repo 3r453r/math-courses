@@ -22,6 +22,7 @@ function PaymentSuccessContent() {
     const sessionId = searchParams.get("session_id");
     if (!sessionId) return;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setVerifying(true);
     fetch("/api/payment/verify", {
       method: "POST",

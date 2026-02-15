@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/auth-utils";
 
 export async function POST(request: Request) {
-  const { userId, error } = await getAuthUser();
+  const { error } = await getAuthUser();
   if (error) return error;
 
   const apiKeys = getApiKeysFromRequest(request);

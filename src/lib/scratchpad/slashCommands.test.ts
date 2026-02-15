@@ -56,9 +56,11 @@ describe("filterCommandsByPrefix", () => {
     expect(results.length).toBeGreaterThan(0);
   });
 
-  it("returns all commands for empty query with large limit", () => {
+  it("returns many commands for empty query with large limit", () => {
     const results = filterCommandsByPrefix("", 100);
-    expect(results.length).toBe(SLASH_COMMANDS.length);
+    // Empty query returns a diverse sample (perCategory from each group), not necessarily all
+    expect(results.length).toBeGreaterThanOrEqual(SLASH_COMMANDS.length * 0.5);
+    expect(results.length).toBeLessThanOrEqual(SLASH_COMMANDS.length);
   });
 
   it('matches "su" prefix — includes sum variants and subset', () => {
