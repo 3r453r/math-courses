@@ -20,7 +20,12 @@ import { LessonContentRenderer } from "@/components/lesson/LessonContentRenderer
 import { ScratchpadPanel } from "@/components/scratchpad";
 import { ChatPanel } from "@/components/chat";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { GeneratingSpinner, TriviaSlideshow } from "@/components/generation";
 import { generateLessonWithQuiz } from "@/lib/generateLessonStream";
+import {
+  requestNotificationPermission,
+  sendNotification,
+} from "@/lib/notifications";
 import type { LessonContent } from "@/types/lesson";
 
 interface QuizInfo {
@@ -86,6 +91,9 @@ export default function LessonPage({
   async function handleGenerate() {
     if (!hasAnyApiKey || !lesson) return;
     setGenerating(true);
+    requestNotificationPermission();
+    const lessonTitle = lesson.title;
+    const lessonUrl = `/courses/${courseId}/lessons/${lessonId}`;
     try {
       await generateLessonWithQuiz(apiHeaders, {
         lessonId: lesson.id,
@@ -93,9 +101,18 @@ export default function LessonPage({
         model: generationModel,
       });
       toast.success(t("lesson:lessonGenerated"));
+      sendNotification(
+        t("generation:lessonReady"),
+        t("generation:lessonReadyBody", { title: lessonTitle }),
+        lessonUrl
+      );
       await fetchLesson();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Generation failed");
+      sendNotification(
+        t("generation:generationFailed"),
+        t("generation:generationFailedBody", { title: lessonTitle })
+      );
     } finally {
       setGenerating(false);
     }
@@ -231,23 +248,28 @@ export default function LessonPage({
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col items-center gap-4">
-                  <p className="text-sm text-muted-foreground text-center">
-                    {t("lesson:generateDescription")}
-                  </p>
-                  <Button onClick={handleGenerate} disabled={generating || !hasAnyApiKey}>
-                    {generating ? (
-                      <>
-                        <span className="animate-spin mr-2">&#9696;</span>
-                        {t("lesson:generatingLessonContent")}
-                      </>
-                    ) : (
-                      t("lesson:generateLessonContent")
-                    )}
-                  </Button>
-                  {!hasAnyApiKey && (
-                    <p className="text-xs text-muted-foreground">
-                      {t("common:apiKeyRequiredHint")}
-                    </p>
+                  {generating ? (
+                    <>
+                      <GeneratingSpinner />
+                      <p className="text-sm text-muted-foreground text-center">
+                        {t("generation:browseAwayMessage")}
+                      </p>
+                      <TriviaSlideshow courseId={courseId} lessonId={lessonId} />
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm text-muted-foreground text-center">
+                        {t("lesson:generateDescription")}
+                      </p>
+                      <Button onClick={handleGenerate} disabled={!hasAnyApiKey}>
+                        {t("lesson:generateLessonContent")}
+                      </Button>
+                      {!hasAnyApiKey && (
+                        <p className="text-xs text-muted-foreground">
+                          {t("common:apiKeyRequiredHint")}
+                        </p>
+                      )}
+                    </>
                   )}
                 </CardContent>
               </Card>
@@ -266,7 +288,7 @@ export default function LessonPage({
                     onClick={handleGenerate}
                     disabled={generating || !hasAnyApiKey}
                   >
-                    {generating ? t("lesson:regenerating") : t("lesson:regenerate")}
+                    {generating ? <GeneratingSpinner /> : t("lesson:regenerate")}
                   </Button>
                 </div>
                 <LessonContentRenderer

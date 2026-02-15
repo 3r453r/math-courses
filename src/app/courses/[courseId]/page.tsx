@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, use } from "react";
+import { useEffect, useState, useMemo, useRef, use } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore, useHasAnyApiKey } from "@/stores/appStore";
 import { useHydrated } from "@/stores/useHydrated";
@@ -21,9 +21,16 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 import { NotebookPanel } from "@/components/notebook";
 import { MathMarkdown } from "@/components/lesson/MathMarkdown";
 import { ExportDialog, ShareDialog } from "@/components/export";
+import { ContextDocGuideDialog } from "@/components/ContextDocGuideDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { evaluateCourseCompletion, DEFAULT_THRESHOLDS } from "@/lib/quiz/courseCompletion";
 import { toast } from "sonner";
@@ -125,12 +132,23 @@ export default function CourseOverviewPage({
   const [draftNoLessonCanFail, setDraftNoLessonCanFail] = useState(true);
   const [draftLessonFailureThreshold, setDraftLessonFailureThreshold] = useState(50);
   const [draftWeights, setDraftWeights] = useState<Record<string, number>>({});
+  const [showFormula, setShowFormula] = useState(false);
+  const [contextDocGuideOpen, setContextDocGuideOpen] = useState(false);
+  const contextDocGuideDismissed = useAppStore((s) => s.contextDocGuideDismissed);
+  const guideShownRef = useRef(false);
 
   useEffect(() => {
     if (!hydrated) return;
     fetchCourse();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, courseId]);
+
+  useEffect(() => {
+    if (course && course.contextDoc && !contextDocGuideDismissed && !guideShownRef.current) {
+      guideShownRef.current = true;
+      setContextDocGuideOpen(true);
+    }
+  }, [course, contextDocGuideDismissed]);
 
   async function fetchCourse() {
     try {
@@ -199,6 +217,28 @@ export default function CourseOverviewPage({
 
     return { layers, edgeList: edges };
   }, [course]);
+
+  // Compute formula display data — reactive to editing mode
+  const formulaData = useMemo(() => {
+    if (!course) return { terms: [], totalWeight: 0, result: 0, threshold: 0.8, passed: false };
+    const terms = course.lessons.map((l) => {
+      const bestScore = l.quizzes?.[0]?.attempts?.[0]?.score ?? 0;
+      const weight = editingThresholds
+        ? (draftWeights[l.id] ?? l.weight ?? 1.0)
+        : (l.weight ?? 1.0);
+      return { score: bestScore, weight, title: l.title };
+    });
+    const totalWeight = terms.reduce((sum, t) => sum + t.weight, 0);
+    const weightedSum = terms.reduce((sum, t) => sum + t.score * t.weight, 0);
+    const result = totalWeight > 0 ? weightedSum / totalWeight : 0;
+    const threshold = editingThresholds
+      ? draftPassThreshold / 100
+      : (course.passThreshold ?? 0.8);
+    const passed = result >= threshold;
+    return { terms, totalWeight, result, threshold, passed };
+  }, [course, editingThresholds, draftWeights, draftPassThreshold]);
+
+  const MAX_FORMULA_TERMS = 5;
 
   function lessonNodeColor(lesson: Lesson) {
     if (lesson.completedAt) {
@@ -582,17 +622,79 @@ export default function CourseOverviewPage({
                       value={totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0}
                       className="h-3"
                     />
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        {t("courseOverview:weightedScore")}
-                      </span>
-                      <span className={`font-bold tabular-nums ${
-                        coursePassed ? "text-emerald-600" : "text-muted-foreground"
-                      }`}>
-                        {Math.round(completionResult.weightedScore * 100)}%
-                        {" / "}
-                        {Math.round((course.passThreshold ?? 0.8) * 100)}%
-                      </span>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          {t("courseOverview:weightedScore")}
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  className="inline-flex items-center justify-center size-4 rounded-full border text-[10px] font-medium text-muted-foreground hover:bg-muted transition-colors"
+                                  aria-label="Info"
+                                >
+                                  ?
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-xs">
+                                {t("courseOverview:weightedScoreTooltip")}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </span>
+                        <span className={`font-bold tabular-nums ${
+                          formulaData.passed ? "text-emerald-600" : "text-muted-foreground"
+                        }`}>
+                          {Math.round(formulaData.result * 100)}%
+                          {" / "}
+                          {Math.round(formulaData.threshold * 100)}%
+                        </span>
+                      </div>
+                      {/* Collapsible formula */}
+                      <button
+                        type="button"
+                        onClick={() => setShowFormula((v) => !v)}
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showFormula
+                          ? t("courseOverview:formulaHideDetails")
+                          : t("courseOverview:formulaShowDetails")}
+                      </button>
+                      {showFormula && formulaData.terms.length > 0 && (
+                        <div className="text-xs font-mono bg-muted/50 rounded-md px-3 py-2 leading-relaxed break-words">
+                          <span className="text-muted-foreground">(</span>
+                          {formulaData.terms.slice(0, MAX_FORMULA_TERMS).map((term, i) => (
+                            <span key={i}>
+                              {i > 0 && <span className="text-muted-foreground"> + </span>}
+                              <span>{Math.round(term.score * 100)}%</span>
+                              <span className="text-muted-foreground">&times;</span>
+                              <span>{term.weight}</span>
+                            </span>
+                          ))}
+                          {formulaData.terms.length > MAX_FORMULA_TERMS && (
+                            <span className="text-muted-foreground">
+                              {" + \u2026"}
+                              <span className="text-foreground/60"> ({formulaData.terms.length - MAX_FORMULA_TERMS} more)</span>
+                            </span>
+                          )}
+                          <span className="text-muted-foreground">)</span>
+                          <span className="text-muted-foreground"> / </span>
+                          <span>{formulaData.totalWeight}</span>
+                          <span className="text-muted-foreground"> = </span>
+                          <span className={formulaData.passed ? "text-emerald-600 font-semibold" : "text-red-500 font-semibold"}>
+                            {Math.round(formulaData.result * 100)}%
+                          </span>
+                          <span className="text-muted-foreground"> {formulaData.passed ? "\u2265" : "<"} </span>
+                          <span>{Math.round(formulaData.threshold * 100)}%</span>
+                          {" "}
+                          {formulaData.passed ? (
+                            <span className="text-emerald-600">{"\u2713"}</span>
+                          ) : (
+                            <span className="text-red-500">{"\u2717"}</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     {completionResult.blockedByFailedLesson && (
                       <p className="text-sm text-amber-600">
@@ -914,6 +1016,10 @@ export default function CourseOverviewPage({
         courseId={courseId}
         open={shareDialogOpen}
         onOpenChange={setShareDialogOpen}
+      />
+      <ContextDocGuideDialog
+        open={contextDocGuideOpen}
+        onOpenChange={setContextDocGuideOpen}
       />
     </div>
   );

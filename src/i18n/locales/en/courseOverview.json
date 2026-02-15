@@ -37,5 +37,15 @@
   "lessonWeightsLabel": "Lesson Weights",
   "resetToDefaults": "Reset to Defaults",
   "settingsSaved": "Completion settings saved",
-  "savingSettings": "Saving..."
+  "savingSettings": "Saving...",
+  "weightedScoreTooltip": "Each lesson's best quiz score is multiplied by its weight, then all products are summed and divided by the total weight. The result must reach the pass threshold to complete the course.",
+  "formulaShowDetails": "Show formula",
+  "formulaHideDetails": "Hide formula",
+  "contextDocGuideTitle": "What is the Context Document?",
+  "contextDocGuideP1": "Every course has a Context Document — a pedagogical guide that shapes how each lesson is generated.",
+  "contextDocGuideP2": "It defines notation conventions, teaching approach, key themes, difficulty calibration, and explanation style. The AI follows these guidelines when creating every lesson.",
+  "contextDocGuideP3": "You can edit this document to match your preferences — for example, change the formality level, request more visual examples, or adjust the notation style. Your changes will influence all future lesson generations.",
+  "contextDocGuideCta": "Scroll down to the Context Document card to review and customize it.",
+  "contextDocGuideDismiss": "Don't show this again",
+  "contextDocGuideClose": "Got it"
 }

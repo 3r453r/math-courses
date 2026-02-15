@@ -37,5 +37,15 @@
   "lessonWeightsLabel": "Wagi lekcji",
   "resetToDefaults": "Przywróć domyślne",
   "settingsSaved": "Ustawienia zaliczenia zapisane",
-  "savingSettings": "Zapisywanie..."
+  "savingSettings": "Zapisywanie...",
+  "weightedScoreTooltip": "Najlepszy wynik quizu z każdej lekcji jest mnożony przez jej wagę, następnie wszystkie iloczyny są sumowane i dzielone przez sumę wag. Wynik musi osiągnąć próg zaliczenia, aby ukończyć kurs.",
+  "formulaShowDetails": "Pokaż wzór",
+  "formulaHideDetails": "Ukryj wzór",
+  "contextDocGuideTitle": "Czym jest Dokument Kontekstowy?",
+  "contextDocGuideP1": "Każdy kurs posiada Dokument Kontekstowy — przewodnik pedagogiczny, który kształtuje sposób generowania każdej lekcji.",
+  "contextDocGuideP2": "Definiuje konwencje notacji, podejście dydaktyczne, kluczowe tematy, kalibrację trudności i styl wyjaśnień. AI stosuje te wytyczne przy tworzeniu każdej lekcji.",
+  "contextDocGuideP3": "Możesz edytować ten dokument, aby dopasować go do swoich preferencji — na przykład zmienić poziom formalności, poprosić o więcej przykładów wizualnych lub dostosować styl notacji. Twoje zmiany wpłyną na wszystkie przyszłe generacje lekcji.",
+  "contextDocGuideCta": "Przewiń w dół do karty Dokumentu Kontekstowego, aby go przejrzeć i dostosować.",
+  "contextDocGuideDismiss": "Nie pokazuj ponownie",
+  "contextDocGuideClose": "Rozumiem"
 }
