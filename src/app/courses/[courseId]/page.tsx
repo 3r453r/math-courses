@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { NotebookPanel } from "@/components/notebook";
 import { MathMarkdown } from "@/components/lesson/MathMarkdown";
 import { ExportDialog, ShareDialog } from "@/components/export";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { evaluateCourseCompletion, DEFAULT_THRESHOLDS } from "@/lib/quiz/courseCompletion";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -200,19 +201,19 @@ export default function CourseOverviewPage({
 
   function lessonNodeColor(lesson: Lesson) {
     if (lesson.completedAt) {
-      return "bg-emerald-100 text-emerald-800 border-emerald-400";
+      return "bg-emerald-100 text-emerald-800 border-emerald-400 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700";
     }
     const hasAttempt = lesson.quizzes?.[0]?.attempts?.[0];
     if (hasAttempt) {
-      return "bg-amber-100 text-amber-800 border-amber-400";
+      return "bg-amber-100 text-amber-800 border-amber-400 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700";
     }
     switch (lesson.status) {
       case "ready":
-        return "bg-green-50 text-green-800 border-green-300";
+        return "bg-green-50 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700";
       case "generating":
-        return "bg-yellow-100 text-yellow-800 border-yellow-300";
+        return "bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/40 dark:text-yellow-300 dark:border-yellow-700";
       default:
-        return "bg-gray-100 text-gray-600 border-gray-300";
+        return "bg-gray-100 text-gray-600 border-gray-300 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600";
     }
   }
 
@@ -357,41 +358,43 @@ export default function CourseOverviewPage({
     <div className="fixed inset-0 bg-background flex flex-col">
       <header className="border-b shrink-0">
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Button variant="ghost" onClick={() => router.push("/")}>
-            &larr; {t("common:back")}
+          <Button variant="ghost" onClick={() => router.push("/")} className="shrink-0">
+            &larr; <span className="hidden sm:inline">{t("common:back")}</span>
           </Button>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold">{course.title}</h1>
-            <p className="text-sm text-muted-foreground">{course.description}</p>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-bold truncate">{course.title}</h1>
+            <p className="text-sm text-muted-foreground hidden sm:block truncate">{course.description}</p>
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setExportDialogOpen(true)}
+            title={t("export:export")}
           >
-            <svg className="size-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="size-4 md:mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
             </svg>
-            {t("export:export")}
+            <span className="hidden md:inline">{t("export:export")}</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShareDialogOpen(true)}
+            title={t("export:share")}
           >
-            <svg className="size-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="size-4 md:mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
             </svg>
-            {t("export:share")}
+            <span className="hidden md:inline">{t("export:share")}</span>
           </Button>
           <Button
             variant={notebookOpen ? "secondary" : "outline"}
             size="sm"
             onClick={() => setNotebookOpen(!notebookOpen)}
-            title="Toggle notebook"
+            title={t("notebook:notebook")}
           >
             <svg
-              className="size-4 mr-1.5"
+              className="size-4 md:mr-1.5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -403,9 +406,10 @@ export default function CourseOverviewPage({
                 d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
               />
             </svg>
-            {t("notebook:notebook")}
+            <span className="hidden md:inline">{t("notebook:notebook")}</span>
           </Button>
-          <Badge variant="outline" className="capitalize">
+          <ThemeToggle />
+          <Badge variant="outline" className="capitalize hidden sm:inline-flex">
             {course.difficulty}
           </Badge>
         </div>
@@ -418,7 +422,7 @@ export default function CourseOverviewPage({
           <main
             className={
               notebookOpen
-                ? "w-1/2 overflow-y-auto px-4 py-8"
+                ? "hidden md:block md:w-3/5 lg:w-1/2 overflow-y-auto px-4 py-8"
                 : "flex-1 container mx-auto px-4 py-8"
             }
           >
@@ -889,7 +893,7 @@ export default function CourseOverviewPage({
 
           {notebookOpen && (
             <aside
-              className="w-1/2 shrink-0"
+              className="w-full md:w-2/5 lg:w-1/2 shrink-0"
               data-testid="notebook-aside"
             >
               <NotebookPanel

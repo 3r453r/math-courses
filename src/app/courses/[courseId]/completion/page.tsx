@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { MathMarkdown } from "@/components/lesson/MathMarkdown";
 import { ScoreBar } from "@/components/progress";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface LessonPerformance {
   title: string;
@@ -138,6 +139,7 @@ export default function CompletionPage({
               {t("completion:completedOn", { date: completedDate })}
             </p>
           </div>
+          <ThemeToggle />
         </div>
       </header>
 

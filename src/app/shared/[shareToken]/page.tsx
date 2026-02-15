@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { MathMarkdown } from "@/components/lesson/MathMarkdown";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface SharedLesson {
   id: string;
@@ -194,6 +195,7 @@ export default function SharedCoursePage({
               </p>
             )}
           </div>
+          <ThemeToggle />
           <Button onClick={handleClone} disabled={cloning}>
             {cloning ? t("export:cloning") : t("export:cloneToMyCourses")}
           </Button>
@@ -259,10 +261,10 @@ export default function SharedCoursePage({
                             transition-all hover:shadow-md hover:scale-[1.02]
                             ${
                               lesson.completedAt
-                                ? "bg-emerald-100 text-emerald-800 border-emerald-400"
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-400 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700"
                                 : lesson.status === "ready"
-                                  ? "bg-green-50 text-green-800 border-green-300"
-                                  : "bg-gray-100 text-gray-600 border-gray-300"
+                                  ? "bg-green-50 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700"
+                                  : "bg-gray-100 text-gray-600 border-gray-300 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600"
                             }
                           `}
                         >
@@ -272,7 +274,7 @@ export default function SharedCoursePage({
                             </span>
                             {lesson.completedAt && (
                               <svg
-                                className="size-4 text-emerald-600"
+                                className="size-4 text-emerald-600 dark:text-emerald-400"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
@@ -365,7 +367,7 @@ export default function SharedCoursePage({
                         </div>
                       )}
                       {section.type === "definition" && (
-                        <div className="border-l-4 border-blue-300 pl-4 my-3">
+                        <div className="border-l-4 border-blue-300 dark:border-blue-700 pl-4 my-3">
                           <p className="font-semibold text-sm">
                             {section.term as string}
                           </p>
@@ -376,7 +378,7 @@ export default function SharedCoursePage({
                         </div>
                       )}
                       {section.type === "theorem" && (
-                        <div className="border-l-4 border-purple-300 pl-4 my-3">
+                        <div className="border-l-4 border-purple-300 dark:border-purple-700 pl-4 my-3">
                           <p className="font-semibold text-sm">
                             {section.name as string}
                           </p>
@@ -451,7 +453,7 @@ export default function SharedCoursePage({
                   <div className="flex items-center gap-2 shrink-0">
                     {lesson.completedAt && (
                       <svg
-                        className="size-4 text-emerald-600"
+                        className="size-4 text-emerald-600 dark:text-emerald-400"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { QuizRunner } from "@/components/quiz/QuizRunner";
 import { QuizResults } from "@/components/quiz/QuizResults";
 import type { QuizQuestion, QuizAnswers, QuizResult } from "@/types/quiz";
@@ -223,10 +224,11 @@ export default function LessonQuizPage({
           >
             &larr; {t("quiz:backToLesson")}
           </Button>
-          <div>
+          <div className="flex-1">
             <h1 className="text-xl font-bold">{t("quiz:lessonQuiz")}</h1>
             <p className="text-sm text-muted-foreground">{lesson?.title}</p>
           </div>
+          <ThemeToggle />
         </div>
       </header>
 

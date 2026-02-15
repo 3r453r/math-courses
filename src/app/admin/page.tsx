@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AccessCodeManager } from "@/components/admin/AccessCodeManager";
 import { UserManager } from "@/components/admin/UserManager";
 import { GalleryManager } from "@/components/admin/GalleryManager";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type Tab = "accessCodes" | "users" | "gallery";
 
@@ -46,9 +47,12 @@ export default function AdminPage() {
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold">{t("admin:title")}</h1>
-          <Button variant="outline" onClick={() => router.push("/")}>
-            Dashboard
-          </Button>
+          <div className="flex gap-2 items-center">
+            <ThemeToggle />
+            <Button variant="outline" onClick={() => router.push("/")}>
+              Dashboard
+            </Button>
+          </div>
         </div>
       </header>
 

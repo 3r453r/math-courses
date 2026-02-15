@@ -17,6 +17,7 @@ import {
   ScoreTimeline,
   WeakTopicsSummary,
 } from "@/components/progress";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface ProgressData {
   global: {
@@ -98,6 +99,7 @@ export default function ProgressPage() {
           <div className="flex-1">
             <h1 className="text-xl font-bold">{t("progress:title")}</h1>
           </div>
+          <ThemeToggle />
         </div>
       </header>
 

@@ -31,6 +31,10 @@ import {
 } from "@/components/ui/collapsible";
 import { MODEL_REGISTRY } from "@/lib/ai/client";
 import type { AIProvider } from "@/lib/ai/client";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { ColorThemeSelector } from "@/components/ColorThemeSelector";
+import { Sun, Moon, Monitor } from "lucide-react";
+import { useTheme } from "next-themes";
 
 interface ProviderConfig {
   id: AIProvider;
@@ -78,6 +82,7 @@ export default function SetupPage() {
     setLanguage,
   } = useAppStore();
   const { t } = useTranslation(["setup", "common", "login"]);
+  const { theme, setTheme } = useTheme();
 
   // Local draft keys (one per provider)
   const [draftKeys, setDraftKeys] = useState<Record<string, string>>({
@@ -230,6 +235,7 @@ export default function SetupPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="fixed top-4 right-4"><ThemeToggle /></div>
       <Card className="w-full max-w-lg">
         <CardHeader>
           <CardTitle className="text-2xl">{t("setup:title")}</CardTitle>
@@ -364,6 +370,47 @@ export default function SetupPage() {
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">{t("setup:languageDescription")}</p>
+          </div>
+
+          {/* Appearance */}
+          <div className="space-y-3 pt-2">
+            <Label>{t("setup:appearance.title")}</Label>
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">{t("setup:appearance.darkMode")}</p>
+              <div className="flex gap-1">
+                <Button
+                  variant={theme === "light" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTheme("light")}
+                  className="gap-1.5"
+                >
+                  <Sun className="size-3.5" />
+                  {t("setup:appearance.light")}
+                </Button>
+                <Button
+                  variant={theme === "dark" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTheme("dark")}
+                  className="gap-1.5"
+                >
+                  <Moon className="size-3.5" />
+                  {t("setup:appearance.dark")}
+                </Button>
+                <Button
+                  variant={theme === "system" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTheme("system")}
+                  className="gap-1.5"
+                >
+                  <Monitor className="size-3.5" />
+                  {t("setup:appearance.system")}
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">{t("setup:appearance.colorTheme")}</p>
+              <ColorThemeSelector />
+            </div>
           </div>
 
           <div className="flex items-center gap-2">

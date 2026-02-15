@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -118,6 +119,7 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="fixed top-4 right-4"><ThemeToggle /></div>
       <Suspense>
         <LoginForm />
       </Suspense>

@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function RedeemPage() {
   const router = useRouter();
@@ -50,6 +51,7 @@ export default function RedeemPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="fixed top-4 right-4"><ThemeToggle /></div>
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">{t("redeem:title")}</CardTitle>

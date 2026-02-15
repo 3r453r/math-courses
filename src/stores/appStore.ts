@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CustomKeyword, KeywordOverride } from "@/lib/speech/voiceKeywords";
 import type { AIProvider, ProviderApiKeys } from "@/lib/ai/client";
+import type { ColorThemeId } from "@/lib/themes";
 
 interface AppState {
   apiKeys: ProviderApiKeys;
@@ -12,6 +13,7 @@ interface AppState {
   generationModel: string;
   chatModel: string;
   language: string;
+  colorTheme: ColorThemeId;
   customVoiceKeywords: CustomKeyword[];
   voiceKeywordOverrides: Record<string, KeywordOverride>;
   controlKeywordOverrides: Record<string, { endInput?: string }>;
@@ -26,6 +28,7 @@ interface AppState {
   setGenerationModel: (model: string) => void;
   setChatModel: (model: string) => void;
   setLanguage: (lang: string) => void;
+  setColorTheme: (theme: ColorThemeId) => void;
   addCustomVoiceKeyword: (keyword: CustomKeyword) => void;
   removeCustomVoiceKeyword: (phrase: string) => void;
   setVoiceKeywordOverride: (key: string, override: KeywordOverride) => void;
@@ -48,6 +51,7 @@ export const useAppStore = create<AppState>()(
       generationModel: "claude-opus-4-6",
       chatModel: "claude-sonnet-4-5-20250929",
       language: "en",
+      colorTheme: "neutral",
       customVoiceKeywords: [],
       voiceKeywordOverrides: {},
       controlKeywordOverrides: {},
@@ -68,6 +72,7 @@ export const useAppStore = create<AppState>()(
       setGenerationModel: (model) => set({ generationModel: model }),
       setChatModel: (model) => set({ chatModel: model }),
       setLanguage: (lang) => set({ language: lang }),
+      setColorTheme: (theme) => set({ colorTheme: theme }),
       addCustomVoiceKeyword: (keyword) =>
         set((state) => ({
           customVoiceKeywords: [

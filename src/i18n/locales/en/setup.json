@@ -23,6 +23,14 @@
   "polish": "Polski",
   "syncApiKey": "Save API keys to your account (syncs across devices)",
   "signedInAs": "Signed in as",
+  "appearance": {
+    "title": "Appearance",
+    "darkMode": "Dark mode",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "colorTheme": "Color theme"
+  },
   "apiKeyHelp": {
     "title": "How to get an API key",
     "anthropic": "Anthropic (Claude)",

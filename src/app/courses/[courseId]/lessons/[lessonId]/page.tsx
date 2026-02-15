@@ -19,6 +19,7 @@ import { useTranslation } from "react-i18next";
 import { LessonContentRenderer } from "@/components/lesson/LessonContentRenderer";
 import { ScratchpadPanel } from "@/components/scratchpad";
 import { ChatPanel } from "@/components/chat";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import type { LessonContent } from "@/types/lesson";
 
 interface QuizInfo {
@@ -143,7 +144,7 @@ export default function LessonPage({
           >
             &larr; {t("lesson:courseOverview")}
           </Button>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono text-muted-foreground">
                 {t("lesson:lessonIndex", { index: lesson.orderIndex })}
@@ -154,11 +155,12 @@ export default function LessonPage({
                 {lesson.status}
               </Badge>
               {lesson.isSupplementary && (
-                <Badge variant="secondary">{t("common:supplementary")}</Badge>
+                <Badge variant="secondary" className="hidden sm:inline-flex">{t("common:supplementary")}</Badge>
               )}
             </div>
-            <h1 className="text-xl font-bold">{lesson.title}</h1>
+            <h1 className="text-xl font-bold truncate">{lesson.title}</h1>
           </div>
+          <ThemeToggle />
           {hasContent && (
             <>
               <Button
@@ -171,7 +173,7 @@ export default function LessonPage({
                 title={t("lesson:toggleChat")}
               >
                 <svg
-                  className="size-4 mr-1.5"
+                  className="size-4 md:mr-1.5"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -183,7 +185,7 @@ export default function LessonPage({
                     d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
                   />
                 </svg>
-                {t("lesson:chat")}
+                <span className="hidden md:inline">{t("lesson:chat")}</span>
               </Button>
               <Button
                 variant={scratchpadOpen ? "secondary" : "outline"}
@@ -195,7 +197,7 @@ export default function LessonPage({
                 title={t("lesson:toggleScratchpad")}
               >
                 <svg
-                  className="size-4 mr-1.5"
+                  className="size-4 md:mr-1.5"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -207,7 +209,7 @@ export default function LessonPage({
                     d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
                   />
                 </svg>
-                {t("lesson:scratchpad")}
+                <span className="hidden md:inline">{t("lesson:scratchpad")}</span>
               </Button>
             </>
           )}
@@ -222,7 +224,7 @@ export default function LessonPage({
             data-testid="lesson-main"
             className={
               (scratchpadOpen || chatSidebarOpen) && hasContent
-                ? "w-1/2 overflow-y-auto px-6 pt-8 pb-4"
+                ? "hidden md:block md:w-3/5 lg:w-1/2 overflow-y-auto px-6 pt-8 pb-4"
                 : "flex-1 container mx-auto px-4 py-8 max-w-4xl"
             }
           >
@@ -341,7 +343,7 @@ export default function LessonPage({
 
           {(scratchpadOpen || chatSidebarOpen) && hasContent && (
             <aside
-              className="w-1/2 shrink-0 h-full"
+              className="w-full md:w-2/5 lg:w-1/2 shrink-0 h-full"
               data-testid={scratchpadOpen ? "scratchpad-aside" : "chat-aside"}
             >
               {scratchpadOpen ? (

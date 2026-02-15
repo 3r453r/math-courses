@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { GalleryCard } from "@/components/gallery/GalleryCard";
 import { GalleryFilters } from "@/components/gallery/GalleryFilters";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface GalleryItem {
   shareToken: string;
@@ -122,7 +123,8 @@ export default function GalleryPage() {
             <h1 className="text-2xl font-bold">{t("gallery:title")}</h1>
             <p className="text-sm text-muted-foreground">{t("gallery:subtitle")}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <ThemeToggle />
             {session?.user ? (
               <Button variant="outline" onClick={() => router.push("/")}>
                 Dashboard

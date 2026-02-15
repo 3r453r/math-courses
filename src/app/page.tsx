@@ -17,6 +17,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { MobileMenu } from "@/components/MobileMenu";
 
 interface CourseProgress {
   completedLessons: number;
@@ -132,10 +134,11 @@ export default function DashboardPage() {
           </div>
           <div className="flex gap-2 items-center">
             {session?.user && (
-              <span className="text-sm text-muted-foreground mr-1">
+              <span className="hidden md:inline text-sm text-muted-foreground mr-1">
                 {session.user.name || session.user.email}
               </span>
             )}
+            <ThemeToggle />
             <Button
               variant="ghost"
               size="sm"
@@ -144,46 +147,49 @@ export default function DashboardPage() {
             >
               {language === "en" ? "PL" : "EN"}
             </Button>
-            {isAdmin && (
-              <Button variant="outline" onClick={() => router.push("/admin")}>
-                Admin
+            <div className="hidden md:flex gap-2 items-center">
+              {isAdmin && (
+                <Button variant="outline" onClick={() => router.push("/admin")}>
+                  Admin
+                </Button>
+              )}
+              <Button variant="outline" onClick={() => router.push("/gallery")}>
+                {t("dashboard:gallery")}
               </Button>
-            )}
-            <Button variant="outline" onClick={() => router.push("/gallery")}>
-              {t("dashboard:gallery")}
-            </Button>
-            {process.env.NEXT_PUBLIC_DISCORD_INVITE_URL && (
-              <Button
-                variant="outline"
-                asChild
-              >
-                <a
-                  href={process.env.NEXT_PUBLIC_DISCORD_INVITE_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
+              {process.env.NEXT_PUBLIC_DISCORD_INVITE_URL && (
+                <Button
+                  variant="outline"
+                  asChild
                 >
-                  {t("dashboard:joinDiscord")}
-                </a>
+                  <a
+                    href={process.env.NEXT_PUBLIC_DISCORD_INVITE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {t("dashboard:joinDiscord")}
+                  </a>
+                </Button>
+              )}
+              {hasReadyCourses && (
+                <Button variant="outline" onClick={() => router.push("/progress")}>
+                  {t("dashboard:viewProgress")}
+                </Button>
+              )}
+              <Button variant="outline" onClick={() => router.push("/setup")}>
+                {t("common:settings")}
               </Button>
-            )}
-            {hasReadyCourses && (
-              <Button variant="outline" onClick={() => router.push("/progress")}>
-                {t("dashboard:viewProgress")}
+              <Button onClick={() => router.push("/courses/new")}>
+                {t("dashboard:newCourse")}
               </Button>
-            )}
-            <Button variant="outline" onClick={() => router.push("/setup")}>
-              {t("common:settings")}
-            </Button>
-            <Button onClick={() => router.push("/courses/new")}>
-              {t("dashboard:newCourse")}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => signOut({ callbackUrl: "/login" })}
-            >
-              {t("login:signOut")}
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => signOut({ callbackUrl: "/login" })}
+              >
+                {t("login:signOut")}
+              </Button>
+            </div>
+            <MobileMenu isAdmin={isAdmin} showProgress={hasReadyCourses} />
           </div>
         </div>
       </header>

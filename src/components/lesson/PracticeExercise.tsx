@@ -62,7 +62,7 @@ export function PracticeExercise({ exercise, index }: Props) {
         <div className="flex items-center gap-2">
           <Badge
             variant="outline"
-            className="bg-emerald-50 text-emerald-700 border-emerald-300"
+            className="bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-700"
           >
             {t("exercise", { number: index + 1 })}
           </Badge>
