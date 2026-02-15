@@ -18,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { QuizRunner } from "@/components/quiz/QuizRunner";
 import { QuizResults } from "@/components/quiz/QuizResults";
+import { generateLessonStream } from "@/lib/generateLessonStream";
 import type { QuizQuestion, QuizAnswers, QuizResult } from "@/types/quiz";
 
 interface QuizData {
@@ -173,20 +174,12 @@ export default function LessonQuizPage({
     if (!hasAnyApiKey || !result) return;
     setRegenerating(true);
     try {
-      const res = await fetch("/api/generate/lesson", {
-        method: "POST",
-        headers: apiHeaders,
-        body: JSON.stringify({
-          lessonId,
-          courseId,
-          model: generationModel,
-          weakTopics: result.weakTopics,
-        }),
+      await generateLessonStream(apiHeaders, {
+        lessonId,
+        courseId,
+        model: generationModel,
+        weakTopics: result.weakTopics,
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to regenerate lesson");
-      }
       toast.success(t("quiz:lessonRegenerated"));
       router.push(`/courses/${courseId}/lessons/${lessonId}`);
     } catch (err) {
