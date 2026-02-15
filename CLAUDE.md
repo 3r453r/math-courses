@@ -62,7 +62,7 @@ pnpm test:all         # All of the above
 ### AI Generation Flow
 
 1. `POST /api/generate/course` — AI generates course structure (lessons + DAG edges) + a pedagogical context document (`contextDoc`) using `courseStructureSchema`
-2. `POST /api/generate/lesson` — AI co-generates lesson content AND quiz in a single call using `lessonWithQuizSchema`. The course `contextDoc` is injected into the prompt. On regeneration with weak topics, quiz questions are weighted 50%+ toward weak areas.
+2. `POST /api/generate/lesson` — Two sequential `generateObject` calls: first generates lesson content (`lessonContentSchema`), then generates quiz (`quizSchema`) with the lesson content as context. The course `contextDoc` is injected into the lesson prompt. On regeneration with weak topics, quiz questions are weighted 50%+ toward weak areas.
 3. `POST /api/generate/quiz` — Standalone quiz generation (fallback/regenerate-only). Also receives `lessonContent` and `contextDoc` when available.
 4. `POST /api/chat` — Streaming AI tutor chat using `streamText` + `toTextStreamResponse()`. Client uses `TextStreamChatTransport` from AI SDK v6.
 5. **Multi-provider AI**: `MODEL_REGISTRY` in `src/lib/ai/client.ts` supports 3 providers (Anthropic, OpenAI, Google) with 9 models. Users store per-provider API keys. `getProviderForModel()` selects the right SDK client. Two model tiers: primary (generation) and chat — user-configurable

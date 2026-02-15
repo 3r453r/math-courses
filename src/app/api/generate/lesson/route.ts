@@ -3,7 +3,8 @@ export const maxDuration = 300;
 import { generateObject } from "ai";
 import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
 import { mockLessonContent, mockQuiz } from "@/lib/ai/mockData";
-import { lessonWithQuizSchema } from "@/lib/ai/schemas/lessonWithQuizSchema";
+import { lessonContentSchema } from "@/lib/ai/schemas/lessonSchema";
+import { quizSchema } from "@/lib/ai/schemas/quizSchema";
 import { buildLanguageInstruction } from "@/lib/ai/prompts/languageInstruction";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
@@ -70,7 +71,8 @@ export async function POST(request: Request) {
 
       const focusAreas = JSON.parse(lesson.course.focusAreas || "[]") as string[];
 
-      let prompt = `You are an educator specializing in ${lesson.course.topic}, creating a detailed lesson with an accompanying quiz.
+      // --- Step 1: Generate lesson content ---
+      let lessonPrompt = `You are an educator specializing in ${lesson.course.topic}, creating a detailed lesson.
 
 LESSON: ${lesson.title}
 SUMMARY: ${lesson.summary}
@@ -91,42 +93,66 @@ LESSON CONTENT GUIDELINES:
 5. Include at least TWO practice exercises with hints and solutions.
 6. For practice exercises: mirror the worked example pattern but change the specific values.
 7. Aim for 8-15 sections of varied types (text, math, definition, theorem, visualization).
-8. Make the content thorough but accessible - explain the "why" not just the "what".
-
-QUIZ GUIDELINES:
-After creating the lesson content, also generate 10-20 quiz questions that:
-1. Directly reference definitions, theorems, and examples from the lesson content.
-2. Test understanding at varying difficulty levels (easy, medium, hard).
-3. Include conceptual, computational, and application questions.
-4. Tag each question with the specific sub-topic it covers.
-5. Provide detailed explanations for every choice (why correct or incorrect).
-6. Ensure at least one question has multiple correct answers.
-7. Use Markdown with LaTeX notation for all math in questions and choices.`;
+8. Make the content thorough but accessible - explain the "why" not just the "what".`;
 
       if (body.weakTopics && body.weakTopics.length > 0) {
-        prompt += `\n\nIMPORTANT - QUIZ FEEDBACK:
-The student previously studied this lesson and took a quiz. They scored poorly on these topics:
+        lessonPrompt += `\n\nIMPORTANT - WEAK AREAS FEEDBACK:
+The student previously studied this lesson and scored poorly on these topics:
 ${body.weakTopics.map((t) => `- ${t}`).join("\n")}
 
 Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
 - Add more detailed explanations and intuition for the weak topics
 - Include additional worked examples specifically targeting these areas
 - Add more practice exercises for the weak topics
-- Consider alternative explanations or approaches that might resonate better
-
-For the quiz: include a higher proportion of questions (at least 50%) targeting these weak topics: ${body.weakTopics.join(", ")}`;
+- Consider alternative explanations or approaches that might resonate better`;
       }
 
-      prompt += buildLanguageInstruction(lesson.course.language);
+      lessonPrompt += buildLanguageInstruction(lesson.course.language);
 
-      const { object } = await generateObject({
+      const { object: lessonObject } = await generateObject({
         model: modelInstance,
-        schema: lessonWithQuizSchema,
-        prompt,
+        schema: lessonContentSchema,
+        prompt: lessonPrompt,
       });
-      lessonContent = object.lesson;
-      quizContent = object.quiz;
-      generationPrompt = prompt;
+      lessonContent = lessonObject;
+      generationPrompt = lessonPrompt;
+
+      // --- Step 2: Generate quiz based on the lesson content ---
+      let quizPrompt = `You are an assessment designer for ${lesson.course.topic}, creating a quiz for a lesson that has just been generated.
+
+LESSON TITLE: ${lesson.title}
+LESSON SUMMARY: ${lesson.summary}
+COURSE: ${lesson.course.title} - ${lesson.course.topic}
+DIFFICULTY: ${lesson.course.difficulty}
+
+LESSON CONTENT (generate questions that directly test this material):
+${JSON.stringify(lessonContent, null, 2)}
+
+QUIZ GUIDELINES:
+1. Generate 10-20 multiple-choice questions that directly reference definitions, theorems, and examples from the lesson content above.
+2. Each question should have 4-6 choices, with one or more correct answers.
+3. Use Markdown with LaTeX ($...$ inline, $$...$$ display) for all math notation.
+4. Test understanding at varying difficulty levels (easy, medium, hard).
+5. Include conceptual, computational, and application questions.
+6. Tag each question with the specific sub-topic it covers.
+7. Provide detailed explanations for every choice (why correct or incorrect).
+8. Ensure at least one question has multiple correct answers.
+9. Each question ID should be unique (e.g., "q1", "q2", etc.).
+10. Each choice ID should be unique within its question (e.g., "a", "b", "c", "d").`;
+
+      if (body.weakTopics && body.weakTopics.length > 0) {
+        quizPrompt += `\n\nIMPORTANT - WEAK AREAS:
+Include a higher proportion of questions (at least 50%) targeting these weak topics: ${body.weakTopics.join(", ")}`;
+      }
+
+      quizPrompt += buildLanguageInstruction(lesson.course.language);
+
+      const { object: quizObject } = await generateObject({
+        model: modelInstance,
+        schema: quizSchema,
+        prompt: quizPrompt,
+      });
+      quizContent = quizObject;
 
       // Normalize: AI returns visualization spec as JSON string, parse to object
       if (lessonContent.sections) {
