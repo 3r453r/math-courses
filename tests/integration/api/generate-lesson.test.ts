@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { POST } from "@/app/api/generate/lesson/route";
+import { POST as POST_QUIZ } from "@/app/api/generate/quiz/route";
 import { createTestCourse, createTestLesson } from "../helpers/fixtures";
 import { getTestPrisma } from "../helpers/db";
 
@@ -61,9 +62,6 @@ describe("POST /api/generate/lesson", () => {
     expect(data.lesson.title).toBeTruthy();
     expect(data.lesson.sections).toBeDefined();
     expect(Array.isArray(data.lesson.sections)).toBe(true);
-    expect(data.quiz).toBeDefined();
-    expect(data.quiz.questions).toBeDefined();
-    expect(Array.isArray(data.quiz.questions)).toBe(true);
   });
 
   it("stores contentJson and updates status to ready", async () => {
@@ -90,10 +88,41 @@ describe("POST /api/generate/lesson", () => {
     expect(updated?.contentJson).toBeTruthy();
     const content = JSON.parse(updated!.contentJson!);
     expect(content.title).toBeTruthy();
+  });
 
-    // Verify co-generated quiz was saved
+  it("generates quiz separately after lesson", async () => {
+    const prisma = getTestPrisma();
+    const course = await createTestCourse({ status: "ready" });
+    const lesson = await createTestLesson(course.id, { status: "pending" });
+
+    // Step 1: Generate lesson
+    const lessonReq = new Request("http://localhost:3000/api/generate/lesson", {
+      method: "POST",
+      headers: { "x-api-key": "test-key" },
+      body: JSON.stringify({
+        lessonId: lesson.id,
+        courseId: course.id,
+        model: "mock",
+      }),
+    });
+    await POST(lessonReq);
+
+    // Step 2: Generate quiz
+    const quizReq = new Request("http://localhost:3000/api/generate/quiz", {
+      method: "POST",
+      headers: { "x-api-key": "test-key" },
+      body: JSON.stringify({
+        lessonId: lesson.id,
+        courseId: course.id,
+        model: "mock",
+      }),
+    });
+    const quizRes = await POST_QUIZ(quizReq);
+    expect(quizRes.status).toBe(200);
+
+    // Verify quiz was saved
     const quiz = await prisma.quiz.findFirst({
-      where: { lessonId: lesson.id },
+      where: { lessonId: lesson.id, isActive: true },
     });
     expect(quiz).toBeTruthy();
     expect(quiz?.status).toBe("ready");

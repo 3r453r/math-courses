@@ -20,7 +20,7 @@ import { LessonContentRenderer } from "@/components/lesson/LessonContentRenderer
 import { ScratchpadPanel } from "@/components/scratchpad";
 import { ChatPanel } from "@/components/chat";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { generateLessonStream } from "@/lib/generateLessonStream";
+import { generateLessonWithQuiz } from "@/lib/generateLessonStream";
 import type { LessonContent } from "@/types/lesson";
 
 interface QuizInfo {
@@ -87,7 +87,7 @@ export default function LessonPage({
     if (!hasAnyApiKey || !lesson) return;
     setGenerating(true);
     try {
-      await generateLessonStream(apiHeaders, {
+      await generateLessonWithQuiz(apiHeaders, {
         lessonId: lesson.id,
         courseId,
         model: generationModel,

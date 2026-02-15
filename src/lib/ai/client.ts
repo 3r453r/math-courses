@@ -86,6 +86,40 @@ export function hasAnyApiKey(keys: ProviderApiKeys): boolean {
   return Boolean(keys.anthropic || keys.openai || keys.google);
 }
 
+/**
+ * Provider-specific options for generateObject/streamObject calls.
+ * Forces Anthropic to use tool-calling mode instead of constrained decoding,
+ * which has a ~180s server-side timeout for large schemas.
+ */
+export function getProviderOptions(modelId: string) {
+  const provider = getProviderForModel(modelId);
+  if (provider === "anthropic") {
+    return {
+      anthropic: {
+        structuredOutputMode: "jsonTool" as const,
+      },
+    };
+  }
+  return undefined;
+}
+
+/**
+ * Repair function for generateObject. When using Anthropic tool-calling mode,
+ * the model sometimes wraps the output in {"parameter":{...}}. This function
+ * unwraps it so schema validation succeeds.
+ */
+export async function repairGeneratedText({ text }: { text: string; error: unknown }): Promise<string | null> {
+  try {
+    const parsed = JSON.parse(text);
+    if (parsed && typeof parsed === "object" && "parameter" in parsed && typeof parsed.parameter === "object") {
+      return JSON.stringify(parsed.parameter);
+    }
+  } catch {
+    // Not valid JSON, can't repair
+  }
+  return null;
+}
+
 // Default model IDs
 export const MODELS = {
   generation: "claude-opus-4-6",

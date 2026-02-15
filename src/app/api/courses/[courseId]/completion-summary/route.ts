@@ -1,5 +1,5 @@
 import { generateObject } from "ai";
-import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
+import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, repairGeneratedText } from "@/lib/ai/client";
 import { completionSummarySchema } from "@/lib/ai/schemas/completionSummarySchema";
 import { buildCompletionSummaryPrompt } from "@/lib/ai/prompts/completionSummary";
 import { mockCompletionSummary } from "@/lib/ai/mockData";
@@ -169,6 +169,8 @@ export async function POST(
           passed: completionResult.passed,
           language: course.language,
         }),
+        providerOptions: getProviderOptions(model),
+        experimental_repairText: repairGeneratedText,
       });
       object = result.object;
     }

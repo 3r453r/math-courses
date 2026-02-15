@@ -1,7 +1,7 @@
 export const maxDuration = 300;
 
 import { generateObject } from "ai";
-import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
+import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, repairGeneratedText } from "@/lib/ai/client";
 import { courseStructureSchema } from "@/lib/ai/schemas/courseSchema";
 import { buildCourseStructurePrompt } from "@/lib/ai/prompts/courseStructure";
 import { mockCourseStructure } from "@/lib/ai/mockData";
@@ -74,6 +74,8 @@ export async function POST(request: Request) {
         model: modelInstance,
         schema: courseStructureSchema,
         prompt: systemPrompt,
+        providerOptions: getProviderOptions(model),
+        experimental_repairText: repairGeneratedText,
       });
       courseStructure = object;
     }

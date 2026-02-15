@@ -1,7 +1,7 @@
 export const maxDuration = 300;
 
 import { generateObject } from "ai";
-import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
+import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, repairGeneratedText } from "@/lib/ai/client";
 import { mockQuiz } from "@/lib/ai/mockData";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "API key required" }, { status: 401 });
   }
 
-  let body: { lessonId?: string; courseId?: string; model?: string } = {};
+  let body: { lessonId?: string; courseId?: string; model?: string; weakTopics?: string[] } = {};
 
   try {
     body = await request.json();
@@ -41,13 +41,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
     }
 
-    // Idempotent: return existing quiz if ready
+    // Idempotent: return existing active quiz if ready
     const existingQuiz = await prisma.quiz.findFirst({
-      where: { lessonId, status: "ready" },
+      where: { lessonId, status: "ready", isActive: true },
     });
     if (existingQuiz) {
       return NextResponse.json(existingQuiz);
     }
+
+    // Determine next generation number
+    const maxGen = await prisma.quiz.aggregate({
+      where: { lessonId },
+      _max: { generation: true },
+    });
+    const nextGeneration = (maxGen._max.generation ?? 0) + 1;
 
     // Create quiz record
     const quiz = await prisma.quiz.create({
@@ -55,6 +62,8 @@ export async function POST(request: Request) {
         lessonId,
         questionsJson: "[]",
         status: "generating",
+        generation: nextGeneration,
+        isActive: true,
       },
     });
 
@@ -66,7 +75,7 @@ export async function POST(request: Request) {
     } else {
       const modelInstance = getModelInstance(model, apiKeys);
 
-      const prompt = buildQuizPrompt({
+      let prompt = buildQuizPrompt({
         lessonTitle: lesson.title,
         lessonSummary: lesson.summary,
         courseTopic: lesson.course.topic,
@@ -75,11 +84,22 @@ export async function POST(request: Request) {
         language: lesson.course.language,
       });
 
+      if (body.weakTopics && body.weakTopics.length > 0) {
+        prompt += `\n\nIMPORTANT - WEAK AREAS:
+Include a higher proportion of questions (at least 50%) targeting these weak topics: ${body.weakTopics.join(", ")}`;
+      }
+
+      const t0 = Date.now();
+      console.log(`[quiz-gen] Starting quiz generation for "${lesson.title}" with model ${model}`);
       const { object } = await generateObject({
         model: modelInstance,
         schema: quizSchema,
         prompt,
+        providerOptions: getProviderOptions(model),
+        experimental_repairText: repairGeneratedText,
       });
+      const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+      console.log(`[quiz-gen] Quiz generation completed in ${elapsed}s`);
       result = object;
     }
 
