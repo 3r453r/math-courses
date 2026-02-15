@@ -21,21 +21,25 @@ export async function POST(request: Request) {
     return new Response("lessonId required", { status: 400 });
   }
 
-  // Filter out empty assistant messages (e.g. step-start with no text content)
-  // that can confuse the model and produce garbage responses
+  // Convert UIMessage format (parts array) to CoreMessage format (content string)
+  // that streamText expects. Also filter out empty assistant messages.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const messages = (rawMessages as any[]).filter((msg: any) => {
-    if (msg.role !== "assistant") return true;
-    // UIMessage format with parts array
+  const messages = (rawMessages as any[]).reduce((acc: any[], msg: any) => {
+    // Extract text content from UIMessage parts or use content directly
+    let content: string;
     if (msg.parts) {
-      return msg.parts.some((p: any) => p.type === "text" && p.text && p.text.trim().length > 0);
+      content = msg.parts
+        .filter((p: any) => p.type === "text")
+        .map((p: any) => p.text)
+        .join("");
+    } else {
+      content = msg.content ?? "";
     }
-    // CoreMessage format with content string
-    if (typeof msg.content === "string") {
-      return msg.content.trim().length > 0;
-    }
-    return true;
-  });
+    // Skip empty assistant messages
+    if (msg.role === "assistant" && !content.trim()) return acc;
+    acc.push({ role: msg.role, content });
+    return acc;
+  }, []);
 
   const { error: ownershipError } = await verifyLessonOwnership(lessonId, userId);
   if (ownershipError) return ownershipError;
