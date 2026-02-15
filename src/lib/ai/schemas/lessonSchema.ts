@@ -26,9 +26,9 @@ const sectionSchema = z.object({
     "3d_surface", "manifold", "tangent_space", "coordinate_transform",
   ]).optional().describe("(visualization) Type of visualization"),
   spec: z.string().optional().describe(
-    '(visualization) JSON string with visualization data. Structure depends on vizType: ' +
-    'function_plot: {"xRange":[min,max],"yRange":[min,max],"functions":[{"expression":"Math.pow(x,2)","color":"blue","label":"x²"}]}. ' +
-    'vector_field: {"xRange":[min,max],"yRange":[min,max],"vectors":[{"origin":[x,y],"direction":[dx,dy],"color":"red"}]}. ' +
+    '(visualization) JSON string with visualization data. VIZTYPE SELECTION: function_plot for y=f(x) single-variable plots; vector_field for 2D fields F(x,y); 3d_surface for z=f(u,v) surfaces; geometry for points/lines/circles. ' +
+    'function_plot: {"xRange":[min,max],"yRange":[min,max],"functions":[{"expression":"Math.pow(x,2)","color":"blue","label":"x²"}]}. Expressions must use ONLY variable x (single-variable functions). ' +
+    'vector_field: {"xRange":[min,max],"yRange":[min,max],"fieldFunction":"[dx_expr, dy_expr]"} where dx_expr and dy_expr use variables x and y. Or explicit vectors: "vectors":[{"origin":[x,y],"direction":[dx,dy],"color":"red"}]. ' +
     'parametric_plot/3d_surface: {"parametricSurface":{"xExpr":"...","yExpr":"...","zExpr":"...","uRange":[min,max],"vRange":[min,max]}}. ' +
     'geometry: {"xRange":[min,max],"yRange":[min,max],"points":[{"x":0,"y":0,"label":"O","color":"red"}],"shapes":[{"type":"line","params":{"from":[-5,-5],"to":[5,5],"color":"blue"}},{"type":"circle","params":{"center":[0,0],"radius":2,"color":"green"}}],"vectors":[{"origin":[0,0],"direction":[2,1],"color":"red","label":"v"}]}. For shapes, set "segment":true in params for finite line segments; lines extend infinitely by default.'
   ),

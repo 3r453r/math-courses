@@ -103,8 +103,11 @@ export default function LessonPage({
 
     try {
       // Step 1: Generate lesson content (blocking)
-      await generateLessonContent(apiHeaders, genBody);
+      const warnings = await generateLessonContent(apiHeaders, genBody);
       toast.success(t("lesson:lessonContentGenerated"));
+      if (warnings.length > 0) {
+        toast.warning(t("lesson:vizMalformedWarning"), { duration: 10000 });
+      }
       sendNotification(
         t("generation:lessonReady"),
         t("generation:lessonReadyBody", { title: lessonTitle }),
