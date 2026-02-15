@@ -8,7 +8,7 @@ export const courseStructureSchema = z.object({
     "Biology", "Engineering", "Economics", "Statistics",
     "Earth Science", "Other"
   ]).describe("Broad academic subject area this course belongs to"),
-  suggestedLessonCount: z.number().min(3).max(30),
+  suggestedLessonCount: z.number().describe("Number of lessons to generate (between 3 and 30)"),
   contextDoc: z.string().describe(
     "A pedagogical guide document (500-1000 words, Markdown) covering: " +
     "1) Notation conventions used throughout the course, " +
@@ -37,10 +37,8 @@ export const courseStructureSchema = z.object({
       ]),
       weight: z
         .number()
-        .min(0.1)
-        .max(5.0)
         .describe(
-          "Relative importance weight for course completion scoring. " +
+          "Relative importance weight for course completion scoring (0.1-5.0). " +
             "Capstone/synthesis lessons: 2.0-3.0. Standard lessons: 1.0. " +
             "Introductory/foundational: 0.5-1.0. Weights are normalized."
         ),

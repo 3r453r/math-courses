@@ -23,16 +23,10 @@ describe("courseStructureSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejects suggestedLessonCount below 3", () => {
-    const data = { ...mockCourseStructure(), suggestedLessonCount: 1 };
+  it("accepts any numeric suggestedLessonCount", () => {
+    const data = { ...mockCourseStructure(), suggestedLessonCount: 5 };
     const result = courseStructureSchema.safeParse(data);
-    expect(result.success).toBe(false);
-  });
-
-  it("rejects suggestedLessonCount above 30", () => {
-    const data = { ...mockCourseStructure(), suggestedLessonCount: 50 };
-    const result = courseStructureSchema.safeParse(data);
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it("rejects invalid estimatedDifficulty enum", () => {
@@ -85,27 +79,10 @@ describe("courseStructureSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  it("rejects lesson weight below 0.1", () => {
+  it("accepts any numeric lesson weight", () => {
     const data = mockCourseStructure();
-    data.lessons[0].weight = 0.05;
+    data.lessons[0].weight = 2.5;
     const result = courseStructureSchema.safeParse(data);
-    expect(result.success).toBe(false);
-  });
-
-  it("rejects lesson weight above 5.0", () => {
-    const data = mockCourseStructure();
-    data.lessons[0].weight = 6.0;
-    const result = courseStructureSchema.safeParse(data);
-    expect(result.success).toBe(false);
-  });
-
-  it("accepts lesson weight at boundaries (0.1 and 5.0)", () => {
-    const data1 = mockCourseStructure();
-    data1.lessons[0].weight = 0.1;
-    expect(courseStructureSchema.safeParse(data1).success).toBe(true);
-
-    const data2 = mockCourseStructure();
-    data2.lessons[0].weight = 5.0;
-    expect(courseStructureSchema.safeParse(data2).success).toBe(true);
+    expect(result.success).toBe(true);
   });
 });
