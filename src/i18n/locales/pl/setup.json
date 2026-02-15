@@ -18,7 +18,7 @@
   "saveAndContinue": "Zapisz i kontynuuj",
   "getApiKeyFrom": "Uzyskaj klucz API na",
   "languageLabel": "Język interfejsu",
-  "languageDescription": "Język interfejsu oraz treści kursów generowanych przez AI",
+  "languageDescription": "Język interfejsu użytkownika. Język treści kursu ustawia się podczas tworzenia kursu.",
   "english": "English",
   "polish": "Polski",
   "syncApiKey": "Zapisz klucze API na koncie (synchronizacja między urządzeniami)",

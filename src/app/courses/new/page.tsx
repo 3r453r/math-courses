@@ -33,6 +33,7 @@ import {
   requestNotificationPermission,
   sendNotification,
 } from "@/lib/notifications";
+import { LANGUAGE_NAMES } from "@/lib/ai/prompts/languageInstruction";
 
 function NewCourseForm() {
   const router = useRouter();
@@ -40,7 +41,8 @@ function NewCourseForm() {
   const hydrated = useHydrated();
   const hasAnyApiKey = useHasAnyApiKey();
   const generationModel = useAppStore((s) => s.generationModel);
-  const language = useAppStore((s) => s.language);
+  const uiLanguage = useAppStore((s) => s.language);
+  const [courseLanguage, setCourseLanguage] = useState(uiLanguage);
   const apiHeaders = useApiHeaders();
   const { t } = useTranslation(["courseNew", "common"]);
 
@@ -121,7 +123,7 @@ function NewCourseForm() {
           focusAreas,
           targetLessonCount: lessonCount ? parseInt(lessonCount) : 10,
           difficulty,
-          language,
+          language: courseLanguage,
           passThreshold: passThreshold / 100,
           noLessonCanFail,
           lessonFailureThreshold: lessonFailureThreshold / 100,
@@ -318,6 +320,25 @@ function NewCourseForm() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="courseLanguage">{t("courseNew:courseLanguageLabel")}</Label>
+                <Select value={courseLanguage} onValueChange={setCourseLanguage}>
+                  <SelectTrigger id="courseLanguage">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(LANGUAGE_NAMES).map(([code, name]) => (
+                      <SelectItem key={code} value={code}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {t("courseNew:courseLanguageNote")}
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="lessons">{t("courseNew:lessonCountLabel")}</Label>
                 <Input
                   id="lessons"
@@ -400,6 +421,7 @@ function NewCourseForm() {
                   <p className="text-sm"><strong>{t("courseNew:focusSummary")}</strong> {focusAreas.join(", ")}</p>
                 )}
                 <p className="text-sm"><strong>{t("courseNew:difficultySummary")}</strong> {difficulty}</p>
+                <p className="text-sm"><strong>{t("courseNew:courseLanguageSummary")}</strong> {LANGUAGE_NAMES[courseLanguage] ?? courseLanguage}</p>
                 <p className="text-sm">
                   <strong>{t("courseNew:lessonsSummary")}</strong> {lessonCount || t("courseNew:aiWillSuggest")}
                 </p>

@@ -21,7 +21,7 @@ import { ScratchpadPanel } from "@/components/scratchpad";
 import { ChatPanel } from "@/components/chat";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { GeneratingSpinner, TriviaSlideshow } from "@/components/generation";
-import { generateLessonWithQuiz } from "@/lib/generateLessonStream";
+import { generateLessonContent, generateQuiz } from "@/lib/generateLessonStream";
 import {
   requestNotificationPermission,
   sendNotification,
@@ -65,6 +65,7 @@ export default function LessonPage({
   const [lesson, setLesson] = useState<LessonDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [generatingQuiz, setGeneratingQuiz] = useState(false);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -94,26 +95,45 @@ export default function LessonPage({
     requestNotificationPermission();
     const lessonTitle = lesson.title;
     const lessonUrl = `/courses/${courseId}/lessons/${lessonId}`;
+    const genBody = {
+      lessonId: lesson.id,
+      courseId,
+      model: generationModel,
+    };
+
     try {
-      await generateLessonWithQuiz(apiHeaders, {
-        lessonId: lesson.id,
-        courseId,
-        model: generationModel,
-      });
-      toast.success(t("lesson:lessonGenerated"));
+      // Step 1: Generate lesson content (blocking)
+      await generateLessonContent(apiHeaders, genBody);
+      toast.success(t("lesson:lessonContentGenerated"));
       sendNotification(
         t("generation:lessonReady"),
         t("generation:lessonReadyBody", { title: lessonTitle }),
         lessonUrl
       );
+      setGenerating(false);
       await fetchLesson();
+
+      // Step 2: Generate quiz in background
+      setGeneratingQuiz(true);
+      try {
+        await generateQuiz(apiHeaders, genBody);
+        toast.success(t("lesson:quizGenerated"));
+        await fetchLesson();
+      } catch (quizErr) {
+        toast.error(
+          quizErr instanceof Error
+            ? quizErr.message
+            : t("lesson:quizGenerationFailed")
+        );
+      } finally {
+        setGeneratingQuiz(false);
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Generation failed");
       sendNotification(
         t("generation:generationFailed"),
         t("generation:generationFailedBody", { title: lessonTitle })
       );
-    } finally {
       setGenerating(false);
     }
   }
@@ -286,7 +306,7 @@ export default function LessonPage({
                     variant="outline"
                     size="sm"
                     onClick={handleGenerate}
-                    disabled={generating || !hasAnyApiKey}
+                    disabled={generating || generatingQuiz || !hasAnyApiKey}
                   >
                     {generating ? <GeneratingSpinner /> : t("lesson:regenerate")}
                   </Button>
@@ -298,7 +318,18 @@ export default function LessonPage({
                 {/* Quiz section */}
                 <Card className="mt-8">
                   <CardContent className="pt-6">
-                    {lesson.quizzes?.[0]?.attempts?.[0] ? (
+                    {generatingQuiz ? (
+                      <div className="flex items-center gap-3">
+                        <svg className="size-4 animate-spin text-muted-foreground" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        <div>
+                          <p className="font-medium text-sm">{t("lesson:generatingQuiz")}</p>
+                          <p className="text-xs text-muted-foreground">{t("lesson:quizGeneratingHint")}</p>
+                        </div>
+                      </div>
+                    ) : lesson.quizzes?.[0]?.attempts?.[0] ? (
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div>

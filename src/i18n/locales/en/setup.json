@@ -18,7 +18,7 @@
   "saveAndContinue": "Save & Continue",
   "getApiKeyFrom": "Get your API key from",
   "languageLabel": "Interface Language",
-  "languageDescription": "Language for the UI and AI-generated course content",
+  "languageDescription": "Language for the user interface. Course content language is set per-course during creation.",
   "english": "English",
   "polish": "Polski",
   "syncApiKey": "Save API keys to your account (syncs across devices)",
