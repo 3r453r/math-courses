@@ -3,7 +3,7 @@ import { Page } from "@playwright/test";
 const STORE_KEY = "math-courses-app";
 const STORE_DATA = JSON.stringify({
   state: {
-    apiKey: "test-key",
+    apiKeys: { anthropic: "test-key" },
     sidebarOpen: true,
     chatSidebarOpen: false,
     scratchpadOpen: false,

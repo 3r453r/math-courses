@@ -37,7 +37,12 @@ test.describe("Quiz Flow", () => {
     const { courseId, lessonId } = await createReadyLesson(page);
     await page.goto(`/courses/${courseId}/lessons/${lessonId}/quiz`);
 
-    // Quiz is co-generated with lesson content, so questions should appear directly
+    // Quiz is generated separately — click Generate Quiz button
+    const generateBtn = page.getByRole("button", { name: /Generate Quiz/i });
+    await generateBtn.waitFor({ timeout: 15000 });
+    await generateBtn.click();
+
+    // Wait for questions to appear
     await expect(page.getByText("Q1", { exact: true })).toBeVisible({ timeout: 15000 });
 
     // Should see progress area
