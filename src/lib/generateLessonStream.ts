@@ -9,7 +9,7 @@ export async function generateLessonContent(
     model: string;
     weakTopics?: string[];
   }
-): Promise<void> {
+): Promise<string[]> {
   const res = await fetch("/api/generate/lesson", {
     method: "POST",
     headers,
@@ -20,6 +20,9 @@ export async function generateLessonContent(
     const data = await res.json();
     throw new Error(data.error || "Failed to generate lesson");
   }
+
+  const data = await res.json();
+  return data.warnings || [];
 }
 
 /**

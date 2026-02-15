@@ -9,6 +9,7 @@ import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
 import { getCheapestModel, repackWithAI, tryCoerceAndValidate } from "@/lib/ai/repairSchema";
+import { validateAndRepairVisualizations } from "@/lib/content/vizValidation";
 
 export async function POST(request: Request) {
   const { userId, error } = await getAuthUser();
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
 
     let lessonContent;
     let generationPrompt = "mock";
+    let vizWarnings: string[] = [];
     if (model === "mock") {
       lessonContent = mockLessonContent();
     } else {
@@ -85,7 +87,7 @@ LESSON CONTENT GUIDELINES:
    - Inline math: $...$
    - Display math: $$...$$
 2. Build intuition BEFORE formalism. Start with a motivating example or real-world connection, then introduce formal definitions.
-3. Include at least ONE visualization section. When specifying function expressions, use JavaScript Math syntax (Math.sin, Math.pow, etc.).
+3. Include at least ONE visualization section. Use JavaScript Math syntax (Math.sin, Math.pow, etc.) for expressions. IMPORTANT: function_plot only supports single-variable functions of x (e.g. Math.pow(x,2)). For 2D vector fields F(x,y), use vector_field with fieldFunction: '[dx_expr, dy_expr]'. For surfaces z=f(u,v), use 3d_surface.
 4. Include at least ONE worked example with detailed step-by-step solution.
 5. Include at least TWO practice exercises with hints and solutions.
 6. For practice exercises: mirror the worked example pattern but change the specific values.
@@ -164,6 +166,19 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
           }
         }
       }
+
+    }
+
+    // Validate visualization expressions and remove malformed ones
+    if (lessonContent.sections) {
+      const vizResult = validateAndRepairVisualizations(
+        lessonContent.sections as { type: string; vizType?: string; spec?: unknown }[]
+      );
+      lessonContent.sections = vizResult.sections as typeof lessonContent.sections;
+      vizWarnings = vizResult.warnings;
+      if (vizWarnings.length > 0) {
+        console.log(`[lesson-gen] Visualization warnings:`, vizWarnings);
+      }
     }
 
     // Deactivate existing quizzes so quiz generation creates a fresh one
@@ -182,7 +197,10 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
       },
     });
 
-    return NextResponse.json({ lesson: lessonContent });
+    return NextResponse.json({
+      lesson: lessonContent,
+      ...(vizWarnings.length > 0 && { warnings: vizWarnings }),
+    });
   } catch (error) {
     console.error("Failed to generate lesson:", error);
     if (body.lessonId) {
