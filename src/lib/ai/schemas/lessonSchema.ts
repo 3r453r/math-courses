@@ -25,39 +25,13 @@ const sectionSchema = z.object({
     "function_plot", "parametric_plot", "vector_field", "geometry",
     "3d_surface", "manifold", "tangent_space", "coordinate_transform",
   ]).optional().describe("(visualization) Type of visualization"),
-  spec: z.object({
-    xRange: z.array(z.number()).optional().describe("[min, max] x-axis range"),
-    yRange: z.array(z.number()).optional().describe("[min, max] y-axis range"),
-    functions: z.array(
-      z.object({
-        expression: z.string().describe("JavaScript Math expression of x"),
-        color: z.string().optional(),
-        label: z.string().optional(),
-      })
-    ).optional(),
-    parametricSurface: z.object({
-      xExpr: z.string(),
-      yExpr: z.string(),
-      zExpr: z.string(),
-      uRange: z.array(z.number()).describe("[min, max] u parameter range"),
-      vRange: z.array(z.number()).describe("[min, max] v parameter range"),
-    }).optional(),
-    points: z.array(
-      z.object({
-        x: z.number(),
-        y: z.number(),
-        label: z.string().optional(),
-      })
-    ).optional(),
-    vectors: z.array(
-      z.object({
-        origin: z.array(z.number()).describe("[x, y] origin point"),
-        direction: z.array(z.number()).describe("[dx, dy] direction vector"),
-        color: z.string().optional(),
-        label: z.string().optional(),
-      })
-    ).optional(),
-  }).optional().describe("(visualization) Visualization specification"),
+  spec: z.string().optional().describe(
+    '(visualization) JSON string with visualization data. Structure depends on vizType: ' +
+    'function_plot: {"xRange":[min,max],"yRange":[min,max],"functions":[{"expression":"Math.pow(x,2)","color":"blue","label":"x²"}]}. ' +
+    'vector_field: {"xRange":[min,max],"yRange":[min,max],"vectors":[{"origin":[x,y],"direction":[dx,dy],"color":"red"}]}. ' +
+    'parametric_plot/3d_surface: {"parametricSurface":{"xExpr":"...","yExpr":"...","zExpr":"...","uRange":[min,max],"vRange":[min,max]}}. ' +
+    'geometry: {"xRange":[min,max],"yRange":[min,max],"points":[{"x":0,"y":0,"label":"O"}]}.'
+  ),
   caption: z.string().optional().describe("(visualization) Caption text"),
   interactionHint: z.string().optional().describe("(visualization) Interaction hint"),
   // code_block

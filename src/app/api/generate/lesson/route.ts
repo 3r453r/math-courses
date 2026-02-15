@@ -125,6 +125,19 @@ For the quiz: include a higher proportion of questions (at least 50%) targeting 
       lessonContent = object.lesson;
       quizContent = object.quiz;
       generationPrompt = prompt;
+
+      // Normalize: AI returns visualization spec as JSON string, parse to object
+      if (lessonContent.sections) {
+        for (const section of lessonContent.sections) {
+          if (section.type === "visualization" && typeof section.spec === "string") {
+            try {
+              section.spec = JSON.parse(section.spec);
+            } catch {
+              // Keep as-is if not valid JSON
+            }
+          }
+        }
+      }
     }
 
     // Deactivate existing quizzes (preserve history instead of deleting)
