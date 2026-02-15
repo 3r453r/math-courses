@@ -4,7 +4,7 @@ test.describe("Setup Flow", () => {
   test("renders setup page with API key form", async ({ page }) => {
     await page.goto("/setup");
 
-    await expect(page.locator("#api-key")).toBeVisible();
+    await expect(page.locator("#key-anthropic")).toBeVisible();
     await expect(
       page.getByText("Generation Model (lessons, quizzes)")
     ).toBeVisible();
@@ -16,8 +16,8 @@ test.describe("Setup Flow", () => {
   }) => {
     await page.goto("/setup");
 
-    // Fill in API key
-    await page.locator("#api-key").fill("sk-ant-test-key");
+    // Fill in Anthropic API key (first provider accordion)
+    await page.locator("#key-anthropic").fill("sk-ant-test-key");
 
     // Select mock model — it's a shadcn/radix Select, click the trigger then option
     const genModelTrigger = page.locator("#gen-model");
@@ -32,13 +32,13 @@ test.describe("Setup Flow", () => {
     await expect(page.getByText("Learning Courses")).toBeVisible();
   });
 
-  test("Test Key and Save & Continue buttons are visible", async ({
+  test("Test and Save & Continue buttons are visible", async ({
     page,
   }) => {
     await page.goto("/setup");
 
     await expect(
-      page.getByRole("button", { name: "Test Key" })
+      page.getByRole("button", { name: "Test" }).first()
     ).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Save & Continue" })

@@ -28,6 +28,12 @@ import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { GeneratingSpinner, TriviaSlideshow } from "@/components/generation";
+import {
+  requestNotificationPermission,
+  sendNotification,
+} from "@/lib/notifications";
+import { LANGUAGE_NAMES } from "@/lib/ai/prompts/languageInstruction";
 
 function NewCourseForm() {
   const router = useRouter();
@@ -35,7 +41,8 @@ function NewCourseForm() {
   const hydrated = useHydrated();
   const hasAnyApiKey = useHasAnyApiKey();
   const generationModel = useAppStore((s) => s.generationModel);
-  const language = useAppStore((s) => s.language);
+  const uiLanguage = useAppStore((s) => s.language);
+  const [courseLanguage, setCourseLanguage] = useState(uiLanguage);
   const apiHeaders = useApiHeaders();
   const { t } = useTranslation(["courseNew", "common"]);
 
@@ -76,6 +83,7 @@ function NewCourseForm() {
   });
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [generatingCourseId, setGeneratingCourseId] = useState<string | null>(null);
 
   function addFocusArea() {
     const trimmed = focusInput.trim();
@@ -100,6 +108,8 @@ function NewCourseForm() {
     }
 
     setGenerating(true);
+    setGeneratingCourseId(null);
+    requestNotificationPermission();
 
     try {
       // Step 1: Create the course in the database
@@ -113,7 +123,7 @@ function NewCourseForm() {
           focusAreas,
           targetLessonCount: lessonCount ? parseInt(lessonCount) : 10,
           difficulty,
-          language,
+          language: courseLanguage,
           passThreshold: passThreshold / 100,
           noLessonCanFail,
           lessonFailureThreshold: lessonFailureThreshold / 100,
@@ -125,6 +135,7 @@ function NewCourseForm() {
       }
 
       const course = await createRes.json();
+      setGeneratingCourseId(course.id);
 
       // Step 2: Generate the course structure with AI
       const genRes = await fetch("/api/generate/course", {
@@ -147,12 +158,22 @@ function NewCourseForm() {
       }
 
       toast.success(t("courseNew:courseGenerated"));
+      sendNotification(
+        t("generation:courseReady"),
+        t("generation:courseReadyBody"),
+        `/courses/${course.id}`
+      );
       router.push(`/courses/${course.id}`);
     } catch (err) {
       console.error("Course generation failed:", err);
       toast.error(err instanceof Error ? err.message : "Failed to generate course");
+      sendNotification(
+        t("generation:generationFailed"),
+        t("generation:generationFailedBody", { title: topic })
+      );
     } finally {
       setGenerating(false);
+      setGeneratingCourseId(null);
     }
   }
 
@@ -299,6 +320,25 @@ function NewCourseForm() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="courseLanguage">{t("courseNew:courseLanguageLabel")}</Label>
+                <Select value={courseLanguage} onValueChange={setCourseLanguage}>
+                  <SelectTrigger id="courseLanguage">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(LANGUAGE_NAMES).map(([code, name]) => (
+                      <SelectItem key={code} value={code}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {t("courseNew:courseLanguageNote")}
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="lessons">{t("courseNew:lessonCountLabel")}</Label>
                 <Input
                   id="lessons"
@@ -381,6 +421,7 @@ function NewCourseForm() {
                   <p className="text-sm"><strong>{t("courseNew:focusSummary")}</strong> {focusAreas.join(", ")}</p>
                 )}
                 <p className="text-sm"><strong>{t("courseNew:difficultySummary")}</strong> {difficulty}</p>
+                <p className="text-sm"><strong>{t("courseNew:courseLanguageSummary")}</strong> {LANGUAGE_NAMES[courseLanguage] ?? courseLanguage}</p>
                 <p className="text-sm">
                   <strong>{t("courseNew:lessonsSummary")}</strong> {lessonCount || t("courseNew:aiWillSuggest")}
                 </p>
@@ -396,15 +437,12 @@ function NewCourseForm() {
               </div>
 
               <div className="flex justify-between">
-                <Button variant="outline" onClick={() => setStep(1)}>
+                <Button variant="outline" onClick={() => setStep(1)} disabled={generating}>
                   {t("common:back")}
                 </Button>
                 <Button onClick={handleGenerate} disabled={generating || !hasAnyApiKey}>
                   {generating ? (
-                    <>
-                      <span className="animate-spin mr-2">&#9696;</span>
-                      {t("courseNew:generatingCourseStructure")}
-                    </>
+                    <GeneratingSpinner />
                   ) : (
                     t("courseNew:generateCourse")
                   )}
@@ -415,6 +453,17 @@ function NewCourseForm() {
                   </p>
                 )}
               </div>
+
+              {generating && (
+                <div className="flex flex-col items-center gap-2 mt-4">
+                  <p className="text-sm text-muted-foreground text-center">
+                    {t("generation:browseAwayCourseMessage")}
+                  </p>
+                  {generatingCourseId && (
+                    <TriviaSlideshow courseId={generatingCourseId} />
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

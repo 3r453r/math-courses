@@ -1,6 +1,8 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import type { z } from "zod";
+import { tryCoerceAndValidate } from "./repairSchema";
 
 export type AIProvider = "anthropic" | "openai" | "google";
 
@@ -104,20 +106,39 @@ export function getProviderOptions(modelId: string) {
 }
 
 /**
- * Repair function for generateObject. When using Anthropic tool-calling mode,
- * the model sometimes wraps the output in {"parameter":{...}}. This function
- * unwraps it so schema validation succeeds.
+ * Factory that creates a repair function for generateObject.
+ * Layer 1: Unwraps Anthropic's {"parameter":{...}} wrapping, then
+ * runs programmatic schema coercion (strip unknown fields, coerce types,
+ * normalize enums, default missing arrays).
  */
-export async function repairGeneratedText({ text }: { text: string; error: unknown }): Promise<string | null> {
-  try {
-    const parsed = JSON.parse(text);
-    if (parsed && typeof parsed === "object" && "parameter" in parsed && typeof parsed.parameter === "object") {
-      return JSON.stringify(parsed.parameter);
+export function createRepairFunction(schema: z.ZodType) {
+  return async ({ text }: { text: string; error: unknown }): Promise<string | null> => {
+    try {
+      let parsed = JSON.parse(text);
+      const original = parsed;
+
+      // Unwrap Anthropic {"parameter":{...}} wrapping
+      if (parsed && typeof parsed === "object" && "parameter" in parsed && typeof parsed.parameter === "object") {
+        parsed = parsed.parameter;
+      }
+
+      // Try schema coercion
+      const coerced = tryCoerceAndValidate(parsed, schema);
+      if (coerced !== null) {
+        console.log("[repair] Schema coercion succeeded");
+        return JSON.stringify(coerced);
+      }
+
+      // If coercion didn't fully fix it, still return the unwrapped version
+      // (the original behavior) so the AI SDK can report the actual validation error
+      if (parsed !== original) {
+        return JSON.stringify(parsed);
+      }
+    } catch {
+      // Not valid JSON, can't repair
     }
-  } catch {
-    // Not valid JSON, can't repair
-  }
-  return null;
+    return null;
+  };
 }
 
 // Default model IDs

@@ -1,13 +1,14 @@
 export const maxDuration = 300;
 
-import { generateObject } from "ai";
-import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, repairGeneratedText } from "@/lib/ai/client";
+import { generateObject, NoObjectGeneratedError } from "ai";
+import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, createRepairFunction } from "@/lib/ai/client";
 import { mockLessonContent } from "@/lib/ai/mockData";
-import { lessonContentSchema } from "@/lib/ai/schemas/lessonSchema";
+import { lessonContentSchema, type LessonContentOutput } from "@/lib/ai/schemas/lessonSchema";
 import { buildLanguageInstruction } from "@/lib/ai/prompts/languageInstruction";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
+import { getCheapestModel, repackWithAI, tryCoerceAndValidate } from "@/lib/ai/repairSchema";
 
 export async function POST(request: Request) {
   const { userId, error } = await getAuthUser();
@@ -107,16 +108,48 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
 
       const t0 = Date.now();
       console.log(`[lesson-gen] Starting lesson generation for "${lesson.title}" with model ${model}`);
-      const { object } = await generateObject({
-        model: modelInstance,
-        schema: lessonContentSchema,
-        prompt,
-        providerOptions: getProviderOptions(model),
-        experimental_repairText: repairGeneratedText,
-      });
+      try {
+        const { object } = await generateObject({
+          model: modelInstance,
+          schema: lessonContentSchema,
+          prompt,
+          providerOptions: getProviderOptions(model),
+          experimental_repairText: createRepairFunction(lessonContentSchema),
+        });
+        lessonContent = object;
+      } catch (genErr) {
+        if (NoObjectGeneratedError.isInstance(genErr) && genErr.text) {
+          console.log(`[lesson-gen] Schema mismatch, attempting recovery...`);
+          // Try direct coercion on the raw text
+          try {
+            const parsed = JSON.parse(genErr.text);
+            const coerced = tryCoerceAndValidate(parsed, lessonContentSchema);
+            if (coerced) {
+              console.log(`[lesson-gen] Direct coercion succeeded`);
+              lessonContent = coerced;
+            }
+          } catch { /* not valid JSON */ }
+
+          // Layer 2: AI repack with cheapest model
+          if (!lessonContent) {
+            const cheapModel = getCheapestModel(apiKeys);
+            if (cheapModel) {
+              console.log(`[lesson-gen] Attempting AI repack with ${cheapModel}`);
+              const repacked = await repackWithAI(genErr.text, lessonContentSchema, apiKeys, cheapModel);
+              if (repacked) {
+                console.log(`[lesson-gen] AI repack succeeded`);
+                lessonContent = repacked as LessonContentOutput;
+              }
+            }
+          }
+
+          if (!lessonContent) throw genErr;
+        } else {
+          throw genErr;
+        }
+      }
       const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
       console.log(`[lesson-gen] Lesson generation completed in ${elapsed}s`);
-      lessonContent = object;
       generationPrompt = prompt;
 
       // Normalize: AI returns visualization spec as JSON string, parse to object

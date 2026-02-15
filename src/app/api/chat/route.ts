@@ -15,11 +15,31 @@ export async function POST(request: Request) {
     return new Response("API key required", { status: 401 });
   }
 
-  const { messages, lessonId, model } = await request.json();
+  const { messages: rawMessages, lessonId, model } = await request.json();
 
   if (!lessonId) {
     return new Response("lessonId required", { status: 400 });
   }
+
+  // Convert UIMessage format (parts array) to CoreMessage format (content string)
+  // that streamText expects. Also filter out empty assistant messages.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const messages = (rawMessages as any[]).reduce((acc: any[], msg: any) => {
+    // Extract text content from UIMessage parts or use content directly
+    let content: string;
+    if (msg.parts) {
+      content = msg.parts
+        .filter((p: any) => p.type === "text")
+        .map((p: any) => p.text)
+        .join("");
+    } else {
+      content = msg.content ?? "";
+    }
+    // Skip empty assistant messages
+    if (msg.role === "assistant" && !content.trim()) return acc;
+    acc.push({ role: msg.role, content });
+    return acc;
+  }, []);
 
   const { error: ownershipError } = await verifyLessonOwnership(lessonId, userId);
   if (ownershipError) return ownershipError;

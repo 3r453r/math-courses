@@ -1,13 +1,14 @@
 export const maxDuration = 300;
 
-import { generateObject } from "ai";
-import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, repairGeneratedText } from "@/lib/ai/client";
+import { generateObject, NoObjectGeneratedError } from "ai";
+import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, createRepairFunction } from "@/lib/ai/client";
 import { mockDiagnostic } from "@/lib/ai/mockData";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
-import { diagnosticSchema } from "@/lib/ai/schemas/diagnosticSchema";
+import { diagnosticSchema, type DiagnosticOutput } from "@/lib/ai/schemas/diagnosticSchema";
 import { buildDiagnosticPrompt } from "@/lib/ai/prompts/quizGeneration";
 import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
+import { getCheapestModel, repackWithAI, tryCoerceAndValidate } from "@/lib/ai/repairSchema";
 
 export async function POST(request: Request) {
   const { userId, error } = await getAuthUser();
@@ -79,14 +80,44 @@ export async function POST(request: Request) {
         language: course.language,
       });
 
-      const { object } = await generateObject({
-        model: modelInstance,
-        schema: diagnosticSchema,
-        prompt,
-        providerOptions: getProviderOptions(model),
-        experimental_repairText: repairGeneratedText,
-      });
-      result = object;
+      try {
+        const { object } = await generateObject({
+          model: modelInstance,
+          schema: diagnosticSchema,
+          prompt,
+          providerOptions: getProviderOptions(model),
+          experimental_repairText: createRepairFunction(diagnosticSchema),
+        });
+        result = object;
+      } catch (genErr) {
+        if (NoObjectGeneratedError.isInstance(genErr) && genErr.text) {
+          console.log(`[diagnostic-gen] Schema mismatch, attempting recovery...`);
+          try {
+            const parsed = JSON.parse(genErr.text);
+            const coerced = tryCoerceAndValidate(parsed, diagnosticSchema);
+            if (coerced) {
+              console.log(`[diagnostic-gen] Direct coercion succeeded`);
+              result = coerced;
+            }
+          } catch { /* not valid JSON */ }
+
+          if (!result) {
+            const cheapModel = getCheapestModel(apiKeys);
+            if (cheapModel) {
+              console.log(`[diagnostic-gen] Attempting AI repack with ${cheapModel}`);
+              const repacked = await repackWithAI(genErr.text, diagnosticSchema, apiKeys, cheapModel);
+              if (repacked) {
+                console.log(`[diagnostic-gen] AI repack succeeded`);
+                result = repacked as DiagnosticOutput;
+              }
+            }
+          }
+
+          if (!result) throw genErr;
+        } else {
+          throw genErr;
+        }
+      }
     }
 
     await prisma.diagnosticQuiz.update({

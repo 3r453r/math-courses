@@ -1,13 +1,14 @@
 export const maxDuration = 300;
 
-import { generateObject } from "ai";
-import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, repairGeneratedText } from "@/lib/ai/client";
-import { courseStructureSchema } from "@/lib/ai/schemas/courseSchema";
+import { generateObject, NoObjectGeneratedError } from "ai";
+import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, createRepairFunction } from "@/lib/ai/client";
+import { courseStructureSchema, type CourseStructureOutput } from "@/lib/ai/schemas/courseSchema";
 import { buildCourseStructurePrompt } from "@/lib/ai/prompts/courseStructure";
 import { mockCourseStructure } from "@/lib/ai/mockData";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
+import { getCheapestModel, repackWithAI, tryCoerceAndValidate } from "@/lib/ai/repairSchema";
 
 export async function POST(request: Request) {
   const { userId, error } = await getAuthUser();
@@ -70,14 +71,44 @@ export async function POST(request: Request) {
         language: courseLanguage,
       });
 
-      const { object } = await generateObject({
-        model: modelInstance,
-        schema: courseStructureSchema,
-        prompt: systemPrompt,
-        providerOptions: getProviderOptions(model),
-        experimental_repairText: repairGeneratedText,
-      });
-      courseStructure = object;
+      try {
+        const { object } = await generateObject({
+          model: modelInstance,
+          schema: courseStructureSchema,
+          prompt: systemPrompt,
+          providerOptions: getProviderOptions(model),
+          experimental_repairText: createRepairFunction(courseStructureSchema),
+        });
+        courseStructure = object;
+      } catch (genErr) {
+        if (NoObjectGeneratedError.isInstance(genErr) && genErr.text) {
+          console.log(`[course-gen] Schema mismatch, attempting recovery...`);
+          try {
+            const parsed = JSON.parse(genErr.text);
+            const coerced = tryCoerceAndValidate(parsed, courseStructureSchema);
+            if (coerced) {
+              console.log(`[course-gen] Direct coercion succeeded`);
+              courseStructure = coerced;
+            }
+          } catch { /* not valid JSON */ }
+
+          if (!courseStructure) {
+            const cheapModel = getCheapestModel(apiKeys);
+            if (cheapModel) {
+              console.log(`[course-gen] Attempting AI repack with ${cheapModel}`);
+              const repacked = await repackWithAI(genErr.text, courseStructureSchema, apiKeys, cheapModel);
+              if (repacked) {
+                console.log(`[course-gen] AI repack succeeded`);
+                courseStructure = repacked as CourseStructureOutput;
+              }
+            }
+          }
+
+          if (!courseStructure) throw genErr;
+        } else {
+          throw genErr;
+        }
+      }
     }
 
     // If we have a courseId, save the generated structure to the database

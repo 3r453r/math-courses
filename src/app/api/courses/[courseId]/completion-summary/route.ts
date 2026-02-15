@@ -1,12 +1,13 @@
-import { generateObject } from "ai";
-import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, repairGeneratedText } from "@/lib/ai/client";
-import { completionSummarySchema } from "@/lib/ai/schemas/completionSummarySchema";
+import { generateObject, NoObjectGeneratedError } from "ai";
+import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, createRepairFunction } from "@/lib/ai/client";
+import { completionSummarySchema, type CompletionSummaryOutput } from "@/lib/ai/schemas/completionSummarySchema";
 import { buildCompletionSummaryPrompt } from "@/lib/ai/prompts/completionSummary";
 import { mockCompletionSummary } from "@/lib/ai/mockData";
 import { evaluateCourseCompletion } from "@/lib/quiz/courseCompletion";
 import { prisma } from "@/lib/db";
 import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
+import { getCheapestModel, repackWithAI, tryCoerceAndValidate } from "@/lib/ai/repairSchema";
 
 export async function GET(
   request: Request,
@@ -153,26 +154,57 @@ export async function POST(
       object = mockCompletionSummary();
     } else {
       const modelInstance = getModelInstance(model, apiKeys);
-      const result = await generateObject({
-        model: modelInstance,
-        schema: completionSummarySchema,
-        prompt: buildCompletionSummaryPrompt({
-          courseTitle: course.title,
-          courseTopic: course.topic,
-          difficulty: course.difficulty,
-          contextDoc: course.contextDoc,
-          focusAreas,
-          summaryData,
-          passThreshold: course.passThreshold,
-          noLessonCanFail: course.noLessonCanFail,
-          lessonFailureThreshold: course.lessonFailureThreshold,
-          passed: completionResult.passed,
-          language: course.language,
-        }),
-        providerOptions: getProviderOptions(model),
-        experimental_repairText: repairGeneratedText,
+      const prompt = buildCompletionSummaryPrompt({
+        courseTitle: course.title,
+        courseTopic: course.topic,
+        difficulty: course.difficulty,
+        contextDoc: course.contextDoc,
+        focusAreas,
+        summaryData,
+        passThreshold: course.passThreshold,
+        noLessonCanFail: course.noLessonCanFail,
+        lessonFailureThreshold: course.lessonFailureThreshold,
+        passed: completionResult.passed,
+        language: course.language,
       });
-      object = result.object;
+      try {
+        const result = await generateObject({
+          model: modelInstance,
+          schema: completionSummarySchema,
+          prompt,
+          providerOptions: getProviderOptions(model),
+          experimental_repairText: createRepairFunction(completionSummarySchema),
+        });
+        object = result.object;
+      } catch (genErr) {
+        if (NoObjectGeneratedError.isInstance(genErr) && genErr.text) {
+          console.log(`[completion-gen] Schema mismatch, attempting recovery...`);
+          try {
+            const parsed = JSON.parse(genErr.text);
+            const coerced = tryCoerceAndValidate(parsed, completionSummarySchema);
+            if (coerced) {
+              console.log(`[completion-gen] Direct coercion succeeded`);
+              object = coerced;
+            }
+          } catch { /* not valid JSON */ }
+
+          if (!object) {
+            const cheapModel = getCheapestModel(apiKeys);
+            if (cheapModel) {
+              console.log(`[completion-gen] Attempting AI repack with ${cheapModel}`);
+              const repacked = await repackWithAI(genErr.text, completionSummarySchema, apiKeys, cheapModel);
+              if (repacked) {
+                console.log(`[completion-gen] AI repack succeeded`);
+                object = repacked as CompletionSummaryOutput;
+              }
+            }
+          }
+
+          if (!object) throw genErr;
+        } else {
+          throw genErr;
+        }
+      }
     }
 
     // Save to database (upsert to handle regeneration)

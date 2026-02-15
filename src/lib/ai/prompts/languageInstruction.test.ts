@@ -29,8 +29,8 @@ describe("buildLanguageInstruction", () => {
   });
 
   it("uses the raw code as language name when not in the lookup table", () => {
-    const result = buildLanguageInstruction("de");
-    expect(result).toContain("de");
-    expect(result).not.toContain("German");
+    const result = buildLanguageInstruction("xyz");
+    expect(result).toContain("xyz");
+    expect(result).toContain("LANGUAGE REQUIREMENT");
   });
 });

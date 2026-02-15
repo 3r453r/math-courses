@@ -44,5 +44,8 @@
   "lessonFailureThresholdNote": "Minimalny wynik dla pojedynczej lekcji, gdy opcja 'żadna lekcja nie może być niezaliczona' jest włączona.",
   "passThresholdSummary": "Próg zaliczenia:",
   "noLessonCanFailSummary": "Bez niezaliczonych lekcji:",
-  "lessonFailureThresholdSummary": "Próg niezaliczenia lekcji:"
+  "lessonFailureThresholdSummary": "Próg niezaliczenia lekcji:",
+  "courseLanguageLabel": "Język kursu",
+  "courseLanguageNote": "Język, w którym AI wygeneruje całą treść kursu. Domyślnie ustawiony na język interfejsu.",
+  "courseLanguageSummary": "Język:"
 }

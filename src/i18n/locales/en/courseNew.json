@@ -44,5 +44,8 @@
   "lessonFailureThresholdNote": "Minimum score on any individual lesson when 'no lesson can be failed' is enabled.",
   "passThresholdSummary": "Pass Threshold:",
   "noLessonCanFailSummary": "No Failed Lessons:",
-  "lessonFailureThresholdSummary": "Lesson Failure Threshold:"
+  "lessonFailureThresholdSummary": "Lesson Failure Threshold:",
+  "courseLanguageLabel": "Course Language",
+  "courseLanguageNote": "The language in which AI will generate all course content. Defaults to your interface language.",
+  "courseLanguageSummary": "Language:"
 }

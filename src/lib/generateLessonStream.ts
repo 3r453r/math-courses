@@ -1,4 +1,52 @@
 /**
+ * Generates lesson content only (first API call).
+ */
+export async function generateLessonContent(
+  headers: Record<string, string>,
+  body: {
+    lessonId: string;
+    courseId: string;
+    model: string;
+    weakTopics?: string[];
+  }
+): Promise<void> {
+  const res = await fetch("/api/generate/lesson", {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || "Failed to generate lesson");
+  }
+}
+
+/**
+ * Generates quiz only (second API call).
+ */
+export async function generateQuiz(
+  headers: Record<string, string>,
+  body: {
+    lessonId: string;
+    courseId: string;
+    model: string;
+    weakTopics?: string[];
+  }
+): Promise<void> {
+  const res = await fetch("/api/generate/quiz", {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || "Failed to generate quiz");
+  }
+}
+
+/**
  * Generates lesson content and quiz in two separate API calls.
  * Each call runs in its own Vercel function with its own 300s timeout.
  */
