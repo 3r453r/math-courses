@@ -3,8 +3,6 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import type { z } from "zod";
 import { tryCoerceAndValidate } from "./repairSchema";
-import fs from "fs";
-import path from "path";
 
 export type AIProvider = "anthropic" | "openai" | "google";
 
@@ -114,10 +112,16 @@ export function getProviderOptions(modelId: string) {
  * normalize enums, default missing arrays).
  */
 function dumpToFile(filename: string, data: string) {
+  if (typeof window !== "undefined") return; // client-side: no-op
   try {
-    const dir = path.join(process.cwd(), ".debug-dumps");
+    // Dynamic require to avoid bundling Node.js modules for the browser
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const fs = require("fs");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const nodePath = require("path");
+    const dir = nodePath.join(process.cwd(), ".debug-dumps");
     fs.mkdirSync(dir, { recursive: true });
-    const filePath = path.join(dir, filename);
+    const filePath = nodePath.join(dir, filename);
     fs.writeFileSync(filePath, data, "utf-8");
     console.log(`[debug-dump] Written ${data.length} chars to ${filePath}`);
   } catch (err) {
