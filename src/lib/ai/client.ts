@@ -112,8 +112,10 @@ export function getProviderOptions(modelId: string) {
  * normalize enums, default missing arrays).
  */
 export function createRepairFunction(schema: z.ZodType) {
-  return async ({ text }: { text: string; error: unknown }): Promise<string | null> => {
+  return async ({ text, error }: { text: string; error: unknown }): Promise<string | null> => {
     try {
+      console.log(`[repair] Attempting repair. Raw text length: ${text.length}, error: ${error instanceof Error ? error.message : String(error)}`);
+      console.log(`[repair] Raw text preview: ${text.substring(0, 500)}...`);
       let parsed = JSON.parse(text);
       const original = parsed;
 

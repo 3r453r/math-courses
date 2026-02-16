@@ -49,6 +49,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
     }
 
+    // Guard against double generation
+    if (lesson.status === "generating") {
+      const ageMs = Date.now() - new Date(lesson.updatedAt).getTime();
+      const STALE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
+      if (ageMs < STALE_THRESHOLD_MS) {
+        return NextResponse.json(
+          { error: "Lesson is already being generated" },
+          { status: 409 }
+        );
+      }
+    }
+
     // Update status
     await prisma.lesson.update({
       where: { id: lessonId },
@@ -179,6 +191,14 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
       if (vizWarnings.length > 0) {
         console.log(`[lesson-gen] Visualization warnings:`, vizWarnings);
       }
+    }
+
+    // Reject empty content — coercion may have defaulted missing arrays to []
+    if (!lessonContent.sections?.length) {
+      throw new Error(
+        "Lesson generation produced incomplete content (no sections). " +
+        "The AI model returned malformed output that could not be fully recovered. Please retry."
+      );
     }
 
     // Deactivate existing quizzes so quiz generation creates a fresh one
