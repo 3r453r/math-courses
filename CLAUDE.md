@@ -66,6 +66,11 @@ pnpm test:all         # All of the above
 3. `POST /api/generate/quiz` — Standalone quiz generation (fallback/regenerate-only). Also receives `lessonContent` and `contextDoc` when available.
 4. `POST /api/chat` — Streaming AI tutor chat using `streamText` + `toTextStreamResponse()`. Client uses `TextStreamChatTransport` from AI SDK v6.
 5. **Multi-provider AI**: `MODEL_REGISTRY` in `src/lib/ai/client.ts` supports 3 providers (Anthropic, OpenAI, Google) with 9 models. Users store per-provider API keys. `getProviderForModel()` selects the right SDK client. Two model tiers: primary (generation) and chat — user-configurable
+6. **Schema repair pipeline** (`src/lib/ai/repairSchema.ts`, `src/lib/ai/client.ts`): Three-layer recovery for malformed AI output:
+   - Layer 0: `experimental_repairText` in `generateObject` — unwraps Anthropic `{"parameter":{...}}` wrapping, runs `coerceToSchema` (type coercion, enum fuzzy-match, unknown field stripping)
+   - Layer 1: Direct `tryCoerceAndValidate` on raw `NoObjectGeneratedError.text`
+   - Layer 2: AI repack — cheapest available model re-serializes the content to match the schema
+   - **Critical**: Anthropic `jsonTool` mode sometimes returns array/object fields as **JSON-encoded strings** (e.g., `"sections":"[{...}]"` instead of `"sections":[{...}]`). `coerceToSchema` handles this by attempting `JSON.parse()` on string values when the schema expects an Array or Object. Without this, arrays silently default to `[]` and all generated content is lost.
 
 ### Content Rendering
 

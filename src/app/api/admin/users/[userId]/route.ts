@@ -16,6 +16,18 @@ export async function PATCH(
     const { userId } = await params;
     const body = await request.json();
 
+    // Prevent modification of owner accounts
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+    if (targetUser?.role === "owner") {
+      return NextResponse.json(
+        { error: "Cannot modify owner accounts" },
+        { status: 403 }
+      );
+    }
+
     const updateData: Record<string, unknown> = {};
 
     if (body.role !== undefined) {

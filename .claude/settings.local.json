@@ -82,7 +82,8 @@
       "mcp__plugin_playwright_playwright__browser_snapshot",
       "mcp__plugin_playwright_playwright__browser_network_requests",
       "mcp__plugin_playwright_playwright__browser_console_messages",
-      "Bash(git status:*)"
+      "Bash(git status:*)",
+      "Bash(git -C \"C:/Users/aswie/source/repos/3r453r/math-courses\" status --short)"
     ]
   }
 }

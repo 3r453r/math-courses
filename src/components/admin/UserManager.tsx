@@ -107,42 +107,46 @@ export function UserManager() {
                 {user.accessSource ?? "—"}
               </td>
               <td className="p-3">
-                <div className="flex gap-2">
-                  {user.role !== "admin" ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => updateUser(user.id, { role: "admin" })}
-                    >
-                      {t("admin:users.makeAdmin")}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => updateUser(user.id, { role: "user" })}
-                    >
-                      {t("admin:users.removeAdmin")}
-                    </Button>
-                  )}
-                  {user.accessStatus !== "active" ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => updateUser(user.id, { accessStatus: "active" })}
-                    >
-                      {t("admin:users.activate")}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => updateUser(user.id, { accessStatus: "suspended" })}
-                    >
-                      {t("admin:users.suspend")}
-                    </Button>
-                  )}
-                </div>
+                {user.role === "owner" ? (
+                  <span className="text-muted-foreground">—</span>
+                ) : (
+                  <div className="flex gap-2">
+                    {user.role !== "admin" ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => updateUser(user.id, { role: "admin" })}
+                      >
+                        {t("admin:users.makeAdmin")}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => updateUser(user.id, { role: "user" })}
+                      >
+                        {t("admin:users.removeAdmin")}
+                      </Button>
+                    )}
+                    {user.accessStatus !== "active" ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => updateUser(user.id, { accessStatus: "active" })}
+                      >
+                        {t("admin:users.activate")}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => updateUser(user.id, { accessStatus: "suspended" })}
+                      >
+                        {t("admin:users.suspend")}
+                      </Button>
+                    )}
+                  </div>
+                )}
               </td>
             </tr>
           ))}

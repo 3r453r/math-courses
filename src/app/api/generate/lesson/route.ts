@@ -1,7 +1,7 @@
 export const maxDuration = 300;
 
 import { generateObject, NoObjectGeneratedError } from "ai";
-import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, createRepairFunction } from "@/lib/ai/client";
+import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, createRepairFunction, dumpToFile } from "@/lib/ai/client";
 import { mockLessonContent } from "@/lib/ai/mockData";
 import { lessonContentSchema, type LessonContentOutput } from "@/lib/ai/schemas/lessonSchema";
 import { buildLanguageInstruction } from "@/lib/ai/prompts/languageInstruction";
@@ -122,7 +122,8 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
       prompt += buildLanguageInstruction(lesson.course.language);
 
       const t0 = Date.now();
-      console.log(`[lesson-gen] Starting lesson generation for "${lesson.title}" with model ${model}`);
+      const ts = new Date().toISOString().replace(/[:.]/g, "-");
+      console.log(`[lesson-gen] Starting lesson generation for "${lesson.title}" with model ${model}, language=${lesson.course.language}`);
       try {
         const { object } = await generateObject({
           model: modelInstance,
@@ -132,18 +133,45 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
           experimental_repairText: createRepairFunction(lessonContentSchema),
         });
         lessonContent = object;
+        // Log successful generation details
+        console.log(`[lesson-gen] generateObject succeeded. sections=${lessonContent.sections?.length}, workedExamples=${lessonContent.workedExamples?.length}, practiceExercises=${lessonContent.practiceExercises?.length}`);
+        if (lessonContent.sections?.length) {
+          const sectionTypes = lessonContent.sections.map((s: { type: string }) => s.type);
+          console.log(`[lesson-gen] Section types: [${sectionTypes.join(", ")}]`);
+        }
       } catch (genErr) {
         if (NoObjectGeneratedError.isInstance(genErr) && genErr.text) {
-          console.log(`[lesson-gen] Schema mismatch, attempting recovery...`);
+          console.log(`[lesson-gen] NoObjectGeneratedError. message="${genErr.message}"`);
+          console.log(`[lesson-gen] Raw text length: ${genErr.text.length}`);
+          console.log(`[lesson-gen] Raw text first 500: ${genErr.text.substring(0, 500)}`);
+
+          // Dump raw error text
+          dumpToFile(`lesson-gen-error-${ts}.json`, genErr.text);
+
           // Try direct coercion on the raw text
           try {
             const parsed = JSON.parse(genErr.text);
-            const coerced = tryCoerceAndValidate(parsed, lessonContentSchema);
+            const topKeys = Object.keys(parsed);
+            console.log(`[lesson-gen] Parsed top-level keys: [${topKeys.join(", ")}]`);
+            const hasParameter = "parameter" in parsed;
+            console.log(`[lesson-gen] Has "parameter" wrapper: ${hasParameter}`);
+
+            // Unwrap parameter before coercion
+            const target = hasParameter && typeof parsed.parameter === "object" ? parsed.parameter : parsed;
+            if (hasParameter) {
+              console.log(`[lesson-gen] Unwrapped "parameter", inner keys: [${Object.keys(target).join(", ")}]`);
+            }
+
+            const coerced = tryCoerceAndValidate(target, lessonContentSchema);
             if (coerced) {
               console.log(`[lesson-gen] Direct coercion succeeded`);
               lessonContent = coerced;
+            } else {
+              console.log(`[lesson-gen] Direct coercion failed`);
             }
-          } catch { /* not valid JSON */ }
+          } catch (parseErr) {
+            console.log(`[lesson-gen] JSON parse failed: ${parseErr instanceof Error ? parseErr.message : parseErr}`);
+          }
 
           // Layer 2: AI repack with cheapest model
           if (!lessonContent) {
@@ -154,12 +182,18 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
               if (repacked) {
                 console.log(`[lesson-gen] AI repack succeeded`);
                 lessonContent = repacked as LessonContentOutput;
+              } else {
+                console.log(`[lesson-gen] AI repack also failed`);
               }
+            } else {
+              console.log(`[lesson-gen] No cheap model available for repack`);
             }
           }
 
           if (!lessonContent) throw genErr;
         } else {
+          const errMsg = genErr instanceof Error ? genErr.message : String(genErr);
+          console.log(`[lesson-gen] Non-recoverable error: ${errMsg}`);
           throw genErr;
         }
       }
@@ -192,6 +226,17 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
       if (vizWarnings.length > 0) {
         console.log(`[lesson-gen] Visualization warnings:`, vizWarnings);
       }
+    }
+
+    // Log final content summary before rejection check
+    console.log(`[lesson-gen] Final content check: sections=${lessonContent.sections?.length ?? 0}, title="${lessonContent.title}", summary="${lessonContent.summary?.substring(0, 80)}..."`);
+    if (lessonContent.sections?.length) {
+      console.log(`[lesson-gen] Final section types: [${lessonContent.sections.map((s: { type: string }) => s.type).join(", ")}]`);
+    } else {
+      console.log(`[lesson-gen] WARNING: sections is empty or missing. Full lessonContent keys: [${Object.keys(lessonContent).join(", ")}]`);
+      // Dump the lessonContent for inspection
+      const ts = new Date().toISOString().replace(/[:.]/g, "-");
+      dumpToFile(`lesson-empty-sections-${ts}.json`, JSON.stringify(lessonContent, null, 2));
     }
 
     // Reject empty content — coercion may have defaulted missing arrays to []

@@ -111,17 +111,53 @@ export function getProviderOptions(modelId: string) {
  * runs programmatic schema coercion (strip unknown fields, coerce types,
  * normalize enums, default missing arrays).
  */
+function dumpToFile(filename: string, data: string) {
+  if (typeof window !== "undefined") return; // client-side: no-op
+  try {
+    // Dynamic require to avoid bundling Node.js modules for the browser
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const fs = require("fs");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const nodePath = require("path");
+    const dir = nodePath.join(process.cwd(), ".debug-dumps");
+    fs.mkdirSync(dir, { recursive: true });
+    const filePath = nodePath.join(dir, filename);
+    fs.writeFileSync(filePath, data, "utf-8");
+    console.log(`[debug-dump] Written ${data.length} chars to ${filePath}`);
+  } catch (err) {
+    console.error(`[debug-dump] Failed to write ${filename}:`, err instanceof Error ? err.message : err);
+  }
+}
+
+export { dumpToFile };
+
 export function createRepairFunction(schema: z.ZodType) {
   return async ({ text, error }: { text: string; error: unknown }): Promise<string | null> => {
     try {
+      const ts = new Date().toISOString().replace(/[:.]/g, "-");
       console.log(`[repair] Attempting repair. Raw text length: ${text.length}, error: ${error instanceof Error ? error.message : String(error)}`);
-      console.log(`[repair] Raw text preview: ${text.substring(0, 500)}...`);
+      console.log(`[repair] Raw text first 1000 chars: ${text.substring(0, 1000)}`);
+      console.log(`[repair] Raw text last 500 chars: ...${text.substring(Math.max(0, text.length - 500))}`);
+
+      // Dump full raw text to file for analysis
+      dumpToFile(`repair-${ts}.json`, text);
+
       let parsed = JSON.parse(text);
       const original = parsed;
+
+      // Log top-level structure
+      if (parsed && typeof parsed === "object") {
+        const topKeys = Object.keys(parsed);
+        console.log(`[repair] Parsed top-level keys: [${topKeys.join(", ")}]`);
+        if ("parameter" in parsed) {
+          console.log(`[repair] Found "parameter" wrapper, inner keys: [${Object.keys(parsed.parameter || {}).join(", ")}]`);
+        }
+      }
 
       // Unwrap Anthropic {"parameter":{...}} wrapping
       if (parsed && typeof parsed === "object" && "parameter" in parsed && typeof parsed.parameter === "object") {
         parsed = parsed.parameter;
+        console.log(`[repair] Unwrapped "parameter" wrapper`);
       }
 
       // Try schema coercion
@@ -131,13 +167,15 @@ export function createRepairFunction(schema: z.ZodType) {
         return JSON.stringify(coerced);
       }
 
+      console.log("[repair] Schema coercion failed, returning unwrapped version for AI SDK error reporting");
+
       // If coercion didn't fully fix it, still return the unwrapped version
       // (the original behavior) so the AI SDK can report the actual validation error
       if (parsed !== original) {
         return JSON.stringify(parsed);
       }
-    } catch {
-      // Not valid JSON, can't repair
+    } catch (err) {
+      console.error(`[repair] JSON parse failed:`, err instanceof Error ? err.message : err);
     }
     return null;
   };
