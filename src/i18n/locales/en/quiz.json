@@ -42,5 +42,7 @@
   "lessonRegenerated": "Lesson regenerated with focus on your weak areas!",
   "addedPrerequisites_one": "Added {{count}} prerequisite lesson to your course!",
   "addedPrerequisites_other": "Added {{count}} prerequisite lessons to your course!",
-  "scoreResult": "Score: {{score}}%"
+  "scoreResult": "Score: {{score}}%",
+  "quizInstruction": "Each question may have one or more correct answers. Select all that apply.",
+  "selectOneOrMore": "Select one or more answers"
 }

@@ -56,6 +56,9 @@ export function QuizRunner({ questions, onSubmit, isSubmitting, disabled }: Prop
           <p className="text-sm font-medium">{Math.round(progress)}%</p>
         </div>
         <Progress value={progress} />
+        <p className="text-xs text-muted-foreground mt-2">
+          {t("quizInstruction")}
+        </p>
       </div>
 
       {/* Questions */}
@@ -87,6 +90,9 @@ export function QuizRunner({ questions, onSubmit, isSubmitting, disabled }: Prop
             </CardHeader>
             <CardContent className="space-y-4">
               <MathMarkdown content={question.questionText} />
+              <p className="text-xs text-muted-foreground italic">
+                {t("selectOneOrMore")}
+              </p>
               <div className="space-y-2">
                 {question.choices.map((choice) => {
                   const isSelected = selected.includes(choice.id);
