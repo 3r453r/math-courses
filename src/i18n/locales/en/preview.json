@@ -1,0 +1,23 @@
+{
+  "badge": "Free Preview",
+  "bannerText": "You're previewing a free lesson from this course",
+  "signUpForFullAccess": "Sign up for full access",
+  "lockedLesson": "Locked",
+  "clickToPreview": "Click to preview this lesson",
+  "takeQuiz": "Take the Quiz",
+  "backToOverview": "Back to Overview",
+  "quizComplete": "Quiz Complete!",
+  "scoreMessage_advance": "Excellent work! You clearly have a strong grasp of this material.",
+  "scoreMessage_supplement": "Good effort! Some topics could use more review.",
+  "scoreMessage_regenerate": "This material needs more study. The full course covers it in depth.",
+  "unlockAll": "Unlock all lessons, quizzes, and AI tutoring",
+  "signUp": "Sign Up",
+  "viewPricing": "View Pricing",
+  "reviewAnswers": "Review Answers",
+  "scratchpad": "Scratchpad",
+  "scratchpadLocalNotice": "Notes saved locally in your browser",
+  "courseOverview": "Course Overview",
+  "lessonCount": "{{count}} lessons",
+  "previewLesson": "Preview Lesson",
+  "score": "Score: {{score}}%"
+}

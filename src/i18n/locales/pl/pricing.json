@@ -20,6 +20,11 @@
   "haveCode": "Masz kod dostępu?",
   "redeemLink": "Aktywuj tutaj",
   "paymentMethods": "Obsługuje karty, BLIK i inne",
+  "socialProof": {
+    "courses": "{{count}} kursów w naszej galerii",
+    "ratings": "{{count}} ocen",
+    "averageRating": "{{rating}}/5 średnia ocena"
+  },
   "success": {
     "title": "Płatność zakończona!",
     "description": "Twoje konto zostało aktywowane. Witaj na platformie!",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useTranslation } from "react-i18next";
@@ -28,6 +28,30 @@ export default function PricingPage() {
   const { data: session } = useSession();
   const { t } = useTranslation(["pricing", "common"]);
   const [loading, setLoading] = useState(false);
+  const [socialProof, setSocialProof] = useState<{
+    show: boolean;
+    totalCourses: number;
+    totalRatings: number;
+    averageRating: number | null;
+  }>({ show: false, totalCourses: 0, totalRatings: 0, averageRating: null });
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/site-config/public").then((r) => r.json()),
+      fetch("/api/gallery/stats").then((r) => r.json()),
+    ])
+      .then(([config, stats]) => {
+        if (config.showGalleryStatsOnPricing === "true" && stats.totalCourses > 0) {
+          setSocialProof({
+            show: true,
+            totalCourses: stats.totalCourses,
+            totalRatings: stats.totalRatings,
+            averageRating: stats.averageRating,
+          });
+        }
+      })
+      .catch(() => { /* ignore */ });
+  }, []);
 
   async function handleCheckout() {
     if (!session?.user) {
@@ -111,6 +135,27 @@ export default function PricingPage() {
             <CardDescription>{t("pricing:byok.description")}</CardDescription>
           </CardHeader>
         </Card>
+
+        {socialProof.show && (
+          <div className="flex justify-center gap-6 mb-8 text-sm text-muted-foreground">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-foreground">{socialProof.totalCourses}</p>
+              <p>{t("pricing:socialProof.courses", { count: socialProof.totalCourses })}</p>
+            </div>
+            {socialProof.totalRatings > 0 && (
+              <div className="text-center">
+                <p className="text-2xl font-bold text-foreground">{socialProof.totalRatings}</p>
+                <p>{t("pricing:socialProof.ratings", { count: socialProof.totalRatings })}</p>
+              </div>
+            )}
+            {socialProof.averageRating && (
+              <div className="text-center">
+                <p className="text-2xl font-bold text-foreground">{socialProof.averageRating}</p>
+                <p>{t("pricing:socialProof.averageRating", { rating: socialProof.averageRating })}</p>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="text-center space-y-4">
           <Button size="lg" className="text-lg px-8" onClick={handleCheckout} disabled={loading}>

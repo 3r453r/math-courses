@@ -11,6 +11,9 @@ const PUBLIC_PATHS = [
   "/shared",
   "/api/shared",
   "/api/payment/webhook",
+  "/preview",
+  "/api/preview",
+  "/api/site-config",
 ];
 
 // Paths accessible to authenticated users regardless of access status

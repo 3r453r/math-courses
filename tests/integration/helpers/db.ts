@@ -50,12 +50,14 @@ export async function cleanDatabase(): Promise<void> {
   await prisma.diagnosticQuiz.deleteMany();
   await prisma.courseEdge.deleteMany();
   await prisma.courseCompletionSummary.deleteMany();
+  await prisma.courseRating.deleteMany();
   await prisma.courseShare.deleteMany();
   await prisma.lesson.deleteMany();
   await prisma.course.deleteMany();
   await prisma.account.deleteMany();
   await prisma.session.deleteMany();
   await prisma.verificationToken.deleteMany();
+  await prisma.siteConfig.deleteMany();
   await prisma.user.deleteMany();
 }
 
