@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { LanguageToggle } from "@/components/LanguageToggle";
 import {
   isInAppBrowser,
   getInAppBrowserName,
@@ -229,7 +230,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="fixed top-4 right-4 z-50">
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-1">
+        <LanguageToggle />
         <ThemeToggle />
       </div>
 
