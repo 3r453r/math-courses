@@ -58,7 +58,7 @@ pnpm test:all         # All of the above
 - `src/components/notebook/` — Per-course notebook (NotebookPanel, NotebookPageList, NotebookPageNav)
 - `src/lib/speech/` — Voice input: `speechManager`, `languageMap`, `voiceKeywords` (math keyword → LaTeX expansion)
 - `src/lib/themes.ts` — Color theme definitions (neutral, ocean, sage, amber)
-- `prisma/schema.prisma` — Database schema (User, Account, Session, VerificationToken, Course, Lesson, CourseEdge, Quiz, QuizAttempt, DiagnosticQuiz, DiagnosticAttempt, Note, ChatMessage, CourseShare, AccessCode, AccessCodeRedemption, CourseRating, CourseCompletionSummary, Payment)
+- `prisma/schema.prisma` — Database schema (User, Account, Session, VerificationToken, Course, Lesson, CourseEdge, Quiz, QuizAttempt, DiagnosticQuiz, DiagnosticAttempt, Note, ChatMessage, CourseShare, AccessCode, AccessCodeRedemption, CourseRating, CourseCompletionSummary, Payment, AiGenerationLog)
 
 ### AI Generation Flow
 
@@ -68,10 +68,12 @@ pnpm test:all         # All of the above
 4. `POST /api/chat` — Streaming AI tutor chat using `streamText` + `toTextStreamResponse()`. Client uses `TextStreamChatTransport` from AI SDK v6.
 5. **Multi-provider AI**: `MODEL_REGISTRY` in `src/lib/ai/client.ts` supports 3 providers (Anthropic, OpenAI, Google) with 9 models. Users store per-provider API keys. `getProviderForModel()` selects the right SDK client. Two model tiers: primary (generation) and chat — user-configurable
 6. **Schema repair pipeline** (`src/lib/ai/repairSchema.ts`, `src/lib/ai/client.ts`): Three-layer recovery for malformed AI output:
-   - Layer 0: `experimental_repairText` in `generateObject` — unwraps Anthropic `{"parameter":{...}}` wrapping, runs `coerceToSchema` (type coercion, enum fuzzy-match, unknown field stripping)
-   - Layer 1: Direct `tryCoerceAndValidate` on raw `NoObjectGeneratedError.text`
+   - Layer 0: `experimental_repairText` in `generateObject` — unwraps Anthropic `{"parameter":...}` wrapping via `unwrapParameter()`, runs `coerceToSchema` (type coercion, enum fuzzy-match, unknown field stripping)
+   - Layer 1: Direct `tryCoerceAndValidate` on raw `NoObjectGeneratedError.text` — also uses `unwrapParameter()` for consistent unwrapping
    - Layer 2: AI repack — cheapest available model re-serializes the content to match the schema
+   - **`unwrapParameter()`** handles both wrapping formats: `{"parameter": {...}}` (object) and `{"parameter": "{\"title\":...}"}` (stringified JSON). Returns `wrapperType: "object" | "string" | "string-repaired" | null` for logging
    - **Critical**: Anthropic `jsonTool` mode sometimes returns array/object fields as **JSON-encoded strings** (e.g., `"sections":"[{...}]"` instead of `"sections":[{...}]`). `coerceToSchema` handles this by attempting `JSON.parse()` on string values when the schema expects an Array or Object. Without this, arrays silently default to `[]` and all generated content is lost.
+   - **`AiGenerationLog`** table stores `wrapperType` column (`"object"` | `"string"` | `"string-repaired"` | null) for querying which wrapper format was encountered. Populated from both Layer 0 (`RepairTracker`) and Layer 1 (`recordLayer1`)
 
 ### Content Rendering
 

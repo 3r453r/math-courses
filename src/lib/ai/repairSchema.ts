@@ -108,6 +108,49 @@ function isStructuralClose(str: string, i: number): boolean {
 }
 
 /**
+ * Unwrap Anthropic's {"parameter": ...} wrapping.
+ * Handles both object values ({"parameter": {...}}) and stringified JSON
+ * values ({"parameter": "{\"title\": ...}"}).
+ */
+export type WrapperType = "object" | "string" | "string-repaired" | null;
+
+export function unwrapParameter(parsed: Record<string, unknown>): { unwrapped: unknown; wasWrapped: boolean; wrapperType: WrapperType } {
+  if (!("parameter" in parsed)) return { unwrapped: parsed, wasWrapped: false, wrapperType: null };
+
+  const param = parsed.parameter;
+
+  // Case 1: {"parameter": {...}} — object value
+  if (typeof param === "object" && param !== null) {
+    console.log(`[repair] Unwrapped "parameter" wrapper (object)`);
+    return { unwrapped: param, wasWrapped: true, wrapperType: "object" };
+  }
+
+  // Case 2: {"parameter": "...stringified JSON..."} — string value
+  if (typeof param === "string") {
+    try {
+      const inner = JSON.parse(param);
+      if (typeof inner === "object" && inner !== null) {
+        console.log(`[repair] Unwrapped "parameter" wrapper (stringified JSON, length=${param.length})`);
+        return { unwrapped: inner, wasWrapped: true, wrapperType: "string" };
+      }
+    } catch {
+      try {
+        const repaired = repairJsonString(param);
+        const inner = JSON.parse(repaired);
+        if (typeof inner === "object" && inner !== null) {
+          console.log(`[repair] Unwrapped "parameter" wrapper (repaired stringified JSON)`);
+          return { unwrapped: inner, wasWrapped: true, wrapperType: "string-repaired" };
+        }
+      } catch {
+        console.log(`[repair] "parameter" string is not parseable JSON (length=${param.length})`);
+      }
+    }
+  }
+
+  return { unwrapped: parsed, wasWrapped: false, wrapperType: null };
+}
+
+/**
  * Recursively coerce a raw value to match a Zod schema.
  * Strips unknown properties, coerces types, normalizes enums, defaults missing arrays.
  * Returns the cleaned value or null if coercion fails.
