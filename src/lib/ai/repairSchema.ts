@@ -9,6 +9,105 @@ import {
 } from "./client";
 
 /**
+ * Repair a JSON string that has unescaped double quotes inside string values.
+ * This happens when Anthropic's jsonTool mode returns array/object fields as
+ * stringified JSON with single-level escaping instead of double-level escaping.
+ *
+ * Uses a state machine with two-level look-ahead: for any `"` inside a string,
+ * checks whether it could be a structural closing quote by verifying not just
+ * the immediate next character, but also whether what follows forms valid JSON
+ * continuation (e.g., `"," ` must be followed by `"`, `{`, `[`, digit, etc.).
+ */
+export function repairJsonString(str: string): string {
+  const result: string[] = [];
+  let inString = false;
+  let i = 0;
+
+  while (i < str.length) {
+    const ch = str[i];
+
+    if (inString) {
+      if (ch === "\\" && i + 1 < str.length) {
+        // Escape sequence — copy both characters
+        result.push(ch, str[i + 1]);
+        i += 2;
+        continue;
+      }
+      if (ch === '"') {
+        // Is this a structural closing quote or an unescaped content quote?
+        // Two-level look-ahead: check next significant char AND what follows it
+        if (isStructuralClose(str, i)) {
+          inString = false;
+          result.push(ch);
+        } else {
+          // Content quote — escape it
+          result.push("\\", '"');
+        }
+        i++;
+        continue;
+      }
+      result.push(ch);
+      i++;
+    } else {
+      if (ch === '"') {
+        inString = true;
+      }
+      result.push(ch);
+      i++;
+    }
+  }
+
+  return result.join("");
+}
+
+/** Skip whitespace in str starting from position j, return index of next non-ws char */
+function skipWs(str: string, j: number): number {
+  while (j < str.length && " \t\n\r".includes(str[j])) j++;
+  return j;
+}
+
+/** Check if a char could begin a JSON value (string, number, object, array, boolean, null) */
+function isJsonValueStart(ch: string): boolean {
+  return ch === '"' || ch === '{' || ch === '[' ||
+    ch === 't' || ch === 'f' || ch === 'n' ||
+    ch === '-' || (ch >= '0' && ch <= '9');
+}
+
+/**
+ * Determine if the `"` at position i is a structural JSON closing quote.
+ * Checks that what follows forms valid JSON continuation, not just the immediate char.
+ */
+function isStructuralClose(str: string, i: number): boolean {
+  let j = skipWs(str, i + 1);
+  if (j >= str.length) return true; // EOF — structural
+
+  const next = str[j];
+
+  // `"}` or `"]` — always structural (end of object/array)
+  if (next === "}" || next === "]") return true;
+
+  // `":` — structural if followed by a valid JSON value
+  if (next === ":") {
+    const k = skipWs(str, j + 1);
+    if (k >= str.length) return false; // colon at EOF — broken, treat as content
+    return isJsonValueStart(str[k]);
+  }
+
+  // `",` — structural if what follows the comma is a valid JSON continuation
+  // (could be another key-value pair starting with `"`, or a value in an array)
+  if (next === ",") {
+    const k = skipWs(str, j + 1);
+    if (k >= str.length) return false; // comma at EOF — broken, treat as content
+    // After comma in an object: next should be `"` (key) or `}` (trailing comma)
+    // After comma in an array: next should be a value start or `]`
+    return isJsonValueStart(str[k]) || str[k] === "]" || str[k] === "}";
+  }
+
+  // Anything else — not structural (content quote)
+  return false;
+}
+
+/**
  * Recursively coerce a raw value to match a Zod schema.
  * Strips unknown properties, coerces types, normalizes enums, defaults missing arrays.
  * Returns the cleaned value or null if coercion fails.
@@ -86,16 +185,34 @@ export function coerceToSchema(raw: unknown, schema: any): unknown {
   if (schema instanceof z.ZodArray) {
     // Anthropic jsonTool mode sometimes returns arrays as JSON strings
     if (typeof raw === "string") {
+      let parsed: unknown = undefined;
+      let parseOk = false;
       try {
-        const parsed = JSON.parse(raw);
+        parsed = JSON.parse(raw);
+        parseOk = true;
+      } catch (e) {
+        console.log(`[coerce] String failed JSON.parse for array field (length=${raw.length}), trying repair. Error: ${e instanceof Error ? e.message : e}`);
+        // Try repairing unescaped quotes in inner JSON strings
+        try {
+          const repaired = repairJsonString(raw);
+          parsed = JSON.parse(repaired);
+          parseOk = true;
+          console.log(`[coerce] Repair succeeded for stringified array`);
+        } catch (e2) {
+          console.log(`[coerce] WARNING: Repair also failed. Error: ${e2 instanceof Error ? e2.message : e2}, preview: ${raw.substring(0, 500)}`);
+        }
+      }
+      if (parseOk) {
         if (Array.isArray(parsed)) {
           console.log(`[coerce] Parsed stringified array (${parsed.length} items)`);
           return parsed.map((item: unknown) => coerceToSchema(item, schema.element));
+        } else {
+          console.log(`[coerce] WARNING: String parsed to non-array type=${typeof parsed}. Length=${raw.length}, preview: ${raw.substring(0, 500)}`);
         }
-      } catch { /* not valid JSON, fall through */ }
+      }
     }
     if (!Array.isArray(raw)) {
-      // null/undefined for required arrays → empty array
+      console.log(`[coerce] WARNING: Non-array value defaulting to []. Actual type=${typeof raw}, constructor=${(raw as object)?.constructor?.name}, preview=${typeof raw === "string" ? raw.substring(0, 200) : JSON.stringify(raw)?.substring(0, 200)}`);
       return [];
     }
     const elementSchema = schema.element;
@@ -106,13 +223,23 @@ export function coerceToSchema(raw: unknown, schema: any): unknown {
   if (schema instanceof z.ZodObject) {
     // Anthropic jsonTool mode sometimes returns objects as JSON strings
     if (typeof raw === "string") {
+      let parsed: unknown = undefined;
+      let parseOk = false;
       try {
-        const parsed = JSON.parse(raw);
-        if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
-          console.log(`[coerce] Parsed stringified object`);
-          return coerceToSchema(parsed, schema);
-        }
-      } catch { /* not valid JSON, fall through */ }
+        parsed = JSON.parse(raw);
+        parseOk = true;
+      } catch {
+        // Try repairing unescaped quotes
+        try {
+          parsed = JSON.parse(repairJsonString(raw));
+          parseOk = true;
+          console.log(`[coerce] Repair succeeded for stringified object`);
+        } catch { /* truly broken */ }
+      }
+      if (parseOk && typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+        console.log(`[coerce] Parsed stringified object`);
+        return coerceToSchema(parsed, schema);
+      }
     }
     if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
       return raw;
@@ -129,6 +256,7 @@ export function coerceToSchema(raw: unknown, schema: any): unknown {
         // For required arrays, default to empty
         const inner = fieldSchema instanceof z.ZodOptional ? fieldSchema.unwrap() : fieldSchema;
         if (inner instanceof z.ZodArray && !(fieldSchema instanceof z.ZodOptional)) {
+          console.log(`[coerce] WARNING: Required array field "${key}" is ${value === null ? "null" : "undefined"}, defaulting to []. Available keys: [${Object.keys(raw as object).join(", ")}]`);
           result[key] = [];
         } else if (value === null && fieldSchema instanceof z.ZodOptional) {
           // Convert null → undefined for optional fields (omit from result)

@@ -105,6 +105,24 @@ export function getProviderOptions(modelId: string) {
   return undefined;
 }
 
+export interface RepairTracker {
+  repairCalled: boolean;
+  rawText: string | null;
+  rawTextLength: number;
+  repairResult: "coercion-success" | "unwrapped-only" | "json-parse-failed" | "returned-null" | null;
+  error: string | null;
+}
+
+export function createRepairTracker(): RepairTracker {
+  return {
+    repairCalled: false,
+    rawText: null,
+    rawTextLength: 0,
+    repairResult: null,
+    error: null,
+  };
+}
+
 /**
  * Factory that creates a repair function for generateObject.
  * Layer 1: Unwraps Anthropic's {"parameter":{...}} wrapping, then
@@ -131,8 +149,14 @@ function dumpToFile(filename: string, data: string) {
 
 export { dumpToFile };
 
-export function createRepairFunction(schema: z.ZodType) {
+export function createRepairFunction(schema: z.ZodType, tracker?: RepairTracker) {
   return async ({ text, error }: { text: string; error: unknown }): Promise<string | null> => {
+    if (tracker) {
+      tracker.repairCalled = true;
+      tracker.rawText = text;
+      tracker.rawTextLength = text.length;
+      tracker.error = error instanceof Error ? error.message : String(error);
+    }
     try {
       const ts = new Date().toISOString().replace(/[:.]/g, "-");
       console.log(`[repair] Attempting repair. Raw text length: ${text.length}, error: ${error instanceof Error ? error.message : String(error)}`);
@@ -164,6 +188,7 @@ export function createRepairFunction(schema: z.ZodType) {
       const coerced = tryCoerceAndValidate(parsed, schema);
       if (coerced !== null) {
         console.log("[repair] Schema coercion succeeded");
+        if (tracker) tracker.repairResult = "coercion-success";
         return JSON.stringify(coerced);
       }
 
@@ -172,10 +197,17 @@ export function createRepairFunction(schema: z.ZodType) {
       // If coercion didn't fully fix it, still return the unwrapped version
       // (the original behavior) so the AI SDK can report the actual validation error
       if (parsed !== original) {
+        if (tracker) tracker.repairResult = "unwrapped-only";
         return JSON.stringify(parsed);
       }
+
+      if (tracker) tracker.repairResult = "returned-null";
     } catch (err) {
       console.error(`[repair] JSON parse failed:`, err instanceof Error ? err.message : err);
+      if (tracker) {
+        tracker.repairResult = "json-parse-failed";
+        tracker.error = err instanceof Error ? err.message : String(err);
+      }
     }
     return null;
   };

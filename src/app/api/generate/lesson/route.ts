@@ -1,7 +1,7 @@
 export const maxDuration = 300;
 
 import { generateObject, NoObjectGeneratedError } from "ai";
-import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, createRepairFunction, dumpToFile } from "@/lib/ai/client";
+import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, createRepairFunction, createRepairTracker, dumpToFile } from "@/lib/ai/client";
 import { mockLessonContent } from "@/lib/ai/mockData";
 import { lessonContentSchema, type LessonContentOutput } from "@/lib/ai/schemas/lessonSchema";
 import { buildLanguageInstruction } from "@/lib/ai/prompts/languageInstruction";
@@ -123,6 +123,8 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
 
       const t0 = Date.now();
       const ts = new Date().toISOString().replace(/[:.]/g, "-");
+      const tracker = createRepairTracker();
+      let scenario: "direct-success" | "repair-triggered" | "error-recovery" = "direct-success";
       console.log(`[lesson-gen] Starting lesson generation for "${lesson.title}" with model ${model}, language=${lesson.course.language}`);
       try {
         const { object } = await generateObject({
@@ -130,20 +132,23 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
           schema: lessonContentSchema,
           prompt,
           providerOptions: getProviderOptions(model),
-          experimental_repairText: createRepairFunction(lessonContentSchema),
+          experimental_repairText: createRepairFunction(lessonContentSchema, tracker),
         });
         lessonContent = object;
+        if (tracker.repairCalled) scenario = "repair-triggered";
         // Log successful generation details
-        console.log(`[lesson-gen] generateObject succeeded. sections=${lessonContent.sections?.length}, workedExamples=${lessonContent.workedExamples?.length}, practiceExercises=${lessonContent.practiceExercises?.length}`);
+        console.log(`[lesson-gen] generateObject succeeded (scenario=${scenario}). sections=${lessonContent.sections?.length}, workedExamples=${lessonContent.workedExamples?.length}, practiceExercises=${lessonContent.practiceExercises?.length}`);
         if (lessonContent.sections?.length) {
           const sectionTypes = lessonContent.sections.map((s: { type: string }) => s.type);
           console.log(`[lesson-gen] Section types: [${sectionTypes.join(", ")}]`);
         }
       } catch (genErr) {
+        scenario = "error-recovery";
         if (NoObjectGeneratedError.isInstance(genErr) && genErr.text) {
           console.log(`[lesson-gen] NoObjectGeneratedError. message="${genErr.message}"`);
           console.log(`[lesson-gen] Raw text length: ${genErr.text.length}`);
           console.log(`[lesson-gen] Raw text first 500: ${genErr.text.substring(0, 500)}`);
+          console.log(`[lesson-gen] Tracker state: repairCalled=${tracker.repairCalled}, result=${tracker.repairResult}, rawLen=${tracker.rawTextLength}`);
 
           // Dump raw error text
           dumpToFile(`lesson-gen-error-${ts}.json`, genErr.text);
@@ -199,6 +204,32 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
       }
       const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
       console.log(`[lesson-gen] Lesson generation completed in ${elapsed}s`);
+
+      // Always dump diagnostic info for debugging
+      const diagData = {
+        scenario,
+        tracker: {
+          repairCalled: tracker.repairCalled,
+          rawTextLength: tracker.rawTextLength,
+          repairResult: tracker.repairResult,
+          error: tracker.error,
+        },
+        model,
+        language: lesson.course.language,
+        lessonTitle: lesson.title,
+        sectionsCount: lessonContent.sections?.length ?? 0,
+        sectionsRawType: typeof lessonContent.sections,
+        sectionsIsArray: Array.isArray(lessonContent.sections),
+        workedExamplesCount: lessonContent.workedExamples?.length ?? 0,
+        practiceExercisesCount: lessonContent.practiceExercises?.length ?? 0,
+        contentKeys: Object.keys(lessonContent),
+        elapsedSeconds: parseFloat(elapsed),
+        lessonContent,
+      };
+      dumpToFile(`diag-lesson-${ts}.json`, JSON.stringify(diagData, null, 2));
+      if (tracker.repairCalled && tracker.rawText) {
+        dumpToFile(`diag-raw-${ts}.json`, tracker.rawText);
+      }
       generationPrompt = prompt;
 
       // Normalize: AI returns visualization spec as JSON string, parse to object
