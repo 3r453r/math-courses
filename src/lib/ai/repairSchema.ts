@@ -84,6 +84,16 @@ export function coerceToSchema(raw: unknown, schema: any): unknown {
 
   // Array
   if (schema instanceof z.ZodArray) {
+    // Anthropic jsonTool mode sometimes returns arrays as JSON strings
+    if (typeof raw === "string") {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          console.log(`[coerce] Parsed stringified array (${parsed.length} items)`);
+          return parsed.map((item: unknown) => coerceToSchema(item, schema.element));
+        }
+      } catch { /* not valid JSON, fall through */ }
+    }
     if (!Array.isArray(raw)) {
       // null/undefined for required arrays → empty array
       return [];
@@ -94,6 +104,16 @@ export function coerceToSchema(raw: unknown, schema: any): unknown {
 
   // Object — strip unknown keys, recurse into known keys
   if (schema instanceof z.ZodObject) {
+    // Anthropic jsonTool mode sometimes returns objects as JSON strings
+    if (typeof raw === "string") {
+      try {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+          console.log(`[coerce] Parsed stringified object`);
+          return coerceToSchema(parsed, schema);
+        }
+      } catch { /* not valid JSON, fall through */ }
+    }
     if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
       return raw;
     }
@@ -136,12 +156,34 @@ export function coerceToSchema(raw: unknown, schema: any): unknown {
 export function tryCoerceAndValidate<T>(raw: unknown, schema: z.ZodType<T>): T | null {
   try {
     const coerced = coerceToSchema(raw, schema);
+
+    // Log coerced shape for debugging
+    if (coerced && typeof coerced === "object" && !Array.isArray(coerced)) {
+      const obj = coerced as Record<string, unknown>;
+      const keys = Object.keys(obj);
+      const sectionsVal = obj.sections;
+      console.log(`[repair] Coerced object keys: [${keys.join(", ")}]`);
+      console.log(`[repair] sections type=${typeof sectionsVal}, isArray=${Array.isArray(sectionsVal)}, length=${Array.isArray(sectionsVal) ? sectionsVal.length : "N/A"}`);
+      if (Array.isArray(sectionsVal) && sectionsVal.length > 0) {
+        const types = sectionsVal.map((s: Record<string, unknown>) => s?.type ?? "undefined").slice(0, 5);
+        console.log(`[repair] First section types: [${types.join(", ")}]`);
+      }
+    }
+
     const result = schema.safeParse(coerced);
     if (result.success) {
       return result.data;
     }
+
+    // Log Zod validation errors
+    console.log(`[repair] Zod validation failed with ${result.error.issues.length} issues:`);
+    for (const issue of result.error.issues) {
+      console.log(`[repair]   path=[${issue.path.join(".")}] code=${issue.code} message="${issue.message}"`);
+    }
+
     return null;
-  } catch {
+  } catch (err) {
+    console.error(`[repair] tryCoerceAndValidate exception:`, err instanceof Error ? err.message : err);
     return null;
   }
 }
