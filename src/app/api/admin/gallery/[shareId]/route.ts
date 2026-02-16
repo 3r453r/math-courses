@@ -147,6 +147,30 @@ export async function PATCH(
       updateData.galleryDescription = body.galleryDescription;
     }
 
+    if (body.previewLessonId !== undefined) {
+      if (body.previewLessonId === null) {
+        updateData.previewLessonId = null;
+      } else {
+        // Validate the lesson belongs to the share's course
+        const shareForValidation = await prisma.courseShare.findUnique({
+          where: { id: shareId },
+          select: { courseId: true },
+        });
+        if (shareForValidation) {
+          const lesson = await prisma.lesson.findFirst({
+            where: { id: body.previewLessonId, courseId: shareForValidation.courseId },
+          });
+          if (!lesson) {
+            return NextResponse.json(
+              { error: "Lesson does not belong to this course" },
+              { status: 400 }
+            );
+          }
+        }
+        updateData.previewLessonId = body.previewLessonId;
+      }
+    }
+
     const share = await prisma.courseShare.update({
       where: { id: shareId },
       data: updateData,

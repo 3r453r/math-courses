@@ -13,5 +13,6 @@
   "inAppBrowserDescription": "Google blocks sign-in in embedded browsers for security. Please open this page in your default browser.",
   "openInBrowser": "Open in Browser",
   "iosOpenInstructions": "Tap the Safari icon or menu (\u22ef) to open in your browser.",
-  "continueAnyway": "Try signing in anyway"
+  "continueAnyway": "Try signing in anyway",
+  "tagline": "AI-powered courses, personalized for you"
 }

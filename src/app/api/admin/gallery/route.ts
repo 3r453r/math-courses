@@ -65,7 +65,8 @@ export async function GET() {
         user: { select: { name: true, email: true } },
         lessons: {
           where: { isSupplementary: false },
-          select: { id: true, status: true, contentJson: true },
+          orderBy: { orderIndex: "asc" },
+          select: { id: true, title: true, status: true, contentJson: true, orderIndex: true },
         },
         shares: {
           where: { isActive: true },
@@ -80,6 +81,7 @@ export async function GET() {
             cloneCount: true,
             featuredAt: true,
             expiresAt: true,
+            previewLessonId: true,
           },
         },
       },
@@ -92,10 +94,15 @@ export async function GET() {
       ).length;
       const isEligible = totalLessons > 0 && generatedLessons === totalLessons;
 
-      const { lessons: _lessons, ...courseWithoutLessons } = course;
+      const { lessons, ...courseWithoutLessons } = course;
 
       return {
         ...courseWithoutLessons,
+        lessonList: lessons.map((l) => ({
+          id: l.id,
+          title: l.title,
+          orderIndex: l.orderIndex,
+        })),
         eligibility: {
           isEligible,
           totalLessons,

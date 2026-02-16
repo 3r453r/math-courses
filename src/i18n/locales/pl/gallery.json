@@ -23,7 +23,8 @@
     "loginToClone": "Zaloguj się, aby klonować",
     "featured": "Wyróżniony",
     "rating": "{{rating}} / 5",
-    "cloneCount": "{{count}} klonów"
+    "cloneCount": "{{count}} klonów",
+    "tryPreview": "Wypróbuj darmowy podgląd"
   },
   "empty": "Brak kursów. Sprawdź później!",
   "loading": "Ładowanie kursów...",

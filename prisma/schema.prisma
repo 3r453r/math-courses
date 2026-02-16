@@ -256,6 +256,7 @@ model CourseShare {
   starCount          Int       @default(0)
   cloneCount         Int       @default(0)
   featuredAt         DateTime?
+  previewLessonId    String?
 
   course  Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
   ratings CourseRating[]
@@ -317,6 +318,14 @@ model Payment {
   createdAt       DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ── Site Configuration ──────────────────────────────────────
+
+model SiteConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }
 
 // ── AI Generation Logging ──────────────────────────────────────

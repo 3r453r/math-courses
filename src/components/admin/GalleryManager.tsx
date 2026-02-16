@@ -35,6 +35,13 @@ interface GalleryShareInfo {
   cloneCount: number;
   featuredAt: string | null;
   expiresAt: string | null;
+  previewLessonId: string | null;
+}
+
+interface LessonInfo {
+  id: string;
+  title: string;
+  orderIndex: number;
 }
 
 interface GalleryCourse {
@@ -48,6 +55,7 @@ interface GalleryCourse {
   clonedFromId: string | null;
   user: { name: string | null; email: string | null };
   shares: GalleryShareInfo[];
+  lessonList: LessonInfo[];
   eligibility: {
     isEligible: boolean;
     totalLessons: number;
@@ -87,8 +95,17 @@ export function GalleryManager() {
   // Clone conflict dialog
   const [cloneConflict, setCloneConflict] = useState<CloneConflict | null>(null);
 
+  // Preview lesson dialog
+  const [previewDialogShare, setPreviewDialogShare] = useState<{ shareId: string; courseId: string } | null>(null);
+  const [selectedPreviewLesson, setSelectedPreviewLesson] = useState<string>("none");
+
+  // Site settings
+  const [showStatsOnPricing, setShowStatsOnPricing] = useState(false);
+  const [settingsLoading, setSettingsLoading] = useState(true);
+
   useEffect(() => {
     fetchCourses();
+    fetchSiteSettings();
   }, []);
 
   async function fetchCourses() {
@@ -104,6 +121,41 @@ export function GalleryManager() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function fetchSiteSettings() {
+    try {
+      const res = await fetch("/api/admin/site-config");
+      if (res.ok) {
+        const data = await res.json();
+        setShowStatsOnPricing(data.showGalleryStatsOnPricing === "true");
+      }
+    } catch (err) {
+      console.error("Failed to fetch site settings:", err);
+    } finally {
+      setSettingsLoading(false);
+    }
+  }
+
+  async function updateSiteSetting(key: string, value: string) {
+    try {
+      const res = await fetch("/api/admin/site-config", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, value }),
+      });
+      if (res.ok) {
+        toast.success(t("admin:gallery.settingSaved"));
+      }
+    } catch (err) {
+      console.error("Failed to update site setting:", err);
+    }
+  }
+
+  async function handleSetPreview(shareId: string, lessonId: string | null) {
+    await updateShare(shareId, { previewLessonId: lessonId });
+    setPreviewDialogShare(null);
+    toast.success(lessonId ? t("admin:gallery.previewUpdated") : t("admin:gallery.previewCleared"));
   }
 
   /** PATCH an existing share */
@@ -265,6 +317,25 @@ export function GalleryManager() {
 
   return (
     <div className="space-y-4">
+      {/* Site settings */}
+      <div className="border rounded-lg p-4 bg-muted/30">
+        <h3 className="text-sm font-medium mb-3">{t("admin:gallery.siteSettings")}</h3>
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showStatsOnPricing}
+            disabled={settingsLoading}
+            onChange={(e) => {
+              const val = e.target.checked;
+              setShowStatsOnPricing(val);
+              updateSiteSetting("showGalleryStatsOnPricing", val ? "true" : "false");
+            }}
+            className="rounded"
+          />
+          {t("admin:gallery.showStatsOnPricing")}
+        </label>
+      </div>
+
       {/* Filter bar */}
       <div className="flex flex-wrap gap-3 items-center">
         <Input
@@ -329,6 +400,7 @@ export function GalleryManager() {
                 {t("admin:gallery.clones")} {sortField === "clones" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
               </th>
               <th className="text-left p-3 font-medium">{t("admin:gallery.tags")}</th>
+              <th className="text-left p-3 font-medium">{t("admin:gallery.preview")}</th>
               <th className="text-left p-3 font-medium">{t("admin:accessCodes.actions")}</th>
             </tr>
           </thead>
@@ -426,6 +498,29 @@ export function GalleryManager() {
                     )}
                   </td>
                   <td className="p-3">
+                    {isListed && listedShare ? (
+                      <div className="flex items-center gap-1">
+                        <Badge variant={listedShare.previewLessonId ? "default" : "outline"}>
+                          {listedShare.previewLessonId
+                            ? t("admin:gallery.previewActive")
+                            : t("admin:gallery.previewNone")}
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setPreviewDialogShare({ shareId: listedShare.id, courseId: course.id });
+                            setSelectedPreviewLesson(listedShare.previewLessonId ?? "none");
+                          }}
+                        >
+                          {t("admin:gallery.setPreview")}
+                        </Button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">{"\u2014"}</span>
+                    )}
+                  </td>
+                  <td className="p-3">
                     <div className="flex gap-2">
                       {isListed && listedShare ? (
                         <>
@@ -477,6 +572,56 @@ export function GalleryManager() {
           </tbody>
         </table>
       </div>
+
+      {/* Preview lesson dialog */}
+      <Dialog open={!!previewDialogShare} onOpenChange={() => setPreviewDialogShare(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("admin:gallery.previewLesson")}</DialogTitle>
+            <DialogDescription>{t("admin:gallery.selectLesson")}</DialogDescription>
+          </DialogHeader>
+          {previewDialogShare && (
+            <Select
+              value={selectedPreviewLesson}
+              onValueChange={setSelectedPreviewLesson}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">{t("admin:gallery.previewNone")}</SelectItem>
+                {courses
+                  .find((c) => c.id === previewDialogShare.courseId)
+                  ?.lessonList.map((lesson) => (
+                    <SelectItem key={lesson.id} value={lesson.id}>
+                      #{lesson.orderIndex} — {lesson.title}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewDialogShare(null)}>
+              {t("admin:gallery.cloneConflict.cancel")}
+            </Button>
+            {previewDialogShare && selectedPreviewLesson === "none" && (
+              <Button
+                variant="secondary"
+                onClick={() => handleSetPreview(previewDialogShare.shareId, null)}
+              >
+                {t("admin:gallery.clearPreview")}
+              </Button>
+            )}
+            {previewDialogShare && selectedPreviewLesson !== "none" && (
+              <Button
+                onClick={() => handleSetPreview(previewDialogShare.shareId, selectedPreviewLesson)}
+              >
+                {t("admin:gallery.setPreview")}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Clone conflict dialog */}
       <Dialog open={!!cloneConflict} onOpenChange={() => setCloneConflict(null)}>
