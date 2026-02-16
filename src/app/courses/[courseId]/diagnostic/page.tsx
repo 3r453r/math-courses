@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserMenu } from "@/components/UserMenu";
 import { QuizRunner } from "@/components/quiz/QuizRunner";
 import { QuizResults } from "@/components/quiz/QuizResults";
 import type { QuizQuestion, QuizAnswers, QuizResult } from "@/types/quiz";
@@ -253,6 +254,7 @@ export default function DiagnosticPage({
             <p className="text-sm text-muted-foreground">{courseTitle}</p>
           </div>
           <ThemeToggle />
+          <UserMenu />
         </div>
       </header>
 

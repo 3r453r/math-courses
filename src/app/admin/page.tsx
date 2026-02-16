@@ -8,6 +8,7 @@ import { AccessCodeManager } from "@/components/admin/AccessCodeManager";
 import { UserManager } from "@/components/admin/UserManager";
 import { GalleryManager } from "@/components/admin/GalleryManager";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserMenu } from "@/components/UserMenu";
 
 type Tab = "accessCodes" | "users" | "gallery";
 
@@ -49,6 +50,7 @@ export default function AdminPage() {
           <h1 className="text-2xl font-bold">{t("admin:title")}</h1>
           <div className="flex gap-2 items-center">
             <ThemeToggle />
+            <UserMenu />
             <Button variant="outline" onClick={() => router.push("/")}>
               Dashboard
             </Button>

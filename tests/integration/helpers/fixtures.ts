@@ -1,4 +1,5 @@
 import { getTestPrisma } from "./db";
+import { serializeSubjects } from "@/lib/subjects";
 
 function prisma() {
   return getTestPrisma();
@@ -43,7 +44,9 @@ export async function createTestCourse(overrides?: {
       title: overrides?.title ?? "Test Course",
       description: "A test course for integration testing",
       topic: overrides?.topic ?? "Mathematics",
-      subject: overrides?.subject ?? "Mathematics",
+      subject: overrides?.subject
+        ? (overrides.subject.startsWith("[") ? overrides.subject : serializeSubjects([overrides.subject]))
+        : serializeSubjects(["Mathematics"]),
       focusAreas: JSON.stringify(["Algebra", "Calculus"]),
       targetLessonCount: 5,
       difficulty: overrides?.difficulty ?? "intermediate",

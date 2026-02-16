@@ -9,20 +9,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { LANGUAGE_NAMES } from "@/lib/ai/prompts/languageInstruction";
 
 interface GalleryFiltersProps {
   search: string;
   onSearchChange: (value: string) => void;
   subject: string;
   onSubjectChange: (value: string) => void;
-  topic: string;
-  onTopicChange: (value: string) => void;
+  language: string;
+  onLanguageChange: (value: string) => void;
   difficulty: string;
   onDifficultyChange: (value: string) => void;
   sort: string;
   onSortChange: (value: string) => void;
   subjects: string[];
-  topics: string[];
+  languages: string[];
   difficulties: string[];
 }
 
@@ -31,14 +32,14 @@ export function GalleryFilters({
   onSearchChange,
   subject,
   onSubjectChange,
-  topic,
-  onTopicChange,
+  language,
+  onLanguageChange,
   difficulty,
   onDifficultyChange,
   sort,
   onSortChange,
   subjects,
-  topics,
+  languages,
   difficulties,
 }: GalleryFiltersProps) {
   const { t } = useTranslation(["gallery"]);
@@ -66,15 +67,15 @@ export function GalleryFilters({
         </SelectContent>
       </Select>
 
-      <Select value={topic} onValueChange={onTopicChange}>
+      <Select value={language} onValueChange={onLanguageChange}>
         <SelectTrigger className="w-40">
-          <SelectValue placeholder={t("gallery:filters.allTopics")} />
+          <SelectValue placeholder={t("gallery:filters.allLanguages")} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">{t("gallery:filters.allTopics")}</SelectItem>
-          {topics.map((t) => (
-            <SelectItem key={t} value={t}>
-              {t}
+          <SelectItem value="all">{t("gallery:filters.allLanguages")}</SelectItem>
+          {languages.map((lang) => (
+            <SelectItem key={lang} value={lang}>
+              {LANGUAGE_NAMES[lang] ?? lang}
             </SelectItem>
           ))}
         </SelectContent>

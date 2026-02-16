@@ -4,11 +4,11 @@
   "search": "Search courses...",
   "filters": {
     "subject": "Subject",
-    "topic": "Topic",
+    "language": "Language",
     "difficulty": "Difficulty",
     "sort": "Sort by",
     "allSubjects": "All Subjects",
-    "allTopics": "All Topics",
+    "allLanguages": "All Languages",
     "allDifficulties": "All Difficulties",
     "sortRecent": "Most Recent",
     "sortStars": "Highest Rated",

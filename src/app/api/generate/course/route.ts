@@ -6,6 +6,7 @@ import { courseStructureSchema, type CourseStructureOutput } from "@/lib/ai/sche
 import { buildCourseStructurePrompt } from "@/lib/ai/prompts/courseStructure";
 import { mockCourseStructure } from "@/lib/ai/mockData";
 import { prisma } from "@/lib/db";
+import { serializeSubjects } from "@/lib/subjects";
 import { NextResponse } from "next/server";
 import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
 import { getCheapestModel, repackWithAI, tryCoerceAndValidate } from "@/lib/ai/repairSchema";
@@ -119,7 +120,7 @@ export async function POST(request: Request) {
         data: {
           title: courseStructure.title,
           description: courseStructure.description,
-          subject: courseStructure.subject,
+          subject: serializeSubjects(courseStructure.subjects),
           contextDoc: courseStructure.contextDoc,
           status: "ready",
         },

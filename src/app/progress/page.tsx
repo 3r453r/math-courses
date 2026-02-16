@@ -18,6 +18,7 @@ import {
   WeakTopicsSummary,
 } from "@/components/progress";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserMenu } from "@/components/UserMenu";
 
 interface ProgressData {
   global: {
@@ -100,6 +101,7 @@ export default function ProgressPage() {
             <h1 className="text-xl font-bold">{t("progress:title")}</h1>
           </div>
           <ThemeToggle />
+          <UserMenu />
         </div>
       </header>
 

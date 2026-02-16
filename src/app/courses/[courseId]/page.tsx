@@ -32,6 +32,7 @@ import { MathMarkdown } from "@/components/lesson/MathMarkdown";
 import { ExportDialog, ShareDialog } from "@/components/export";
 import { ContextDocGuideDialog } from "@/components/ContextDocGuideDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserMenu } from "@/components/UserMenu";
 import { evaluateCourseCompletion, DEFAULT_THRESHOLDS } from "@/lib/quiz/courseCompletion";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -450,6 +451,7 @@ export default function CourseOverviewPage({
             <span className="hidden md:inline">{t("notebook:notebook")}</span>
           </Button>
           <ThemeToggle />
+          <UserMenu />
           <Badge variant="outline" className="capitalize hidden sm:inline-flex">
             {course.difficulty}
           </Badge>

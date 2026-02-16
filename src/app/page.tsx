@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { useAppStore } from "@/stores/appStore";
 import { useHydrated } from "@/stores/useHydrated";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserMenu } from "@/components/UserMenu";
 import { MobileMenu } from "@/components/MobileMenu";
 
 interface CourseProgress {
@@ -49,7 +51,9 @@ export default function DashboardPage() {
   const [courses, setCourses] = useState<CourseWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const { t } = useTranslation(["dashboard", "common", "login"]);
+  const importRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+  const { t } = useTranslation(["dashboard", "common", "login", "export"]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -87,6 +91,30 @@ export default function DashboardPage() {
       console.error("Failed to fetch courses:", err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleImport(file: File) {
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+      const res = await fetch("/api/courses/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(json),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Import failed");
+      }
+      const result = await res.json();
+      toast.success(t("export:importSuccess"));
+      router.push(`/courses/${result.id}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("export:importFailed"));
+    } finally {
+      setImporting(false);
     }
   }
 
@@ -133,12 +161,8 @@ export default function DashboardPage() {
             <p className="text-sm text-muted-foreground">{t("dashboard:subtitle")}</p>
           </div>
           <div className="flex gap-2 items-center">
-            {session?.user && (
-              <span className="hidden md:inline text-sm text-muted-foreground mr-1">
-                {session.user.name || session.user.email}
-              </span>
-            )}
             <ThemeToggle />
+            <UserMenu />
             <Button
               variant="ghost"
               size="sm"
@@ -147,6 +171,17 @@ export default function DashboardPage() {
             >
               {language === "en" ? "PL" : "EN"}
             </Button>
+            <input
+              ref={importRef}
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleImport(file);
+                e.target.value = "";
+              }}
+            />
             <div className="hidden md:flex gap-2 items-center">
               {isAdmin && (
                 <Button variant="outline" onClick={() => router.push("/admin")}>
@@ -178,18 +213,18 @@ export default function DashboardPage() {
               <Button variant="outline" onClick={() => router.push("/setup")}>
                 {t("common:settings")}
               </Button>
+              <Button
+                variant="outline"
+                onClick={() => importRef.current?.click()}
+                disabled={importing}
+              >
+                {importing ? t("export:importing") : t("export:importCourse")}
+              </Button>
               <Button onClick={() => router.push("/courses/new")}>
                 {t("dashboard:newCourse")}
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => signOut({ callbackUrl: "/login" })}
-              >
-                {t("login:signOut")}
-              </Button>
             </div>
-            <MobileMenu isAdmin={isAdmin} showProgress={hasReadyCourses} />
+            <MobileMenu isAdmin={isAdmin} showProgress={hasReadyCourses} onImport={() => importRef.current?.click()} />
           </div>
         </div>
       </header>

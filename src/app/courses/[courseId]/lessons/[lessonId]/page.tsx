@@ -20,6 +20,7 @@ import { LessonContentRenderer } from "@/components/lesson/LessonContentRenderer
 import { ScratchpadPanel } from "@/components/scratchpad";
 import { ChatPanel } from "@/components/chat";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserMenu } from "@/components/UserMenu";
 import { GeneratingSpinner, TriviaSlideshow } from "@/components/generation";
 import { generateLessonContent, generateQuiz } from "@/lib/generateLessonStream";
 import {
@@ -195,6 +196,7 @@ export default function LessonPage({
             <h1 className="text-xl font-bold truncate">{lesson.title}</h1>
           </div>
           <ThemeToggle />
+          <UserMenu />
           {hasContent && (
             <>
               <Button

@@ -11,6 +11,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { StarRating } from "./StarRating";
+import { LANGUAGE_NAMES } from "@/lib/ai/prompts/languageInstruction";
+import { parseSubjects } from "@/lib/subjects";
 
 interface GalleryItem {
   shareToken: string;
@@ -47,6 +49,9 @@ export function GalleryCard({ item, onClone, cloning, isAuthenticated }: Gallery
     }
   })();
 
+  const languageName = LANGUAGE_NAMES[item.course.language] ?? item.course.language;
+  const subjects = parseSubjects(item.course.subject);
+
   return (
     <Card className="flex flex-col h-full hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
@@ -65,11 +70,18 @@ export function GalleryCard({ item, onClone, cloning, isAuthenticated }: Gallery
       <CardContent className="flex-1 flex flex-col justify-between gap-3">
         <div className="space-y-2">
           <div className="flex flex-wrap gap-1.5">
-            <Badge variant="secondary" className="text-xs">{item.course.subject}</Badge>
+            {subjects.map((subj) => (
+              <Badge key={subj} variant="secondary" className="text-xs">{subj}</Badge>
+            ))}
             <Badge variant="outline">{item.course.topic}</Badge>
             <Badge variant="outline" className="capitalize">
               {item.course.difficulty}
             </Badge>
+            {languageName && (
+              <Badge variant="outline" className="text-xs">
+                {languageName}
+              </Badge>
+            )}
             {tags.map((tag) => (
               <Badge key={tag} variant="secondary" className="text-xs">
                 {tag}

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 import { GET as getGallery } from "@/app/api/gallery/route";
 import { POST as rateCourse } from "@/app/api/gallery/[shareToken]/rate/route";
+import { GET as getAdminGallery, POST as createAdminGalleryListing } from "@/app/api/admin/gallery/route";
 import { PATCH as updateGalleryShare } from "@/app/api/admin/gallery/[shareId]/route";
 import { getTestPrisma } from "../helpers/db";
 import { createTestCourse, createTestLesson, TEST_USER_ID } from "../helpers/fixtures";
@@ -71,8 +72,8 @@ describe("gallery API", () => {
     expect(data.items[0].course.title).toBe("Linear Algebra");
   });
 
-  it("GET /api/gallery returns filter options", async () => {
-    const course = await createTestCourse({ title: "Filter Test", topic: "Physics", difficulty: "advanced", status: "ready" });
+  it("GET /api/gallery returns filter options with languages", async () => {
+    const course = await createTestCourse({ title: "Filter Test", topic: "Physics", difficulty: "advanced", language: "pl", status: "ready" });
     await createGalleryListing(course.id);
 
     const response = await getGallery(
@@ -80,7 +81,7 @@ describe("gallery API", () => {
     );
 
     const data = await response.json();
-    expect(data.filters.topics).toContain("Physics");
+    expect(data.filters.languages).toContain("pl");
     expect(data.filters.difficulties).toContain("advanced");
   });
 
@@ -100,6 +101,24 @@ describe("gallery API", () => {
     const data = await response.json();
     expect(data.items.length).toBe(1);
     expect(data.items[0].course.title).toBe("Physics Course");
+  });
+
+  it("GET /api/gallery filters by language", async () => {
+    await createTestCourse({ title: "English Course", language: "en", status: "ready" }).then(
+      (c) => createGalleryListing(c.id)
+    );
+    await createTestCourse({ title: "Polish Course", language: "pl", status: "ready" }).then(
+      (c) => createGalleryListing(c.id)
+    );
+
+    const response = await getGallery(
+      new NextRequest("http://localhost/api/gallery?language=pl")
+    );
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.items.length).toBe(1);
+    expect(data.items[0].course.title).toBe("Polish Course");
   });
 
   it("GET /api/gallery returns subjects in filter options", async () => {
@@ -175,6 +194,93 @@ describe("gallery rating", () => {
     );
 
     expect(response.status).toBe(404);
+  });
+});
+
+describe("admin gallery management", () => {
+  beforeEach(() => {
+    vi.mocked(authUtils.requireAdmin).mockResolvedValue({
+      userId: TEST_USER_ID,
+      role: "admin",
+      accessStatus: "active",
+      error: null,
+    });
+  });
+
+  it("GET /api/admin/gallery returns all courses (not just shares)", async () => {
+    // Create a course WITHOUT any share link
+    const course = await createTestCourse({ title: "No Share Course", status: "ready" });
+    await createTestLesson(course.id, { status: "ready", contentJson: "{}" });
+
+    // Create a course WITH a share link
+    const course2 = await createTestCourse({ title: "Has Share Course", status: "ready" });
+    await createTestLesson(course2.id, { status: "ready", contentJson: "{}" });
+    await createShareLink(course2.id);
+
+    const response = await getAdminGallery();
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+
+    // Both courses should appear
+    const titles = data.map((c: { title: string }) => c.title);
+    expect(titles).toContain("No Share Course");
+    expect(titles).toContain("Has Share Course");
+
+    // Course with share should have shares array populated
+    const hasShareCourse = data.find((c: { title: string }) => c.title === "Has Share Course");
+    expect(hasShareCourse.shares.length).toBe(1);
+
+    // Course without share should have empty shares array
+    const noShareCourse = data.find((c: { title: string }) => c.title === "No Share Course");
+    expect(noShareCourse.shares.length).toBe(0);
+  });
+
+  it("GET /api/admin/gallery includes eligibility info", async () => {
+    const course = await createTestCourse({ title: "Eligibility Test", status: "ready" });
+    await createTestLesson(course.id, { status: "ready", contentJson: "{}" });
+    await createTestLesson(course.id, { status: "pending" }); // not generated
+
+    const response = await getAdminGallery();
+    const data = await response.json();
+
+    const testCourse = data.find((c: { title: string }) => c.title === "Eligibility Test");
+    expect(testCourse.eligibility.isEligible).toBe(false);
+    expect(testCourse.eligibility.totalLessons).toBe(2);
+    expect(testCourse.eligibility.generatedLessons).toBe(1);
+  });
+
+  it("POST /api/admin/gallery auto-creates share and gallery listing", async () => {
+    const course = await createTestCourse({ title: "Auto Share", status: "ready" });
+    await createTestLesson(course.id, { status: "ready", contentJson: "{}" });
+
+    const response = await createAdminGalleryListing(
+      new Request("http://localhost/api/admin/gallery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ courseId: course.id }),
+      })
+    );
+
+    expect(response.status).toBe(201);
+    const data = await response.json();
+    expect(data.isGalleryListed).toBe(true);
+    expect(data.shareToken).toBeTruthy();
+    expect(data.courseId).toBe(course.id);
+  });
+
+  it("POST /api/admin/gallery rejects ineligible courses", async () => {
+    const course = await createTestCourse({ title: "Ineligible", status: "draft" });
+
+    const response = await createAdminGalleryListing(
+      new Request("http://localhost/api/admin/gallery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ courseId: course.id }),
+      })
+    );
+
+    expect(response.status).toBe(400);
   });
 });
 
@@ -292,5 +398,34 @@ describe("admin gallery clone conflict detection", () => {
 
     const updatedClone = await prisma.courseShare.findUnique({ where: { id: cloneShare.id } });
     expect(updatedClone?.isGalleryListed).toBe(true);
+  });
+
+  it("detects clone conflict when using POST to auto-create share", async () => {
+    // Create original with gallery listing
+    const original = await createTestCourse({ title: "Original POST", status: "ready" });
+    await createTestLesson(original.id, { status: "ready", contentJson: "{}" });
+    await createGalleryListing(original.id);
+
+    // Create a clone without any share
+    const clone = await createTestCourse({
+      title: "Clone POST",
+      status: "ready",
+      clonedFromId: original.id,
+    });
+    await createTestLesson(clone.id, { status: "ready", contentJson: "{}" });
+
+    // Try to add clone via POST — should get conflict
+    const response = await createAdminGalleryListing(
+      new Request("http://localhost/api/admin/gallery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ courseId: clone.id }),
+      })
+    );
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.cloneConflict).toBe(true);
+    expect(data.conflictingShare.course.title).toBe("Original POST");
   });
 });

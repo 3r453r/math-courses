@@ -9,7 +9,7 @@ export interface CourseExportJson {
     title: string;
     description: string;
     topic: string;
-    subject?: string;
+    subject?: string; // JSON array string or legacy single string
     focusAreas: string;
     targetLessonCount: number;
     difficulty: string;

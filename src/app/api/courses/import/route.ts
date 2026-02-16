@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 import type { CourseExportJson } from "@/lib/export/toJson";
+import { serializeSubjects } from "@/lib/subjects";
 
 export async function POST(request: Request) {
   const { userId, error: authError } = await getAuthUser();
@@ -33,7 +34,9 @@ export async function POST(request: Request) {
         title: courseData.title,
         description: courseData.description,
         topic: courseData.topic,
-        subject: courseData.subject ?? "Other",
+        subject: courseData.subject
+          ? (courseData.subject.startsWith("[") ? courseData.subject : serializeSubjects([courseData.subject]))
+          : serializeSubjects(["Other"]),
         focusAreas: courseData.focusAreas,
         targetLessonCount: courseData.targetLessonCount,
         difficulty: courseData.difficulty,
