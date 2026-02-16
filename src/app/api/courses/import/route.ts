@@ -62,7 +62,6 @@ export async function POST(request: Request) {
           status: lessonData.status,
           contentJson: lessonData.contentJson,
           rawMarkdown: lessonData.rawMarkdown,
-          generationPrompt: lessonData.generationPrompt ?? null,
           isSupplementary: lessonData.isSupplementary,
           weight: lessonData.weight,
           completedAt: lessonData.completedAt
