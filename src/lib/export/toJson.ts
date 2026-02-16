@@ -27,7 +27,6 @@ export interface CourseExportJson {
     status: string;
     contentJson: string | null;
     rawMarkdown: string | null;
-    generationPrompt: string | null;
     isSupplementary: boolean;
     weight: number;
     completedAt: string | null;
@@ -124,7 +123,6 @@ export function toExportJson(data: FullCourseData): CourseExportJson {
       status: lesson.status,
       contentJson: lesson.contentJson,
       rawMarkdown: lesson.rawMarkdown,
-      generationPrompt: lesson.generationPrompt,
       isSupplementary: lesson.isSupplementary,
       weight: lesson.weight,
       completedAt: lesson.completedAt?.toISOString() ?? null,

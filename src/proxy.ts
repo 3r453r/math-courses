@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { isDevBypassEnabled } from "@/lib/dev-bypass";
 
 // Public paths that don't require any authentication
 const PUBLIC_PATHS = [
@@ -37,7 +38,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Dev bypass: auto-authenticate when AUTH_DEV_BYPASS=true
-  if (process.env.AUTH_DEV_BYPASS === "true") {
+  if (isDevBypassEnabled()) {
     return NextResponse.next();
   }
 

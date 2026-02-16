@@ -2,6 +2,7 @@ import { getAuthUserAnyStatus } from "@/lib/auth-utils";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { isDevBypassEnabled } from "@/lib/dev-bypass";
 
 /**
  * POST /api/payment/checkout — Create a Stripe Checkout Session
@@ -13,7 +14,7 @@ export async function POST(request: Request) {
   if (authError) return authError;
 
   // Dev bypass: skip Stripe and directly activate the user
-  if (process.env.AUTH_DEV_BYPASS === "true") {
+  if (isDevBypassEnabled()) {
     await prisma.user.update({
       where: { id: userId },
       data: {

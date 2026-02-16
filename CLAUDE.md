@@ -171,4 +171,7 @@ Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Au
 - **Build command**: `pnpm build` (runs `next build`)
 - **Required env vars**: `AUTH_SECRET`, `NEXTAUTH_URL`, `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`
 - **Optional env vars**: `GOOGLE_CLIENT_ID`/`SECRET`, `GITHUB_ID`/`SECRET`, `DISCORD_CLIENT_ID`/`SECRET` (OAuth providers), `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID` (payments), `API_KEY_ENCRYPTION_KEY` (server-side key storage)
+- **Production Turso credentials**: Stored in `.env.turso-prod` (gitignored, NOT auto-loaded by Next.js). To apply schema changes to production: `source .env.turso-prod && npx prisma db push`
+- **NEVER** set `TURSO_DATABASE_URL` in `.env.local` — it causes `pnpm dev` to write to the production database
+- **Dev bypass production guard**: `isDevBypassEnabled()` in `src/lib/dev-bypass.ts` blocks `AUTH_DEV_BYPASS` in production (`NODE_ENV=production`) unless `NEXT_TEST_MODE=1` (E2E tests). Also logs a warning when bypass is active with a remote database (`TURSO_DATABASE_URL` set)
 

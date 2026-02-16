@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { isDevBypassEnabled } from "@/lib/dev-bypass";
 
 type AuthResult =
   | { userId: string; role: string; accessStatus: string; error: null }
@@ -42,18 +43,18 @@ export async function getAuthUser(): Promise<AuthResult> {
  */
 export async function getAuthUserAnyStatus(): Promise<AuthResultAnyStatus> {
   // Dev bypass: auto-authenticate with a default dev user
-  if (process.env.AUTH_DEV_BYPASS === "true") {
+  if (isDevBypassEnabled()) {
     let user = await prisma.user.findUnique({ where: { email: DEV_USER_EMAIL } });
     if (!user) {
       user = await prisma.user.create({
         data: {
           email: DEV_USER_EMAIL,
           name: "Dev User",
-          role: "admin",
+          role: "user",
           emailVerified: new Date(),
           accessStatus: "active",
           accessGrantedAt: new Date(),
-          accessSource: "admin_grant",
+          accessSource: "dev_bypass",
         },
       });
     }
