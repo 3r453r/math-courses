@@ -162,7 +162,7 @@ export default function DashboardPage() {
             <Button
               variant="ghost"
               size="sm"
-              className="text-xs font-medium"
+              className="text-xs font-medium hidden md:inline-flex"
               onClick={() => setLanguage(language === "en" ? "pl" : "en")}
             >
               {language === "en" ? "PL" : "EN"}
@@ -215,7 +215,12 @@ export default function DashboardPage() {
                 {t("dashboard:newCourse")}
               </Button>
             </div>
-            <MobileMenu showProgress={hasReadyCourses} onImport={() => importRef.current?.click()} />
+            <MobileMenu
+              showProgress={hasReadyCourses}
+              onImport={() => importRef.current?.click()}
+              languageLabel={language === "en" ? "PL" : "EN"}
+              onLanguageToggle={() => setLanguage(language === "en" ? "pl" : "en")}
+            />
           </div>
         </div>
       </header>

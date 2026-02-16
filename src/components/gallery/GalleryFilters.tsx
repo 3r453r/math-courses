@@ -45,16 +45,16 @@ export function GalleryFilters({
   const { t } = useTranslation(["gallery"]);
 
   return (
-    <div className="flex flex-wrap gap-3 items-center">
+    <div className="flex flex-wrap gap-3 items-center w-full">
       <Input
         placeholder={t("gallery:search")}
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
-        className="w-64"
+        className="w-full sm:w-64"
       />
 
       <Select value={subject} onValueChange={onSubjectChange}>
-        <SelectTrigger className="w-40">
+        <SelectTrigger className="w-full sm:w-40">
           <SelectValue placeholder={t("gallery:filters.allSubjects")} />
         </SelectTrigger>
         <SelectContent>
@@ -68,7 +68,7 @@ export function GalleryFilters({
       </Select>
 
       <Select value={language} onValueChange={onLanguageChange}>
-        <SelectTrigger className="w-40">
+        <SelectTrigger className="w-full sm:w-40">
           <SelectValue placeholder={t("gallery:filters.allLanguages")} />
         </SelectTrigger>
         <SelectContent>
@@ -82,7 +82,7 @@ export function GalleryFilters({
       </Select>
 
       <Select value={difficulty} onValueChange={onDifficultyChange}>
-        <SelectTrigger className="w-40">
+        <SelectTrigger className="w-full sm:w-40">
           <SelectValue placeholder={t("gallery:filters.allDifficulties")} />
         </SelectTrigger>
         <SelectContent>
@@ -96,7 +96,7 @@ export function GalleryFilters({
       </Select>
 
       <Select value={sort} onValueChange={onSortChange}>
-        <SelectTrigger className="w-40">
+        <SelectTrigger className="w-full sm:w-40">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

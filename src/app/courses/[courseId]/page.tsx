@@ -34,8 +34,15 @@ import { ContextDocGuideDialog } from "@/components/ContextDocGuideDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserMenu } from "@/components/UserMenu";
 import { evaluateCourseCompletion, DEFAULT_THRESHOLDS } from "@/lib/quiz/courseCompletion";
+import { MoreVertical } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface QuizAttemptInfo {
   id: string;
@@ -407,11 +414,13 @@ export default function CourseOverviewPage({
             <h1 className="text-xl font-bold truncate">{course.title}</h1>
             <p className="text-sm text-muted-foreground hidden sm:block truncate">{course.description}</p>
           </div>
+          {/* Desktop buttons */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => setExportDialogOpen(true)}
             title={t("export:export")}
+            className="hidden md:inline-flex"
           >
             <svg className="size-4 md:mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
@@ -423,6 +432,7 @@ export default function CourseOverviewPage({
             size="sm"
             onClick={() => setShareDialogOpen(true)}
             title={t("export:share")}
+            className="hidden md:inline-flex"
           >
             <svg className="size-4 md:mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
@@ -434,6 +444,7 @@ export default function CourseOverviewPage({
             size="sm"
             onClick={() => setNotebookOpen(!notebookOpen)}
             title={t("notebook:notebook")}
+            className="hidden md:inline-flex"
           >
             <svg
               className="size-4 md:mr-1.5"
@@ -450,11 +461,30 @@ export default function CourseOverviewPage({
             </svg>
             <span className="hidden md:inline">{t("notebook:notebook")}</span>
           </Button>
-          <ThemeToggle />
+          <div className="hidden md:inline-flex"><ThemeToggle /></div>
           <UserMenu />
           <Badge variant="outline" className="capitalize hidden sm:inline-flex">
             {course.difficulty}
           </Badge>
+          {/* Mobile overflow menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="size-8 p-0 md:hidden">
+                <MoreVertical className="size-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => setExportDialogOpen(true)}>
+                {t("export:export")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShareDialogOpen(true)}>
+                {t("export:share")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setNotebookOpen(!notebookOpen)}>
+                {t("notebook:notebook")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
