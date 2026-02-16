@@ -62,7 +62,7 @@
   "voiceDictationMultiInput": "Wielopolowe: \"sumowanie i koniec pola n koniec pola\" → \\sum_{i}^{n}. Fraza \"koniec pola\" jest konfigurowalna.",
   "voiceDictationCustom": "Skonfiguruj wszystkie słowa kluczowe przyciskiem \"Głos\" — edytuj frazy lub dodawaj własne.",
   "aiModeButton": "AI",
-  "aiModeTooltip": "Tryb interpretacji AI — używa Claude do konwersji mowy na LaTeX",
+  "aiModeTooltip": "Tryb interpretacji AI — używa AI do konwersji mowy na LaTeX",
   "interpreting": "Interpretuję...",
   "calibrateButton": "Test",
   "calibrationTitle": "Kalibracja głosu",
