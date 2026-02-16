@@ -47,32 +47,8 @@ export async function GET(request: NextRequest) {
     if (sort === "stars") orderBy = { starCount: "desc" };
     else if (sort === "clones") orderBy = { cloneCount: "desc" };
 
-    const [shares, total] = await Promise.all([
-      prisma.courseShare.findMany({
-        where,
-        orderBy,
-        skip,
-        take: limit,
-        include: {
-          course: {
-            select: {
-              title: true,
-              description: true,
-              topic: true,
-              subject: true,
-              difficulty: true,
-              language: true,
-              _count: { select: { lessons: true } },
-              user: { select: { name: true } },
-            },
-          },
-        },
-      }),
-      prisma.courseShare.count({ where }),
-    ]);
-
-    // Also get featured courses for the first page
-    let featured: typeof shares = [];
+    // Fetch featured courses first (page 1 only) so we can exclude them from main query
+    let featured: Awaited<ReturnType<typeof prisma.courseShare.findMany>> = [];
     if (page === 1) {
       featured = await prisma.courseShare.findMany({
         where: {
@@ -98,6 +74,36 @@ export async function GET(request: NextRequest) {
         },
       });
     }
+
+    // On page 1, exclude featured items from main query to avoid duplicates
+    const featuredIds = featured.map((f) => f.id);
+    const mainWhere = featuredIds.length > 0
+      ? { ...where, id: { notIn: featuredIds } }
+      : where;
+
+    const [shares, total] = await Promise.all([
+      prisma.courseShare.findMany({
+        where: mainWhere,
+        orderBy,
+        skip,
+        take: limit,
+        include: {
+          course: {
+            select: {
+              title: true,
+              description: true,
+              topic: true,
+              subject: true,
+              difficulty: true,
+              language: true,
+              _count: { select: { lessons: true } },
+              user: { select: { name: true } },
+            },
+          },
+        },
+      }),
+      prisma.courseShare.count({ where: mainWhere }),
+    ]);
 
     // Get distinct filter options from gallery-listed courses
     const allListings = await prisma.courseShare.findMany({
