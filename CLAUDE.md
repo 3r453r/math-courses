@@ -47,6 +47,7 @@ pnpm test:all         # All of the above
 - `src/lib/stripe.ts` — Stripe client singleton for payment processing
 - `src/components/admin/` — Admin panel components (AccessCodeManager, UserManager, GalleryManager)
 - `src/components/gallery/` — Gallery components (GalleryCard, StarRating, GalleryFilters)
+- `src/components/landing/` — Landing page sections (HeroSection, HowItWorksSection, FeaturesSection, FeaturedCoursesSection, LandingFooter)
 - `src/lib/crypto.ts` — AES-256-GCM encryption for server-side API key storage
 - `src/lib/export/` — Export utilities: `courseData.ts` (shared data layer), `toMarkdown.ts`, `toJson.ts`
 - `src/components/export/` — ExportDialog (Markdown/JSON/Print), ShareDialog (share link CRUD)
@@ -80,7 +81,7 @@ pnpm test:all         # All of the above
 
 ### Routes
 
-- `/login` — Login page (OAuth + dev credentials)
+- `/login` — Landing page (hero, features, featured courses, sign-in) with auth redirect to `/` for logged-in users
 - `/` — Dashboard with course list (requires auth + API key)
 - `/setup` — API key, model configuration, account info
 - `/courses/new` — Course creation wizard
@@ -124,9 +125,11 @@ Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Au
 - **Full-viewport pages** (lesson page, course overview) use `fixed inset-0` wrapper — NOT `h-dvh`. This takes the page completely out of document flow, preventing the browser from creating a document-level scrollbar. Internal areas use `overflow-y-auto` for scrolling. The header is `shrink-0` and always visible; the content area is `flex-1 min-h-0`. When side panels (chat/scratchpad) are open, `main` gets `overflow-y-auto w-1/2`; when closed, the outer container gets `overflow-y-auto` instead. Switching between panels preserves the lesson content scroll position.
 
 - **i18n**: i18next + react-i18next with `en` and `pl` locales. 17 namespaces under `src/i18n/locales/`. `I18nProvider` wraps the app in `layout.tsx`
+- **i18n copywriting**: User-facing text must NOT reference specific AI provider names (Claude, Anthropic, OpenAI, etc.) — use generic "AI" instead. Exception: provider labels in the API key setup page. PL locale files must use proper Polish diacritics (ą, ę, ó, ś, ć, ź, ż, ł, ń).
 - **Voice input**: `useSpeechToText` hook uses Web Speech API. `voiceKeywords` expands spoken math terms to LaTeX. Configurable trigger word and custom keywords in Zustand store
 - **Notebook**: Per-course multi-page notebook with autosave. `useNotebook` hook manages CRUD via `/api/courses/[courseId]/notebook` routes. `NotebookPanel` renders in lesson sidebar (mutually exclusive with chat/scratchpad)
 - **Color themes**: 4 themes (neutral, ocean, sage, amber) defined in `src/lib/themes.ts`. `colorTheme` stored in Zustand. Dark mode via `next-themes` `ThemeProvider`
+- **Language toggle**: `LanguageToggle` component (`src/components/LanguageToggle.tsx`) cycles through available languages. Uses Zustand `setLanguage`. Available on landing page alongside `ThemeToggle`
 
 ## Conventions
 
