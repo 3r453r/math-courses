@@ -103,6 +103,12 @@ pnpm test:all         # All of the above
 
 Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Auth.js v5 (next-auth@beta), Zustand 5, Zod 4, Vercel AI SDK (`@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google`, `ai`), Stripe, KaTeX, mathjs, Three.js, Mafs, i18next, react-i18next, next-themes, shadcn/ui, reagraph
 
+## Git / Branch Policy
+
+- **Stay on `main`**: Do NOT create or switch branches unless the user explicitly asks you to. Multiple Claude Code agents may be working in this repository simultaneously, and switching branches causes conflicts. This applies to local CLI agents only — cloud Claude Code instances with their own worktrees are exempt.
+- **Commit directly to `main`** for small changes when asked to commit.
+- If the user asks for branch-based workflow (feature branch, PR), only then create a branch.
+
 ## Key Patterns
 
 - Most pages are client components (`"use client"`); API routes are server-side
