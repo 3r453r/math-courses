@@ -10,6 +10,8 @@ import { NextResponse } from "next/server";
 import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
 import { getCheapestModel, repackWithAI, tryCoerceAndValidate } from "@/lib/ai/repairSchema";
 import { validateAndRepairVisualizations } from "@/lib/content/vizValidation";
+import { createGenerationLogger } from "@/lib/ai/generationLogger";
+import type { z } from "zod";
 
 export async function POST(request: Request) {
   const { userId, error } = await getAuthUser();
@@ -121,6 +123,18 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
 
       prompt += buildLanguageInstruction(lesson.course.language);
 
+      const logger = createGenerationLogger({
+        generationType: "lesson",
+        schemaName: "lessonContentSchema",
+        modelId: model,
+        userId,
+        courseId,
+        lessonId,
+        language: lesson.course.language,
+        difficulty: lesson.course.difficulty,
+        promptText: prompt,
+      });
+
       const t0 = Date.now();
       const ts = new Date().toISOString().replace(/[:.]/g, "-");
       const tracker = createRepairTracker();
@@ -136,6 +150,7 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
         });
         lessonContent = object;
         if (tracker.repairCalled) scenario = "repair-triggered";
+        logger.recordLayer0(tracker);
         // Log successful generation details
         console.log(`[lesson-gen] generateObject succeeded (scenario=${scenario}). sections=${lessonContent.sections?.length}, workedExamples=${lessonContent.workedExamples?.length}, practiceExercises=${lessonContent.practiceExercises?.length}`);
         if (lessonContent.sections?.length) {
@@ -144,6 +159,7 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
         }
       } catch (genErr) {
         scenario = "error-recovery";
+        logger.recordLayer0(tracker);
         if (NoObjectGeneratedError.isInstance(genErr) && genErr.text) {
           console.log(`[lesson-gen] NoObjectGeneratedError. message="${genErr.message}"`);
           console.log(`[lesson-gen] Raw text length: ${genErr.text.length}`);
@@ -153,21 +169,23 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
           // Dump raw error text
           dumpToFile(`lesson-gen-error-${ts}.json`, genErr.text);
 
-          // Try direct coercion on the raw text
+          // Try direct coercion on the raw text (Layer 1)
+          let hadWrapper = false;
+          const zodCollector: { issues: z.ZodIssue[] } = { issues: [] };
           try {
             const parsed = JSON.parse(genErr.text);
             const topKeys = Object.keys(parsed);
             console.log(`[lesson-gen] Parsed top-level keys: [${topKeys.join(", ")}]`);
-            const hasParameter = "parameter" in parsed;
-            console.log(`[lesson-gen] Has "parameter" wrapper: ${hasParameter}`);
+            hadWrapper = "parameter" in parsed;
+            console.log(`[lesson-gen] Has "parameter" wrapper: ${hadWrapper}`);
 
             // Unwrap parameter before coercion
-            const target = hasParameter && typeof parsed.parameter === "object" ? parsed.parameter : parsed;
-            if (hasParameter) {
+            const target = hadWrapper && typeof parsed.parameter === "object" ? parsed.parameter : parsed;
+            if (hadWrapper) {
               console.log(`[lesson-gen] Unwrapped "parameter", inner keys: [${Object.keys(target).join(", ")}]`);
             }
 
-            const coerced = tryCoerceAndValidate(target, lessonContentSchema);
+            const coerced = tryCoerceAndValidate(target, lessonContentSchema, zodCollector);
             if (coerced) {
               console.log(`[lesson-gen] Direct coercion succeeded`);
               lessonContent = coerced;
@@ -177,6 +195,13 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
           } catch (parseErr) {
             console.log(`[lesson-gen] JSON parse failed: ${parseErr instanceof Error ? parseErr.message : parseErr}`);
           }
+
+          logger.recordLayer1({
+            rawText: genErr.text,
+            hadWrapper,
+            success: !!lessonContent,
+            zodErrors: zodCollector.issues,
+          });
 
           // Layer 2: AI repack with cheapest model
           if (!lessonContent) {
@@ -190,15 +215,22 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
               } else {
                 console.log(`[lesson-gen] AI repack also failed`);
               }
+              logger.recordLayer2({ modelId: cheapModel, success: !!repacked });
             } else {
               console.log(`[lesson-gen] No cheap model available for repack`);
             }
           }
 
-          if (!lessonContent) throw genErr;
+          if (!lessonContent) {
+            logger.recordFailure(genErr.message);
+            await logger.finalize();
+            throw genErr;
+          }
         } else {
           const errMsg = genErr instanceof Error ? genErr.message : String(genErr);
           console.log(`[lesson-gen] Non-recoverable error: ${errMsg}`);
+          logger.recordFailure(errMsg);
+          await logger.finalize();
           throw genErr;
         }
       }
@@ -245,6 +277,7 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
         }
       }
 
+      await logger.finalize();
     }
 
     // Validate visualization expressions and remove malformed ones

@@ -20,6 +20,7 @@ interface GalleryItem {
   cloneCount: number;
   tags: string;
   featuredAt: string | null;
+  hasPreview?: boolean;
   course: {
     title: string;
     description: string;
@@ -110,17 +111,28 @@ export function GalleryCard({ item, onClone, cloning, isAuthenticated }: Gallery
           </div>
         </div>
 
-        <Button
-          className="w-full"
-          onClick={() => onClone(item.shareToken)}
-          disabled={cloning || !isAuthenticated}
-        >
-          {cloning
-            ? t("gallery:card.cloning")
-            : isAuthenticated
-              ? t("gallery:card.clone")
-              : t("gallery:card.loginToClone")}
-        </Button>
+        <div className="flex flex-col gap-2">
+          {item.hasPreview && (
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => window.location.href = `/preview/${item.shareToken}`}
+            >
+              {t("gallery:card.tryPreview")}
+            </Button>
+          )}
+          <Button
+            className="w-full"
+            onClick={() => onClone(item.shareToken)}
+            disabled={cloning || !isAuthenticated}
+          >
+            {cloning
+              ? t("gallery:card.cloning")
+              : isAuthenticated
+                ? t("gallery:card.clone")
+                : t("gallery:card.loginToClone")}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

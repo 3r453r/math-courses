@@ -20,6 +20,11 @@
   "haveCode": "Have an access code?",
   "redeemLink": "Redeem it here",
   "paymentMethods": "Supports credit cards, BLIK, and more",
+  "socialProof": {
+    "courses": "{{count}} courses in our gallery",
+    "ratings": "{{count}} ratings",
+    "averageRating": "{{rating}}/5 average rating"
+  },
   "success": {
     "title": "Payment Successful!",
     "description": "Your account has been activated. Welcome to the platform!",

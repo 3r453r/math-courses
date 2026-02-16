@@ -256,6 +256,7 @@ model CourseShare {
   starCount          Int       @default(0)
   cloneCount         Int       @default(0)
   featuredAt         DateTime?
+  previewLessonId    String?
 
   course  Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
   ratings CourseRating[]
@@ -317,4 +318,72 @@ model Payment {
   createdAt       DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ── Site Configuration ──────────────────────────────────────
+
+model SiteConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// ── AI Generation Logging ──────────────────────────────────────
+
+model AiGenerationLog {
+  id             String   @id @default(cuid())
+
+  // What was being generated
+  generationType String   // "course"|"lesson"|"quiz"|"diagnostic"|"trivia"|"completion_summary"
+  schemaName     String   // "courseStructureSchema"|"lessonContentSchema"|etc.
+  modelId        String   // "claude-opus-4-6", "gpt-5.2", etc.
+  provider       String   // "anthropic"|"openai"|"google"
+
+  // Domain entity references (no FK — logs survive entity deletion)
+  userId         String?
+  courseId        String?
+  lessonId       String?
+
+  // Final outcome
+  outcome        String   // "success"|"repaired_layer0"|"repaired_layer1"|"repaired_layer2"|"failed"
+  durationMs     Int
+
+  // Layer 0 (experimental_repairText)
+  layer0Called    Boolean  @default(false)
+  layer0Result   String?  // "coercion-success"|"unwrapped-only"|"json-parse-failed"|"returned-null"
+  layer0Error    String?
+
+  // Layer 1 (catch-block direct coercion)
+  layer1Called    Boolean  @default(false)
+  layer1Success  Boolean  @default(false)
+  layer1HadWrapper Boolean @default(false)
+
+  // Layer 2 (AI repack)
+  layer2Called    Boolean  @default(false)
+  layer2Success  Boolean  @default(false)
+  layer2ModelId  String?
+
+  // Raw AI output for replication
+  rawOutputText  String?  // up to 200KB, truncated with marker
+  rawOutputLen   Int?     // always stored even if text is truncated
+
+  // Validation details
+  zodErrors      String?  // JSON array of {path, code, message}
+  errorMessage   String?  // final error if outcome="failed"
+
+  // Prompt fingerprint for grouping
+  promptHash     String?  // SHA-256 hex
+  promptText     String?  // stored only on non-success outcomes
+
+  // Request metadata
+  language       String?
+  difficulty     String?
+
+  createdAt      DateTime @default(now())
+
+  @@index([generationType])
+  @@index([outcome])
+  @@index([modelId])
+  @@index([createdAt])
+  @@index([courseId])
 }

@@ -13,5 +13,6 @@
   "inAppBrowserDescription": "Google blokuje logowanie w przegladarkach wbudowanych ze wzgledow bezpieczenstwa. Otworz te strone w domyslnej przegladarce.",
   "openInBrowser": "Otworz w przegladarce",
   "iosOpenInstructions": "Kliknij ikone Safari lub menu (\u22ef), aby otworzyc w przegladarce.",
-  "continueAnyway": "Sprobuj zalogowac sie mimo to"
+  "continueAnyway": "Sprobuj zalogowac sie mimo to",
+  "tagline": "Kursy AI, spersonalizowane dla Ciebie"
 }

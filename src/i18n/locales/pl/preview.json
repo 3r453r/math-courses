@@ -1,0 +1,23 @@
+{
+  "badge": "Darmowy podgląd",
+  "bannerText": "Przeglądasz darmową lekcję z tego kursu",
+  "signUpForFullAccess": "Zarejestruj się, aby uzyskać pełny dostęp",
+  "lockedLesson": "Zablokowana",
+  "clickToPreview": "Kliknij, aby zobaczyć podgląd tej lekcji",
+  "takeQuiz": "Rozwiąż quiz",
+  "backToOverview": "Powrót do przeglądu",
+  "quizComplete": "Quiz zakończony!",
+  "scoreMessage_advance": "Świetna robota! Wyraźnie dobrze opanowałeś ten materiał.",
+  "scoreMessage_supplement": "Dobra próba! Niektóre tematy wymagają powtórki.",
+  "scoreMessage_regenerate": "Ten materiał wymaga więcej nauki. Pełny kurs omawia go szczegółowo.",
+  "unlockAll": "Odblokuj wszystkie lekcje, quizy i korepetycje AI",
+  "signUp": "Zarejestruj się",
+  "viewPricing": "Zobacz cennik",
+  "reviewAnswers": "Przejrzyj odpowiedzi",
+  "scratchpad": "Notatnik",
+  "scratchpadLocalNotice": "Notatki zapisane lokalnie w przeglądarce",
+  "courseOverview": "Przegląd kursu",
+  "lessonCount": "{{count}} lekcji",
+  "previewLesson": "Podgląd lekcji",
+  "score": "Wynik: {{score}}%"
+}

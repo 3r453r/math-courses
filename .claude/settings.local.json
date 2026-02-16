@@ -85,7 +85,9 @@
       "Bash(git status:*)",
       "Bash(git -C \"C:/Users/aswie/source/repos/3r453r/math-courses\" status --short)",
       "Bash(pnpm vitest run:*)",
-      "Bash(pnpm dev:*)"
+      "Bash(pnpm dev:*)",
+      "Bash(git checkout:*)",
+      "Bash(gh pr create:*)"
     ]
   }
 }

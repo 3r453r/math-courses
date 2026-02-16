@@ -23,7 +23,8 @@
     "loginToClone": "Log in to clone",
     "featured": "Featured",
     "rating": "{{rating}} / 5",
-    "cloneCount": "{{count}} clones"
+    "cloneCount": "{{count}} clones",
+    "tryPreview": "Try Free Preview"
   },
   "empty": "No courses found. Check back later!",
   "loading": "Loading courses...",

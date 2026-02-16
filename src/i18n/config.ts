@@ -22,6 +22,7 @@ import enAdmin from "./locales/en/admin.json";
 import enGallery from "./locales/en/gallery.json";
 import enPricing from "./locales/en/pricing.json";
 import enGeneration from "./locales/en/generation.json";
+import enPreview from "./locales/en/preview.json";
 
 import plCommon from "./locales/pl/common.json";
 import plDashboard from "./locales/pl/dashboard.json";
@@ -44,6 +45,7 @@ import plAdmin from "./locales/pl/admin.json";
 import plGallery from "./locales/pl/gallery.json";
 import plPricing from "./locales/pl/pricing.json";
 import plGeneration from "./locales/pl/generation.json";
+import plPreview from "./locales/pl/preview.json";
 
 i18n.use(initReactI18next).init({
   resources: {
@@ -69,6 +71,7 @@ i18n.use(initReactI18next).init({
       gallery: enGallery,
       pricing: enPricing,
       generation: enGeneration,
+      preview: enPreview,
     },
     pl: {
       common: plCommon,
@@ -92,6 +95,7 @@ i18n.use(initReactI18next).init({
       gallery: plGallery,
       pricing: plPricing,
       generation: plGeneration,
+      preview: plPreview,
     },
   },
   lng: "en",

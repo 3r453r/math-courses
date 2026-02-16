@@ -108,9 +108,19 @@ export async function GET(request: NextRequest) {
     const difficulties = [...new Set(allListings.map((s) => s.course.difficulty))].sort();
     const languages = [...new Set(allListings.map((s) => s.course.language).filter(Boolean))].sort();
 
+    // Add hasPreview flag derived from previewLessonId
+    const items = shares.map((s) => ({
+      ...s,
+      hasPreview: s.previewLessonId != null,
+    }));
+    const featuredItems = featured.map((s) => ({
+      ...s,
+      hasPreview: s.previewLessonId != null,
+    }));
+
     return NextResponse.json({
-      items: shares,
-      featured,
+      items,
+      featured: featuredItems,
       total,
       page,
       limit,
