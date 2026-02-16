@@ -1,6 +1,7 @@
 "use client";
 
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { cn } from "@/lib/utils";
@@ -26,10 +27,14 @@ export function MathMarkdown({ content, className }: MathMarkdownProps) {
         "[&_blockquote]:border-l-4 [&_blockquote]:border-muted [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:my-3",
         "[&_strong]:font-semibold",
         "[&_a]:text-primary [&_a]:underline",
+        "[&_table]:w-full [&_table]:border-collapse [&_table]:my-3 [&_table]:text-sm",
+        "[&_th]:border [&_th]:border-border [&_th]:bg-muted/50 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold",
+        "[&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2",
+        "[&_tr:nth-child(even)]:bg-muted/30",
         className
       )}
     >
-      <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
         {content}
       </ReactMarkdown>
     </div>

@@ -76,7 +76,7 @@ model Course {
   title             String
   description       String
   topic             String
-  subject           String   @default("Other")
+  subject           String   @default("[\"Other\"]")
   focusAreas        String   @default("[]")
   targetLessonCount Int      @default(10)
   difficulty        String   @default("intermediate")

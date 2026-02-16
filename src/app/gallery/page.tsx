@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { GalleryCard } from "@/components/gallery/GalleryCard";
 import { GalleryFilters } from "@/components/gallery/GalleryFilters";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserMenu } from "@/components/UserMenu";
 
 interface GalleryItem {
   shareToken: string;
@@ -34,7 +35,7 @@ interface GalleryResponse {
   total: number;
   page: number;
   totalPages: number;
-  filters: { topics: string[]; subjects: string[]; difficulties: string[] };
+  filters: { subjects: string[]; difficulties: string[]; languages: string[] };
 }
 
 export default function GalleryPage() {
@@ -49,7 +50,7 @@ export default function GalleryPage() {
   // Filters
   const [search, setSearch] = useState("");
   const [subject, setSubject] = useState("all");
-  const [topic, setTopic] = useState("all");
+  const [language, setLanguage] = useState("all");
   const [difficulty, setDifficulty] = useState("all");
   const [sort, setSort] = useState("recent");
   const [page, setPage] = useState(1);
@@ -60,7 +61,7 @@ export default function GalleryPage() {
       const params = new URLSearchParams({ page: String(page), sort });
       if (search) params.set("search", search);
       if (subject !== "all") params.set("subject", subject);
-      if (topic !== "all") params.set("topic", topic);
+      if (language !== "all") params.set("language", language);
       if (difficulty !== "all") params.set("difficulty", difficulty);
 
       const res = await fetch(`/api/gallery?${params}`);
@@ -72,7 +73,7 @@ export default function GalleryPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, sort, search, subject, topic, difficulty]);
+  }, [page, sort, search, subject, language, difficulty]);
 
   useEffect(() => {
     fetchGallery();
@@ -125,6 +126,7 @@ export default function GalleryPage() {
           </div>
           <div className="flex gap-2 items-center">
             <ThemeToggle />
+            <UserMenu />
             {session?.user ? (
               <Button variant="outline" onClick={() => router.push("/")}>
                 Dashboard
@@ -144,14 +146,14 @@ export default function GalleryPage() {
           onSearchChange={setSearch}
           subject={subject}
           onSubjectChange={(v) => { setSubject(v); setPage(1); }}
-          topic={topic}
-          onTopicChange={(v) => { setTopic(v); setPage(1); }}
+          language={language}
+          onLanguageChange={(v) => { setLanguage(v); setPage(1); }}
           difficulty={difficulty}
           onDifficultyChange={(v) => { setDifficulty(v); setPage(1); }}
           sort={sort}
           onSortChange={(v) => { setSort(v); setPage(1); }}
           subjects={data?.filters.subjects ?? []}
-          topics={data?.filters.topics ?? []}
+          languages={data?.filters.languages ?? []}
           difficulties={data?.filters.difficulties ?? []}
         />
 

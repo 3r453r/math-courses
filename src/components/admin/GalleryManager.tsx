@@ -21,11 +21,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { LANGUAGE_NAMES } from "@/lib/ai/prompts/languageInstruction";
+import { parseSubjects } from "@/lib/subjects";
 
-interface GalleryShare {
+interface GalleryShareInfo {
   id: string;
   shareToken: string;
-  isActive: boolean;
   isGalleryListed: boolean;
   galleryTitle: string | null;
   galleryDescription: string | null;
@@ -33,15 +34,20 @@ interface GalleryShare {
   starCount: number;
   cloneCount: number;
   featuredAt: string | null;
-  course: {
-    title: string;
-    topic: string;
-    subject: string;
-    difficulty: string;
-    status: string;
-    clonedFromId: string | null;
-    user: { name: string | null; email: string | null };
-  };
+  expiresAt: string | null;
+}
+
+interface GalleryCourse {
+  id: string;
+  title: string;
+  topic: string;
+  subject: string;
+  difficulty: string;
+  status: string;
+  language: string;
+  clonedFromId: string | null;
+  user: { name: string | null; email: string | null };
+  shares: GalleryShareInfo[];
   eligibility: {
     isEligible: boolean;
     totalLessons: number;
@@ -50,7 +56,9 @@ interface GalleryShare {
 }
 
 interface CloneConflict {
-  shareId: string;
+  /** shareId for PATCH, or courseId for POST */
+  identifier: string;
+  mode: "patch" | "post";
   conflictingShare: {
     id: string;
     shareToken: string;
@@ -60,7 +68,7 @@ interface CloneConflict {
 
 export function GalleryManager() {
   const { t } = useTranslation(["admin"]);
-  const [shares, setShares] = useState<GalleryShare[]>([]);
+  const [courses, setCourses] = useState<GalleryCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingTags, setEditingTags] = useState<string | null>(null);
   const [tagsInput, setTagsInput] = useState("");
@@ -68,29 +76,30 @@ export function GalleryManager() {
   // Filters
   const [search, setSearch] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("all");
-  const [topicFilter, setTopicFilter] = useState("all");
+  const [languageFilter, setLanguageFilter] = useState("all");
   const [difficultyFilter, setDifficultyFilter] = useState("all");
 
   // Clone conflict dialog
   const [cloneConflict, setCloneConflict] = useState<CloneConflict | null>(null);
 
   useEffect(() => {
-    fetchShares();
+    fetchCourses();
   }, []);
 
-  async function fetchShares() {
+  async function fetchCourses() {
     try {
       const res = await fetch("/api/admin/gallery");
       if (res.ok) {
-        setShares(await res.json());
+        setCourses(await res.json());
       }
     } catch (err) {
-      console.error("Failed to fetch shares:", err);
+      console.error("Failed to fetch courses:", err);
     } finally {
       setLoading(false);
     }
   }
 
+  /** PATCH an existing share */
   async function updateShare(shareId: string, data: Record<string, unknown>) {
     try {
       const res = await fetch(`/api/admin/gallery/${shareId}`, {
@@ -101,12 +110,12 @@ export function GalleryManager() {
       const result = await res.json();
 
       if (result.cloneConflict) {
-        setCloneConflict({ shareId, conflictingShare: result.conflictingShare });
+        setCloneConflict({ identifier: shareId, mode: "patch", conflictingShare: result.conflictingShare });
         return;
       }
 
       if (res.ok) {
-        fetchShares();
+        fetchCourses();
       } else {
         toast.error(result.error || "Failed to update");
       }
@@ -115,16 +124,57 @@ export function GalleryManager() {
     }
   }
 
-  async function handleCloneConflictAction(action: "replace" | "add") {
-    if (!cloneConflict) return;
-    setCloneConflict(null);
-    await updateShare(cloneConflict.shareId, {
-      isGalleryListed: true,
-      cloneConflictAction: action,
-    });
+  /** POST to create a new share + gallery listing for a course without shares */
+  async function createGalleryListing(courseId: string, data?: Record<string, unknown>) {
+    try {
+      const res = await fetch("/api/admin/gallery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ courseId, ...data }),
+      });
+      const result = await res.json();
+
+      if (result.cloneConflict) {
+        setCloneConflict({ identifier: courseId, mode: "post", conflictingShare: result.conflictingShare });
+        return;
+      }
+
+      if (res.ok) {
+        fetchCourses();
+      } else {
+        toast.error(result.error || "Failed to create gallery listing");
+      }
+    } catch (err) {
+      console.error("Failed to create gallery listing:", err);
+    }
   }
 
-  function startEditTags(share: GalleryShare) {
+  /** Add course to gallery — uses PATCH if share exists, POST if not */
+  function addToGallery(course: GalleryCourse) {
+    if (course.shares.length > 0) {
+      updateShare(course.shares[0].id, { isGalleryListed: true });
+    } else {
+      createGalleryListing(course.id);
+    }
+  }
+
+  async function handleCloneConflictAction(action: "replace" | "add") {
+    if (!cloneConflict) return;
+    const { identifier, mode } = cloneConflict;
+    setCloneConflict(null);
+
+    if (mode === "patch") {
+      await updateShare(identifier, { isGalleryListed: true, cloneConflictAction: action });
+    } else {
+      await createGalleryListing(identifier, { cloneConflictAction: action });
+    }
+  }
+
+  function getGalleryShare(course: GalleryCourse): GalleryShareInfo | null {
+    return course.shares.find((s) => s.isGalleryListed) ?? course.shares[0] ?? null;
+  }
+
+  function startEditTags(share: GalleryShareInfo) {
     setEditingTags(share.id);
     try {
       setTagsInput(JSON.parse(share.tags).join(", "));
@@ -145,35 +195,35 @@ export function GalleryManager() {
 
   // Derive distinct filter options
   const filterOptions = useMemo(() => {
-    const subjects = [...new Set(shares.map((s) => s.course.subject))].sort();
-    const topics = [...new Set(shares.map((s) => s.course.topic))].sort();
-    const difficulties = [...new Set(shares.map((s) => s.course.difficulty))].sort();
-    return { subjects, topics, difficulties };
-  }, [shares]);
+    const subjects = [...new Set(courses.flatMap((c) => parseSubjects(c.subject)))].sort();
+    const languages = [...new Set(courses.map((c) => c.language).filter(Boolean))].sort();
+    const difficulties = [...new Set(courses.map((c) => c.difficulty))].sort();
+    return { subjects, languages, difficulties };
+  }, [courses]);
 
   // Client-side filtering
-  const filteredShares = useMemo(() => {
-    return shares.filter((share) => {
-      if (subjectFilter !== "all" && share.course.subject !== subjectFilter) return false;
-      if (topicFilter !== "all" && share.course.topic !== topicFilter) return false;
-      if (difficultyFilter !== "all" && share.course.difficulty !== difficultyFilter) return false;
+  const filteredCourses = useMemo(() => {
+    return courses.filter((course) => {
+      if (subjectFilter !== "all" && !parseSubjects(course.subject).includes(subjectFilter)) return false;
+      if (languageFilter !== "all" && course.language !== languageFilter) return false;
+      if (difficultyFilter !== "all" && course.difficulty !== difficultyFilter) return false;
       if (search) {
         const q = search.toLowerCase();
-        const matchTitle = share.course.title.toLowerCase().includes(q);
-        const matchTopic = share.course.topic.toLowerCase().includes(q);
-        const matchOwner = (share.course.user.name || share.course.user.email || "").toLowerCase().includes(q);
+        const matchTitle = course.title.toLowerCase().includes(q);
+        const matchTopic = course.topic.toLowerCase().includes(q);
+        const matchOwner = (course.user.name || course.user.email || "").toLowerCase().includes(q);
         if (!matchTitle && !matchTopic && !matchOwner) return false;
       }
       return true;
     });
-  }, [shares, search, subjectFilter, topicFilter, difficultyFilter]);
+  }, [courses, search, subjectFilter, languageFilter, difficultyFilter]);
 
   if (loading) {
     return <p className="text-muted-foreground">Loading...</p>;
   }
 
-  if (shares.length === 0) {
-    return <p className="text-muted-foreground">{t("admin:gallery.noShares")}</p>;
+  if (courses.length === 0) {
+    return <p className="text-muted-foreground">{t("admin:gallery.noCourses")}</p>;
   }
 
   return (
@@ -197,14 +247,16 @@ export function GalleryManager() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={topicFilter} onValueChange={setTopicFilter}>
+        <Select value={languageFilter} onValueChange={setLanguageFilter}>
           <SelectTrigger className="w-40">
-            <SelectValue placeholder={t("admin:gallery.allTopics")} />
+            <SelectValue placeholder={t("admin:gallery.allLanguages")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{t("admin:gallery.allTopics")}</SelectItem>
-            {filterOptions.topics.map((tp) => (
-              <SelectItem key={tp} value={tp}>{tp}</SelectItem>
+            <SelectItem value="all">{t("admin:gallery.allLanguages")}</SelectItem>
+            {filterOptions.languages.map((lang) => (
+              <SelectItem key={lang} value={lang}>
+                {LANGUAGE_NAMES[lang] ?? lang}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -228,6 +280,7 @@ export function GalleryManager() {
             <tr>
               <th className="text-left p-3 font-medium">{t("admin:gallery.courseTitle")}</th>
               <th className="text-left p-3 font-medium">{t("admin:gallery.owner")}</th>
+              <th className="text-left p-3 font-medium">{t("admin:gallery.language")}</th>
               <th className="text-left p-3 font-medium">{t("admin:gallery.eligibility")}</th>
               <th className="text-left p-3 font-medium">{t("admin:gallery.galleryStatus")}</th>
               <th className="text-left p-3 font-medium">{t("admin:gallery.stars")}</th>
@@ -237,124 +290,144 @@ export function GalleryManager() {
             </tr>
           </thead>
           <tbody>
-            {filteredShares.map((share) => (
-              <tr key={share.id} className="border-t">
-                <td className="p-3">
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <p className="font-medium">{share.course.title}</p>
-                      {share.course.clonedFromId && (
-                        <Badge variant="outline" className="text-[10px] px-1 py-0">
-                          {t("admin:gallery.cloned")}
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {share.course.subject} / {share.course.topic} / {share.course.difficulty}
-                    </p>
-                  </div>
-                </td>
-                <td className="p-3 text-muted-foreground">
-                  {share.course.user.name || share.course.user.email || "\u2014"}
-                </td>
-                <td className="p-3">
-                  {share.eligibility.isEligible ? (
-                    <Badge variant="default">{t("admin:gallery.eligible")}</Badge>
-                  ) : (
+            {filteredCourses.map((course) => {
+              const galleryShare = getGalleryShare(course);
+              const isListed = course.shares.some((s) => s.isGalleryListed);
+              const listedShare = course.shares.find((s) => s.isGalleryListed);
+              const featuredAt = listedShare?.featuredAt ?? null;
+
+              return (
+                <tr key={course.id} className="border-t">
+                  <td className="p-3">
                     <div>
-                      <Badge variant="destructive">{t("admin:gallery.notEligible")}</Badge>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {t("admin:gallery.lessonsGenerated", {
-                          generated: share.eligibility.generatedLessons,
-                          total: share.eligibility.totalLessons,
-                        })}
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-medium">{course.title}</p>
+                        {course.clonedFromId && (
+                          <Badge variant="outline" className="text-[10px] px-1 py-0">
+                            {t("admin:gallery.cloned")}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {parseSubjects(course.subject).join(", ")} / {course.topic} / {course.difficulty}
                       </p>
                     </div>
-                  )}
-                </td>
-                <td className="p-3">
-                  <div className="flex gap-1">
-                    {share.isGalleryListed ? (
-                      <Badge variant="default">{t("admin:gallery.listed")}</Badge>
+                  </td>
+                  <td className="p-3 text-muted-foreground">
+                    {course.user.name || course.user.email || "\u2014"}
+                  </td>
+                  <td className="p-3 text-muted-foreground">
+                    {LANGUAGE_NAMES[course.language] ?? course.language ?? "\u2014"}
+                  </td>
+                  <td className="p-3">
+                    {course.eligibility.isEligible ? (
+                      <Badge variant="default">{t("admin:gallery.eligible")}</Badge>
                     ) : (
-                      <Badge variant="outline">{t("admin:gallery.notListed")}</Badge>
+                      <div>
+                        <Badge variant="destructive">{t("admin:gallery.notEligible")}</Badge>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {t("admin:gallery.lessonsGenerated", {
+                            generated: course.eligibility.generatedLessons,
+                            total: course.eligibility.totalLessons,
+                          })}
+                        </p>
+                      </div>
                     )}
-                    {share.featuredAt && (
-                      <Badge variant="secondary">{t("admin:gallery.featured")}</Badge>
-                    )}
-                  </div>
-                </td>
-                <td className="p-3 tabular-nums">{share.starCount}</td>
-                <td className="p-3 tabular-nums">{share.cloneCount}</td>
-                <td className="p-3">
-                  {editingTags === share.id ? (
+                  </td>
+                  <td className="p-3">
                     <div className="flex gap-1">
-                      <Input
-                        value={tagsInput}
-                        onChange={(e) => setTagsInput(e.target.value)}
-                        className="h-7 text-xs w-32"
-                        placeholder="math, calc"
-                      />
-                      <Button size="sm" variant="ghost" onClick={() => saveTags(share.id)}>
-                        Save
-                      </Button>
+                      {isListed ? (
+                        <Badge variant="default">{t("admin:gallery.listed")}</Badge>
+                      ) : (
+                        <Badge variant="outline">{t("admin:gallery.notListed")}</Badge>
+                      )}
+                      {featuredAt && (
+                        <Badge variant="secondary">{t("admin:gallery.featured")}</Badge>
+                      )}
                     </div>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => startEditTags(share)}
-                    >
-                      {t("admin:gallery.editTags")}
-                    </Button>
-                  )}
-                </td>
-                <td className="p-3">
-                  <div className="flex gap-2">
-                    {share.isGalleryListed ? (
-                      <>
+                  </td>
+                  <td className="p-3 tabular-nums">
+                    {galleryShare?.starCount ?? 0}
+                  </td>
+                  <td className="p-3 tabular-nums">
+                    {galleryShare?.cloneCount ?? 0}
+                  </td>
+                  <td className="p-3">
+                    {galleryShare ? (
+                      editingTags === galleryShare.id ? (
+                        <div className="flex gap-1">
+                          <Input
+                            value={tagsInput}
+                            onChange={(e) => setTagsInput(e.target.value)}
+                            className="h-7 text-xs w-32"
+                            placeholder="math, calc"
+                          />
+                          <Button size="sm" variant="ghost" onClick={() => saveTags(galleryShare.id)}>
+                            Save
+                          </Button>
+                        </div>
+                      ) : (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => updateShare(share.id, { isGalleryListed: false })}
+                          onClick={() => startEditTags(galleryShare)}
                         >
-                          {t("admin:gallery.removeFromGallery")}
+                          {t("admin:gallery.editTags")}
                         </Button>
-                        {share.featuredAt ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => updateShare(share.id, { featuredAt: null })}
-                          >
-                            {t("admin:gallery.unfeature")}
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              updateShare(share.id, { featuredAt: new Date().toISOString() })
-                            }
-                          >
-                            {t("admin:gallery.feature")}
-                          </Button>
-                        )}
-                      </>
+                      )
                     ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={!share.eligibility.isEligible}
-                        onClick={() => updateShare(share.id, { isGalleryListed: true })}
-                        title={!share.eligibility.isEligible ? t("admin:gallery.notEligible") : ""}
-                      >
-                        {t("admin:gallery.addToGallery")}
-                      </Button>
+                      <span className="text-xs text-muted-foreground">{"\u2014"}</span>
                     )}
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="p-3">
+                    <div className="flex gap-2">
+                      {isListed && listedShare ? (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => updateShare(listedShare.id, { isGalleryListed: false })}
+                          >
+                            {t("admin:gallery.removeFromGallery")}
+                          </Button>
+                          {featuredAt ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => updateShare(listedShare.id, { featuredAt: null })}
+                            >
+                              {t("admin:gallery.unfeature")}
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                updateShare(listedShare.id, { featuredAt: new Date().toISOString() })
+                              }
+                            >
+                              {t("admin:gallery.feature")}
+                            </Button>
+                          )}
+                        </>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={!course.eligibility.isEligible}
+                          onClick={() => addToGallery(course)}
+                          title={!course.eligibility.isEligible ? t("admin:gallery.notEligible") : ""}
+                        >
+                          {course.shares.length > 0
+                            ? t("admin:gallery.addToGallery")
+                            : t("admin:gallery.createShare")}
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

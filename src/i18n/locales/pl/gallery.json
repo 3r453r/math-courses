@@ -4,11 +4,11 @@
   "search": "Szukaj kursów...",
   "filters": {
     "subject": "Dziedzina",
-    "topic": "Temat",
+    "language": "Język",
     "difficulty": "Poziom",
     "sort": "Sortuj",
     "allSubjects": "Wszystkie dziedziny",
-    "allTopics": "Wszystkie tematy",
+    "allLanguages": "Wszystkie języki",
     "allDifficulties": "Wszystkie poziomy",
     "sortRecent": "Najnowsze",
     "sortStars": "Najwyżej oceniane",

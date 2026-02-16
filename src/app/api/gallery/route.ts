@@ -1,17 +1,18 @@
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { parseSubjects } from "@/lib/subjects";
 
 /**
  * GET /api/gallery — List gallery courses (public, no auth required)
- * Query params: page, limit, topic, difficulty, sort (stars/clones/recent), search
+ * Query params: page, limit, language, difficulty, sort (stars/clones/recent), search
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
     const page = Math.max(1, Number(searchParams.get("page") ?? 1));
     const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") ?? 12)));
-    const topic = searchParams.get("topic") ?? undefined;
+    const language = searchParams.get("language") ?? undefined;
     const subject = searchParams.get("subject") ?? undefined;
     const difficulty = searchParams.get("difficulty") ?? undefined;
     const sort = searchParams.get("sort") ?? "recent";
@@ -27,8 +28,8 @@ export async function GET(request: NextRequest) {
 
     // Course-level filters via nested relation
     const courseWhere: Record<string, unknown> = {};
-    if (topic) courseWhere.topic = topic;
-    if (subject) courseWhere.subject = subject;
+    if (language) courseWhere.language = language;
+    if (subject) courseWhere.subject = { contains: `"${subject}"` };
     if (difficulty) courseWhere.difficulty = difficulty;
     if (search) {
       courseWhere.OR = [
@@ -98,14 +99,14 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get distinct topics and difficulties for filters
+    // Get distinct filter options from gallery-listed courses
     const allListings = await prisma.courseShare.findMany({
       where: { isGalleryListed: true, isActive: true },
-      select: { course: { select: { topic: true, subject: true, difficulty: true } } },
+      select: { course: { select: { subject: true, difficulty: true, language: true } } },
     });
-    const topics = [...new Set(allListings.map((s) => s.course.topic))].sort();
-    const subjects = [...new Set(allListings.map((s) => s.course.subject))].sort();
+    const subjects = [...new Set(allListings.flatMap((s) => parseSubjects(s.course.subject)))].sort();
     const difficulties = [...new Set(allListings.map((s) => s.course.difficulty))].sort();
+    const languages = [...new Set(allListings.map((s) => s.course.language).filter(Boolean))].sort();
 
     return NextResponse.json({
       items: shares,
@@ -114,7 +115,7 @@ export async function GET(request: NextRequest) {
       page,
       limit,
       totalPages: Math.ceil(total / limit),
-      filters: { topics, subjects, difficulties },
+      filters: { subjects, difficulties, languages },
     });
   } catch (error) {
     console.error("Failed to list gallery:", error);

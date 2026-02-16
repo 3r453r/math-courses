@@ -28,6 +28,8 @@ import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserMenu } from "@/components/UserMenu";
 import { GeneratingSpinner, TriviaSlideshow } from "@/components/generation";
 import {
   requestNotificationPermission,
@@ -186,10 +188,12 @@ function NewCourseForm() {
           <Button variant="ghost" onClick={() => router.push("/")}>
             &larr; {t("common:back")}
           </Button>
-          <div>
+          <div className="flex-1">
             <h1 className="text-xl font-bold">{t("courseNew:createNewCourse")}</h1>
             <p className="text-sm text-muted-foreground">{t("courseNew:stepOf", { step, total: 2 })}</p>
           </div>
+          <ThemeToggle />
+          <UserMenu />
         </div>
       </header>
 

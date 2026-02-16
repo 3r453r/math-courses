@@ -16,11 +16,12 @@ import {
 interface MobileMenuProps {
   isAdmin?: boolean;
   showProgress?: boolean;
+  onImport?: () => void;
 }
 
-export function MobileMenu({ isAdmin, showProgress }: MobileMenuProps) {
+export function MobileMenu({ isAdmin, showProgress, onImport }: MobileMenuProps) {
   const router = useRouter();
-  const { t } = useTranslation(["dashboard", "common", "login"]);
+  const { t } = useTranslation(["dashboard", "common", "login", "export"]);
 
   return (
     <DropdownMenu>
@@ -57,6 +58,11 @@ export function MobileMenu({ isAdmin, showProgress }: MobileMenuProps) {
         <DropdownMenuItem onClick={() => router.push("/setup")}>
           {t("common:settings")}
         </DropdownMenuItem>
+        {onImport && (
+          <DropdownMenuItem onClick={onImport}>
+            {t("export:importCourse")}
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onClick={() => router.push("/courses/new")}>
           {t("dashboard:newCourse")}
         </DropdownMenuItem>

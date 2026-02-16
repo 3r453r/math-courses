@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, useRef, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore, useHasAnyApiKey } from "@/stores/appStore";
 import { useHydrated } from "@/stores/useHydrated";
@@ -20,6 +20,7 @@ import { LessonContentRenderer } from "@/components/lesson/LessonContentRenderer
 import { ScratchpadPanel } from "@/components/scratchpad";
 import { ChatPanel } from "@/components/chat";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserMenu } from "@/components/UserMenu";
 import { GeneratingSpinner, TriviaSlideshow } from "@/components/generation";
 import { generateLessonContent, generateQuiz } from "@/lib/generateLessonStream";
 import {
@@ -31,6 +32,7 @@ import type { LessonContent } from "@/types/lesson";
 interface QuizInfo {
   id: string;
   status: string;
+  createdAt: string;
   attempts: { id: string; score: number; recommendation: string }[];
 }
 
@@ -43,8 +45,11 @@ interface LessonDetail {
   contentJson: string | null;
   isSupplementary: boolean;
   courseId: string;
+  updatedAt: string;
   quizzes?: QuizInfo[];
 }
+
+const STALE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
 
 export default function LessonPage({
   params,
@@ -66,14 +71,10 @@ export default function LessonPage({
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [generatingQuiz, setGeneratingQuiz] = useState(false);
+  // Tracks whether generation was initiated locally (this mount) to avoid duplicate toasts from polling
+  const localGenerationRef = useRef(false);
 
-  useEffect(() => {
-    if (!hydrated) return;
-    fetchLesson();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, lessonId]);
-
-  async function fetchLesson() {
+  const fetchLesson = useCallback(async () => {
     try {
       const res = await fetch(`/api/courses/${courseId}`);
       if (!res.ok) throw new Error("Course not found");
@@ -81,17 +82,80 @@ export default function LessonPage({
       const found = course.lessons.find((l: LessonDetail) => l.id === lessonId);
       if (!found) throw new Error("Lesson not found");
       setLesson(found);
+
+      // Sync generation state from backend status
+      if (!localGenerationRef.current) {
+        const lessonAge = Date.now() - new Date(found.updatedAt).getTime();
+        if (found.status === "generating" && lessonAge < STALE_THRESHOLD_MS) {
+          setGenerating(true);
+        } else if (found.status !== "generating") {
+          setGenerating(false);
+        }
+
+        const activeQuiz = found.quizzes?.[0];
+        if (activeQuiz?.status === "generating") {
+          const quizAge = Date.now() - new Date(activeQuiz.createdAt).getTime();
+          if (quizAge < STALE_THRESHOLD_MS) {
+            setGeneratingQuiz(true);
+          }
+        } else if (activeQuiz?.status !== "generating") {
+          setGeneratingQuiz(false);
+        }
+      }
     } catch (err) {
       console.error(err);
       toast.error(t("lesson:failedToLoadLesson"));
     } finally {
       setLoading(false);
     }
-  }
+  }, [courseId, lessonId, t]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    fetchLesson();
+  }, [hydrated, fetchLesson]);
+
+  // Poll for generation completion when generating
+  useEffect(() => {
+    if (!generating && !generatingQuiz) return;
+    if (localGenerationRef.current) return; // local generation handles its own updates
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/courses/${courseId}`);
+        if (!res.ok) return;
+        const course = await res.json();
+        const found = course.lessons?.find((l: LessonDetail) => l.id === lessonId);
+        if (!found) return;
+
+        if (generating && found.status !== "generating") {
+          setGenerating(false);
+          setLesson(found);
+          if (found.contentJson) {
+            toast.success(t("lesson:lessonContentGenerated"));
+          }
+        }
+
+        const activeQuiz = found.quizzes?.[0];
+        if (generatingQuiz && activeQuiz?.status !== "generating") {
+          setGeneratingQuiz(false);
+          setLesson(found);
+          if (activeQuiz?.status === "ready") {
+            toast.success(t("lesson:quizGenerated"));
+          }
+        }
+      } catch {
+        // Ignore polling errors
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [generating, generatingQuiz, courseId, lessonId, t]);
 
   async function handleGenerate() {
-    if (!hasAnyApiKey || !lesson) return;
+    if (!hasAnyApiKey || !lesson || generating) return;
     setGenerating(true);
+    localGenerationRef.current = true;
     requestNotificationPermission();
     const lessonTitle = lesson.title;
     const lessonUrl = `/courses/${courseId}/lessons/${lessonId}`;
@@ -138,6 +202,8 @@ export default function LessonPage({
         t("generation:generationFailedBody", { title: lessonTitle })
       );
       setGenerating(false);
+    } finally {
+      localGenerationRef.current = false;
     }
   }
 
@@ -195,6 +261,7 @@ export default function LessonPage({
             <h1 className="text-xl font-bold truncate">{lesson.title}</h1>
           </div>
           <ThemeToggle />
+          <UserMenu />
           {hasContent && (
             <>
               <Button

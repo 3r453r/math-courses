@@ -4,7 +4,7 @@ export function mockCourseStructure(): CourseStructureOutput {
   return {
     title: "Mock Test Course",
     description: "This is a mock course generated for testing purposes. No API call was made.",
-    subject: "Mathematics",
+    subjects: ["Mathematics"],
     suggestedLessonCount: 3,
     contextDoc: "## Notation Conventions\n- Variables: lowercase italic ($x$, $y$)\n- Functions: standard notation ($f(x)$)\n\n## Pedagogical Approach\nIntuition before formalism. Start with concrete examples.\n\n## Key Themes\nTesting and mock data verification.\n\n## Difficulty Calibration\nIntroductory level, accessible to beginners.\n\n## Style Guidelines\nKeep explanations concise and use examples liberally.",
     lessons: [

@@ -20,6 +20,7 @@ export async function POST(request: Request) {
   }
 
   let body: { lessonId?: string; courseId?: string; model?: string; weakTopics?: string[] } = {};
+  let createdQuizId: string | null = null;
 
   try {
     body = await request.json();
@@ -50,6 +51,23 @@ export async function POST(request: Request) {
       return NextResponse.json(existingQuiz);
     }
 
+    // Guard against double generation
+    const generatingQuiz = await prisma.quiz.findFirst({
+      where: { lessonId, status: "generating", isActive: true },
+    });
+    if (generatingQuiz) {
+      const ageMs = Date.now() - new Date(generatingQuiz.createdAt).getTime();
+      const STALE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
+      if (ageMs < STALE_THRESHOLD_MS) {
+        return NextResponse.json(
+          { error: "Quiz is already being generated" },
+          { status: 409 }
+        );
+      }
+      // Stale generating quiz — delete the stuck record
+      await prisma.quiz.delete({ where: { id: generatingQuiz.id } });
+    }
+
     // Determine next generation number
     const maxGen = await prisma.quiz.aggregate({
       where: { lessonId },
@@ -67,6 +85,7 @@ export async function POST(request: Request) {
         isActive: true,
       },
     });
+    createdQuizId = quiz.id;
 
     const model = body.model || MODELS.generation;
 
@@ -151,6 +170,10 @@ Include a higher proportion of questions (at least 50%) targeting these weak top
     });
   } catch (error) {
     console.error("Failed to generate quiz:", error);
+    // Clean up the "generating" quiz record to prevent orphans
+    if (createdQuizId) {
+      await prisma.quiz.delete({ where: { id: createdQuizId } }).catch(() => {});
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to generate quiz" },
       { status: 500 }

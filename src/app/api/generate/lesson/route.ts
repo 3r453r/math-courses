@@ -49,6 +49,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
     }
 
+    // Guard against double generation
+    if (lesson.status === "generating") {
+      const ageMs = Date.now() - new Date(lesson.updatedAt).getTime();
+      const STALE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
+      if (ageMs < STALE_THRESHOLD_MS) {
+        return NextResponse.json(
+          { error: "Lesson is already being generated" },
+          { status: 409 }
+        );
+      }
+    }
+
     // Update status
     await prisma.lesson.update({
       where: { id: lessonId },
@@ -92,7 +104,8 @@ LESSON CONTENT GUIDELINES:
 5. Include at least TWO practice exercises with hints and solutions.
 6. For practice exercises: mirror the worked example pattern but change the specific values.
 7. Aim for 8-15 sections of varied types (text, math, definition, theorem, visualization).
-8. Make the content thorough but accessible - explain the "why" not just the "what".`;
+8. Make the content thorough but accessible - explain the "why" not just the "what".
+9. For tabular data (payoff matrices, truth tables, comparisons), use Markdown pipe-table syntax. Use only inline math $...$ inside table cells — never display math $$...$$.`;
 
       if (body.weakTopics && body.weakTopics.length > 0) {
         prompt += `\n\nIMPORTANT - WEAK AREAS FEEDBACK:
@@ -179,6 +192,14 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
       if (vizWarnings.length > 0) {
         console.log(`[lesson-gen] Visualization warnings:`, vizWarnings);
       }
+    }
+
+    // Reject empty content — coercion may have defaulted missing arrays to []
+    if (!lessonContent.sections?.length) {
+      throw new Error(
+        "Lesson generation produced incomplete content (no sections). " +
+        "The AI model returned malformed output that could not be fully recovered. Please retry."
+      );
     }
 
     // Deactivate existing quizzes so quiz generation creates a fresh one
