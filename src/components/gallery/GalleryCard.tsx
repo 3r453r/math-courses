@@ -93,11 +93,6 @@ export function GalleryCard({ item, onClone, cloning, isAuthenticated }: Gallery
             <span>
               {t("gallery:card.lessons", { count: item.course._count.lessons })}
             </span>
-            {item.course.user.name && (
-              <span>
-                {t("gallery:card.by")} {item.course.user.name}
-              </span>
-            )}
           </div>
 
           <div className="flex items-center gap-3">

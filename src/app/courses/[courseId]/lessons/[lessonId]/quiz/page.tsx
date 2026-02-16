@@ -218,8 +218,9 @@ export default function LessonQuizPage({
           <Button
             variant="ghost"
             onClick={() => router.push(`/courses/${courseId}/lessons/${lessonId}`)}
+            className="shrink-0"
           >
-            &larr; {t("quiz:backToLesson")}
+            &larr; <span className="hidden sm:inline">{t("quiz:backToLesson")}</span>
           </Button>
           <div className="flex-1">
             <h1 className="text-xl font-bold">{t("quiz:lessonQuiz")}</h1>

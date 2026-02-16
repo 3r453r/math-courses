@@ -1,9 +1,10 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +17,12 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import {
+  isInAppBrowser,
+  getInAppBrowserName,
+  getPlatform,
+  getOpenInBrowserUrl,
+} from "@/lib/detectInAppBrowser";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -24,6 +31,16 @@ function LoginForm() {
   const { t } = useTranslation(["login", "common"]);
   const [devEmail, setDevEmail] = useState("");
   const [loading, setLoading] = useState<string | null>(null);
+  const [inAppBrowser, setInAppBrowser] = useState<string | null>(null);
+  const [inAppPlatform, setInAppPlatform] = useState<"android" | "ios" | "unknown">("unknown");
+  const [dismissedWarning, setDismissedWarning] = useState(false);
+
+  useEffect(() => {
+    if (isInAppBrowser()) {
+      setInAppBrowser(getInAppBrowserName());
+      setInAppPlatform(getPlatform());
+    }
+  }, []);
 
   const isDev = process.env.NODE_ENV === "development";
 
@@ -46,6 +63,47 @@ function LoginForm() {
         <CardDescription>{t("login:description")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {inAppBrowser && !dismissedWarning && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/50">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="size-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="space-y-2 text-sm">
+                <p className="font-medium text-amber-800 dark:text-amber-300">
+                  {t("login:inAppBrowserWarning", { browser: inAppBrowser })}
+                </p>
+                <p className="text-amber-700 dark:text-amber-400">
+                  {t("login:inAppBrowserDescription")}
+                </p>
+                {inAppPlatform === "android" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-amber-400 text-amber-800 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-900"
+                    onClick={() => {
+                      const intentUrl = getOpenInBrowserUrl(window.location.href);
+                      if (intentUrl) window.location.href = intentUrl;
+                    }}
+                  >
+                    {t("login:openInBrowser")}
+                  </Button>
+                )}
+                {inAppPlatform === "ios" && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    {t("login:iosOpenInstructions")}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  className="text-xs text-amber-600 underline hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200"
+                  onClick={() => setDismissedWarning(true)}
+                >
+                  {t("login:continueAnyway")}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {authError && (
           <p className="text-sm text-destructive text-center">
             {t("login:authError")}

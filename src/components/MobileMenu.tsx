@@ -16,9 +16,11 @@ import {
 interface MobileMenuProps {
   showProgress?: boolean;
   onImport?: () => void;
+  languageLabel?: string;
+  onLanguageToggle?: () => void;
 }
 
-export function MobileMenu({ showProgress, onImport }: MobileMenuProps) {
+export function MobileMenu({ showProgress, onImport, languageLabel, onLanguageToggle }: MobileMenuProps) {
   const router = useRouter();
   const { t } = useTranslation(["dashboard", "common", "login", "export"]);
 
@@ -60,6 +62,11 @@ export function MobileMenu({ showProgress, onImport }: MobileMenuProps) {
         <DropdownMenuItem onClick={() => router.push("/courses/new")}>
           {t("dashboard:newCourse")}
         </DropdownMenuItem>
+        {onLanguageToggle && languageLabel && (
+          <DropdownMenuItem onClick={onLanguageToggle}>
+            {languageLabel}
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>
           {t("login:signOut")}

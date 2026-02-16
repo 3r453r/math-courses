@@ -182,6 +182,11 @@
   color: inherit;
 }
 
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
 /* ── Mafs visualization dark mode ── */
 .dark .MafsView {
   --mafs-bg: oklch(0.145 0 0);

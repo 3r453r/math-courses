@@ -14,8 +14,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { MoreVertical } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { LessonContentRenderer } from "@/components/lesson/LessonContentRenderer";
 import { ScratchpadPanel } from "@/components/scratchpad";
 import { ChatPanel } from "@/components/chat";
@@ -241,8 +248,9 @@ export default function LessonPage({
           <Button
             variant="ghost"
             onClick={() => router.push(`/courses/${courseId}`)}
+            className="shrink-0"
           >
-            &larr; {t("lesson:courseOverview")}
+            &larr; <span className="hidden sm:inline">{t("lesson:courseOverview")}</span>
           </Button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
@@ -260,8 +268,9 @@ export default function LessonPage({
             </div>
             <h1 className="text-xl font-bold truncate">{lesson.title}</h1>
           </div>
-          <ThemeToggle />
-          <UserMenu />
+          {/* Desktop buttons */}
+          <div className="hidden md:inline-flex"><ThemeToggle /></div>
+          <div className="hidden md:inline-flex"><UserMenu /></div>
           {hasContent && (
             <>
               <Button
@@ -272,6 +281,7 @@ export default function LessonPage({
                   setChatSidebarOpen(!chatSidebarOpen);
                 }}
                 title={t("lesson:toggleChat")}
+                className="hidden md:inline-flex"
               >
                 <svg
                   className="size-4 md:mr-1.5"
@@ -296,6 +306,7 @@ export default function LessonPage({
                   setScratchpadOpen(!scratchpadOpen);
                 }}
                 title={t("lesson:toggleScratchpad")}
+                className="hidden md:inline-flex"
               >
                 <svg
                   className="size-4 md:mr-1.5"
@@ -314,6 +325,32 @@ export default function LessonPage({
               </Button>
             </>
           )}
+          {/* Mobile overflow menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="size-8 p-0 md:hidden">
+                <MoreVertical className="size-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {hasContent && (
+                <>
+                  <DropdownMenuItem onClick={() => {
+                    if (!chatSidebarOpen) setScratchpadOpen(false);
+                    setChatSidebarOpen(!chatSidebarOpen);
+                  }}>
+                    {t("lesson:chat")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    if (!scratchpadOpen) setChatSidebarOpen(false);
+                    setScratchpadOpen(!scratchpadOpen);
+                  }}>
+                    {t("lesson:scratchpad")}
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
