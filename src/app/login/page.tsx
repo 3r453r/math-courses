@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -23,6 +23,13 @@ import {
   getPlatform,
   getOpenInBrowserUrl,
 } from "@/lib/detectInAppBrowser";
+import {
+  HeroSection,
+  HowItWorksSection,
+  FeaturesSection,
+  FeaturedCoursesSection,
+  LandingFooter,
+} from "@/components/landing";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -187,13 +194,60 @@ function LoginForm() {
   );
 }
 
+function AutoScrollToSignIn() {
+  const searchParams = useSearchParams();
+  const scrolled = useRef(false);
+
+  useEffect(() => {
+    if (scrolled.current) return;
+    const callbackUrl = searchParams.get("callbackUrl");
+    if (callbackUrl) {
+      scrolled.current = true;
+      // Delay slightly so the DOM is fully painted
+      setTimeout(() => {
+        document.getElementById("sign-in")?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    }
+  }, [searchParams]);
+
+  return null;
+}
+
 export default function LoginPage() {
+  const { t } = useTranslation(["login"]);
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="fixed top-4 right-4"><ThemeToggle /></div>
+    <div className="min-h-screen bg-background">
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
+
       <Suspense>
-        <LoginForm />
+        <AutoScrollToSignIn />
       </Suspense>
+
+      <div className="container mx-auto px-4">
+        <HeroSection />
+      </div>
+
+      <HowItWorksSection />
+
+      <div className="container mx-auto px-4">
+        <FeaturesSection />
+      </div>
+
+      <FeaturedCoursesSection />
+
+      <section id="sign-in" className="py-16">
+        <div className="max-w-sm mx-auto text-center space-y-6">
+          <h2 className="text-3xl font-bold">{t("login:signInSection.title")}</h2>
+          <Suspense>
+            <LoginForm />
+          </Suspense>
+        </div>
+      </section>
+
+      <LandingFooter />
     </div>
   );
 }

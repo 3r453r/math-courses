@@ -62,7 +62,7 @@
   "voiceDictationMultiInput": "Multi-input: \"summation i next n next\" → \\sum_{i}^{n}. The \"next\" phrase is configurable.",
   "voiceDictationCustom": "Configure all keywords via the \"Voice\" button — edit phrases or add custom keywords.",
   "aiModeButton": "AI",
-  "aiModeTooltip": "AI interpretation mode — uses Claude to convert natural speech to LaTeX",
+  "aiModeTooltip": "AI interpretation mode — uses AI to convert natural speech to LaTeX",
   "interpreting": "Interpreting...",
   "calibrateButton": "Test",
   "calibrationTitle": "Voice Calibration",

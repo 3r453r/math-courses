@@ -1,7 +1,7 @@
 {
-  "title": "Zaloguj sie",
-  "description": "Zaloguj sie, aby uzyskac dostep do kursow",
-  "authError": "Uwierzytelnianie nie powiodlo sie. Sprobuj ponownie.",
+  "title": "Zaloguj się",
+  "description": "Zaloguj się, aby uzyskać dostęp do kursów",
+  "authError": "Uwierzytelnianie nie powiodło się. Spróbuj ponownie.",
   "signInGoogle": "Zaloguj przez Google",
   "signInGitHub": "Zaloguj przez GitHub",
   "signInDiscord": "Zaloguj przez Discord",
@@ -9,10 +9,76 @@
   "emailLabel": "Email",
   "devSignIn": "Logowanie dev",
   "signOut": "Wyloguj",
-  "inAppBrowserWarning": "Logowanie moze nie dzialac w {{browser}}",
-  "inAppBrowserDescription": "Google blokuje logowanie w przegladarkach wbudowanych ze wzgledow bezpieczenstwa. Otworz te strone w domyslnej przegladarce.",
-  "openInBrowser": "Otworz w przegladarce",
-  "iosOpenInstructions": "Kliknij ikone Safari lub menu (\u22ef), aby otworzyc w przegladarce.",
-  "continueAnyway": "Sprobuj zalogowac sie mimo to",
-  "tagline": "Kursy AI, spersonalizowane dla Ciebie"
+  "inAppBrowserWarning": "Logowanie może nie działać w {{browser}}",
+  "inAppBrowserDescription": "Google blokuje logowanie w przeglądarkach wbudowanych ze względów bezpieczeństwa. Otwórz tę stronę w domyślnej przeglądarce.",
+  "openInBrowser": "Otwórz w przeglądarce",
+  "iosOpenInstructions": "Kliknij ikonę Safari lub menu (\u22ef), aby otworzyć w przeglądarce.",
+  "continueAnyway": "Spróbuj zalogować się mimo to",
+  "tagline": "Kursy AI, spersonalizowane dla Ciebie",
+  "hero": {
+    "title": "Ucz się dowolnego przedmiotu z kursami AI",
+    "subtitle": "Wybierz temat, a AI stworzy ustrukturyzowany kurs z lekcjami, quizami i interaktywnym tutorem — dopasowany do Twojego poziomu.",
+    "getStarted": "Zacznij",
+    "browseGallery": "Przeglądaj galerię"
+  },
+  "howItWorks": {
+    "title": "Jak to działa",
+    "stepLabel": "Krok {{step}}",
+    "choose": {
+      "title": "Wybierz temat",
+      "description": "Dowolny przedmiot STEM — matematyka, fizyka, informatyka i więcej. Ustaw poziom i preferencje."
+    },
+    "generate": {
+      "title": "AI generuje kurs",
+      "description": "AI buduje ustrukturyzowany kurs z lekcjami połączonymi w graf zależności, a nie płaską listę."
+    },
+    "learn": {
+      "title": "Ucz się we własnym tempie",
+      "description": "Studiuj lekcje równolegle, rozwiązuj quizy, rozmawiaj z tutorem AI i śledź postępy."
+    }
+  },
+  "features": {
+    "title": "Wszystko, czego potrzebujesz do nauki",
+    "generation": {
+      "title": "Generowanie kursów AI",
+      "description": "Ustrukturyzowane kursy z lekcjami, definicjami, twierdzeniami, przykładami i wizualizacjami."
+    },
+    "quizzes": {
+      "title": "Adaptacyjne quizy",
+      "description": "Automatycznie generowane quizy, które dostosowują się do słabszych obszarów."
+    },
+    "chat": {
+      "title": "Czat z tutorem AI",
+      "description": "Zadaj pytanie o dowolną lekcję i otrzymaj natychmiastowe, kontekstowe wyjaśnienia."
+    },
+    "graph": {
+      "title": "Grafy zależności",
+      "description": "Zobacz, jak lekcje są ze sobą połączone. Ucz się równolegle, gdy wymagania wstępne są spełnione."
+    },
+    "export": {
+      "title": "Eksport i udostępnianie",
+      "description": "Eksportuj do Markdown, JSON lub drukuj. Udostępniaj kursy linkiem lub klonuj z galerii."
+    },
+    "gallery": {
+      "title": "Galeria kursów",
+      "description": "Przeglądaj kursy społeczności, wypróbuj darmowe podglądy i klonuj kursy do dostosowania."
+    }
+  },
+  "featuredCourses": {
+    "title": "Wyróżnione kursy",
+    "subtitle": "Wypróbuj darmowy podgląd — bez konta.",
+    "viewAll": "Zobacz wszystkie kursy"
+  },
+  "signInSection": {
+    "title": "Gotowy, by zacząć się uczyć?"
+  },
+  "socialProof": {
+    "courses": "Kursy",
+    "ratings": "Oceny",
+    "averageRating": "Średnia ocena"
+  },
+  "footer": {
+    "gallery": "Galeria",
+    "pricing": "Cennik"
+  }
 }

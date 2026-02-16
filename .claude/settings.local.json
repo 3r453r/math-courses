@@ -87,7 +87,9 @@
       "Bash(pnpm vitest run:*)",
       "Bash(pnpm dev:*)",
       "Bash(git checkout:*)",
-      "Bash(gh pr create:*)"
+      "Bash(gh pr create:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote prune:*)"
     ]
   }
 }

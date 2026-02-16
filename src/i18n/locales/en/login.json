@@ -14,5 +14,71 @@
   "openInBrowser": "Open in Browser",
   "iosOpenInstructions": "Tap the Safari icon or menu (\u22ef) to open in your browser.",
   "continueAnyway": "Try signing in anyway",
-  "tagline": "AI-powered courses, personalized for you"
+  "tagline": "AI-powered courses, personalized for you",
+  "hero": {
+    "title": "Learn Any Subject with AI-Generated Courses",
+    "subtitle": "Choose a topic, and AI creates a structured course with lessons, quizzes, and an interactive tutor — personalized to your level.",
+    "getStarted": "Get Started",
+    "browseGallery": "Browse Gallery"
+  },
+  "howItWorks": {
+    "title": "How It Works",
+    "stepLabel": "Step {{step}}",
+    "choose": {
+      "title": "Choose a Topic",
+      "description": "Pick any STEM subject — math, physics, CS, and more. Set your level and preferences."
+    },
+    "generate": {
+      "title": "AI Generates Your Course",
+      "description": "AI builds a structured course with lessons organized as a prerequisite graph, not a flat list."
+    },
+    "learn": {
+      "title": "Learn at Your Own Pace",
+      "description": "Study lessons in parallel, take quizzes, chat with an AI tutor, and track your progress."
+    }
+  },
+  "features": {
+    "title": "Everything You Need to Learn",
+    "generation": {
+      "title": "AI Course Generation",
+      "description": "Structured courses with lessons, definitions, theorems, worked examples, and visualizations."
+    },
+    "quizzes": {
+      "title": "Adaptive Quizzes",
+      "description": "Auto-generated quizzes that adapt to your weak areas and track your mastery."
+    },
+    "chat": {
+      "title": "AI Tutor Chat",
+      "description": "Ask questions about any lesson and get instant, context-aware explanations."
+    },
+    "graph": {
+      "title": "Prerequisite Graphs",
+      "description": "See how lessons connect. Study in parallel when prerequisites are met."
+    },
+    "export": {
+      "title": "Export & Share",
+      "description": "Export to Markdown, JSON, or print. Share courses with a link or clone from the gallery."
+    },
+    "gallery": {
+      "title": "Course Gallery",
+      "description": "Browse community courses, try free previews, and clone courses to customize."
+    }
+  },
+  "featuredCourses": {
+    "title": "Featured Courses",
+    "subtitle": "Try a free preview — no account needed.",
+    "viewAll": "View All Courses"
+  },
+  "signInSection": {
+    "title": "Ready to Start Learning?"
+  },
+  "socialProof": {
+    "courses": "Courses",
+    "ratings": "Ratings",
+    "averageRating": "Avg Rating"
+  },
+  "footer": {
+    "gallery": "Gallery",
+    "pricing": "Pricing"
+  }
 }

@@ -13,7 +13,7 @@
   },
   "byok": {
     "title": "Bring Your Own Key",
-    "description": "You provide your own Anthropic API key for AI generation. This keeps the platform cost-free for us and gives you full control over your usage and billing."
+    "description": "You provide your own AI provider API key for content generation. This keeps the platform cost-free for us and gives you full control over your usage and billing."
   },
   "cta": "Get Access Now",
   "processing": "Processing...",

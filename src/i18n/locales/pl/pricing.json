@@ -13,7 +13,7 @@
   },
   "byok": {
     "title": "Własny klucz API",
-    "description": "Dostarczasz własny klucz Anthropic API do generowania AI. Dzięki temu platforma jest bezkosztowa, a Ty masz pełną kontrolę nad wykorzystaniem i rozliczeniami."
+    "description": "Dostarczasz własny klucz API dostawcy AI do generowania treści. Dzięki temu platforma jest bezkosztowa, a Ty masz pełną kontrolę nad wykorzystaniem i rozliczeniami."
   },
   "cta": "Kup dostęp",
   "processing": "Przetwarzanie...",
