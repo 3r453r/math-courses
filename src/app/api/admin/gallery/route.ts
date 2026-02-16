@@ -55,7 +55,7 @@ async function findCloneConflict(courseId: string) {
  * owner hasn't created a share link yet.
  */
 export async function GET() {
-  const { error: authError } = await requireAdmin();
+  const { role, error: authError } = await requireAdmin();
   if (authError) return authError;
 
   try {
@@ -90,7 +90,7 @@ export async function GET() {
       const generatedLessons = course.lessons.filter(
         (l) => l.status !== "pending" && l.contentJson !== null
       ).length;
-      const isEligible = course.status === "ready" && totalLessons > 0 && generatedLessons === totalLessons;
+      const isEligible = totalLessons > 0 && generatedLessons === totalLessons;
 
       const { lessons: _lessons, ...courseWithoutLessons } = course;
 
@@ -104,7 +104,7 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json(result);
+    return NextResponse.json({ courses: result, role });
   } catch (error) {
     console.error("Failed to list courses for gallery:", error);
     return NextResponse.json({ error: "Failed to list courses" }, { status: 500 });
@@ -117,7 +117,7 @@ export async function GET() {
  * with isGalleryListed: true and no expiry.
  */
 export async function POST(request: Request) {
-  const { error: authError } = await requireAdmin();
+  const { role, error: authError } = await requireAdmin();
   if (authError) return authError;
 
   try {
@@ -146,11 +146,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
-    const allGenerated = course.status === "ready" &&
-      course.lessons.length > 0 &&
+    const allGenerated = course.lessons.length > 0 &&
       course.lessons.every((l) => l.status !== "pending" && l.contentJson !== null);
 
-    if (!allGenerated) {
+    if (!allGenerated && role !== "owner") {
       return NextResponse.json(
         { error: "Course must be fully generated before adding to gallery" },
         { status: 400 }

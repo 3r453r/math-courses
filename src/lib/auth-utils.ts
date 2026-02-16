@@ -136,12 +136,20 @@ export async function requireOwner(): Promise<AuthResult> {
  * Verify that a course belongs to the given user.
  * Returns the course if owned, or a 404 NextResponse if not.
  */
-export async function verifyCourseOwnership(courseId: string, userId: string) {
+export async function verifyCourseOwnership(
+  courseId: string,
+  userId: string,
+  options?: { allowAdmin?: boolean; role?: string }
+) {
   const course = await prisma.course.findUnique({
     where: { id: courseId },
     select: { id: true, userId: true },
   });
-  if (!course || course.userId !== userId) {
+  if (!course) {
+    return { course: null, error: NextResponse.json({ error: "Course not found" }, { status: 404 }) };
+  }
+  const isAdmin = options?.allowAdmin && ["admin", "owner"].includes(options.role ?? "");
+  if (course.userId !== userId && !isAdmin) {
     return { course: null, error: NextResponse.json({ error: "Course not found" }, { status: 404 }) };
   }
   return { course, error: null };

@@ -167,11 +167,22 @@ export async function POST(request: Request) {
     return NextResponse.json(courseStructure);
   } catch (error) {
     console.error("Failed to generate course structure:", error);
-    // Reset course status on failure using the already-parsed body
+    // Reset course status on failure — but only to "draft" if no lessons exist yet
     if (body.courseId) {
+      const existing = await prisma.course.findUnique({
+        where: { id: body.courseId },
+        select: {
+          lessons: {
+            where: { isSupplementary: false, NOT: { contentJson: null } },
+            select: { id: true },
+            take: 1,
+          },
+        },
+      }).catch(() => null);
+      const targetStatus = existing?.lessons?.length ? "ready" : "draft";
       await prisma.course.update({
         where: { id: body.courseId },
-        data: { status: "draft" },
+        data: { status: targetStatus },
       }).catch(() => {});
     }
     return NextResponse.json(

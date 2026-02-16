@@ -6,12 +6,12 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ courseId: string }> }
 ) {
-  const { userId, error: authError } = await getAuthUser();
+  const { userId, role, error: authError } = await getAuthUser();
   if (authError) return authError;
 
   try {
     const { courseId } = await params;
-    const { error: ownerError } = await verifyCourseOwnership(courseId, userId);
+    const { error: ownerError } = await verifyCourseOwnership(courseId, userId, { allowAdmin: true, role });
     if (ownerError) return ownerError;
 
     const course = await prisma.course.findUnique({

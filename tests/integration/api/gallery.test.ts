@@ -222,17 +222,21 @@ describe("admin gallery management", () => {
     expect(response.status).toBe(200);
     const data = await response.json();
 
+    // Response should include role and courses array
+    expect(data.role).toBeDefined();
+    const courses = data.courses;
+
     // Both courses should appear
-    const titles = data.map((c: { title: string }) => c.title);
+    const titles = courses.map((c: { title: string }) => c.title);
     expect(titles).toContain("No Share Course");
     expect(titles).toContain("Has Share Course");
 
     // Course with share should have shares array populated
-    const hasShareCourse = data.find((c: { title: string }) => c.title === "Has Share Course");
+    const hasShareCourse = courses.find((c: { title: string }) => c.title === "Has Share Course");
     expect(hasShareCourse.shares.length).toBe(1);
 
     // Course without share should have empty shares array
-    const noShareCourse = data.find((c: { title: string }) => c.title === "No Share Course");
+    const noShareCourse = courses.find((c: { title: string }) => c.title === "No Share Course");
     expect(noShareCourse.shares.length).toBe(0);
   });
 
@@ -244,7 +248,7 @@ describe("admin gallery management", () => {
     const response = await getAdminGallery();
     const data = await response.json();
 
-    const testCourse = data.find((c: { title: string }) => c.title === "Eligibility Test");
+    const testCourse = data.courses.find((c: { title: string }) => c.title === "Eligibility Test");
     expect(testCourse.eligibility.isEligible).toBe(false);
     expect(testCourse.eligibility.totalLessons).toBe(2);
     expect(testCourse.eligibility.generatedLessons).toBe(1);

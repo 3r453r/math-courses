@@ -57,7 +57,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ shareId: string }> }
 ) {
-  const { error: authError } = await requireAdmin();
+  const { role, error: authError } = await requireAdmin();
   if (authError) return authError;
 
   try {
@@ -91,11 +91,10 @@ export async function PATCH(
         }
 
         const lessons = share.course.lessons;
-        const allGenerated = share.course.status === "ready" &&
-          lessons.length > 0 &&
+        const allGenerated = lessons.length > 0 &&
           lessons.every((l) => l.status !== "pending" && l.contentJson !== null);
 
-        if (!allGenerated) {
+        if (!allGenerated && role !== "owner") {
           return NextResponse.json(
             { error: "Course must be fully generated before adding to gallery" },
             { status: 400 }
