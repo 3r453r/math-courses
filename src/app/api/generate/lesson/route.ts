@@ -104,7 +104,8 @@ LESSON CONTENT GUIDELINES:
 5. Include at least TWO practice exercises with hints and solutions.
 6. For practice exercises: mirror the worked example pattern but change the specific values.
 7. Aim for 8-15 sections of varied types (text, math, definition, theorem, visualization).
-8. Make the content thorough but accessible - explain the "why" not just the "what".`;
+8. Make the content thorough but accessible - explain the "why" not just the "what".
+9. For tabular data (payoff matrices, truth tables, comparisons), use Markdown pipe-table syntax. Use only inline math $...$ inside table cells — never display math $$...$$.`;
 
       if (body.weakTopics && body.weakTopics.length > 0) {
         prompt += `\n\nIMPORTANT - WEAK AREAS FEEDBACK:
