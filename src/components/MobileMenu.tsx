@@ -14,12 +14,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 interface MobileMenuProps {
-  isAdmin?: boolean;
   showProgress?: boolean;
   onImport?: () => void;
 }
 
-export function MobileMenu({ isAdmin, showProgress, onImport }: MobileMenuProps) {
+export function MobileMenu({ showProgress, onImport }: MobileMenuProps) {
   const router = useRouter();
   const { t } = useTranslation(["dashboard", "common", "login", "export"]);
 
@@ -31,11 +30,6 @@ export function MobileMenu({ isAdmin, showProgress, onImport }: MobileMenuProps)
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        {isAdmin && (
-          <DropdownMenuItem onClick={() => router.push("/admin")}>
-            Admin
-          </DropdownMenuItem>
-        )}
         <DropdownMenuItem onClick={() => router.push("/gallery")}>
           {t("dashboard:gallery")}
         </DropdownMenuItem>

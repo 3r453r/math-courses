@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useTranslation } from "react-i18next";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,8 +16,22 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function UserMenu() {
+  const router = useRouter();
   const { data: session } = useSession();
   const { t } = useTranslation(["login"]);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!session?.user) return;
+    fetch("/api/user/status")
+      .then((res) => res.json())
+      .then((data) => {
+        if (["admin", "owner"].includes(data.role)) {
+          setIsAdmin(true);
+        }
+      })
+      .catch(() => {});
+  }, [session?.user]);
 
   if (!session?.user) return null;
 
@@ -38,6 +54,12 @@ export function UserMenu() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {isAdmin && (
+          <DropdownMenuItem onClick={() => router.push("/admin")}>
+            <Shield className="size-4 mr-2" />
+            Admin
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>
           <LogOut className="size-4 mr-2" />
           {t("login:signOut")}

@@ -80,6 +80,10 @@ export function GalleryManager() {
   const [languageFilter, setLanguageFilter] = useState("all");
   const [difficultyFilter, setDifficultyFilter] = useState("all");
 
+  // Sorting
+  const [sortField, setSortField] = useState<"stars" | "clones" | "language" | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
   // Clone conflict dialog
   const [cloneConflict, setCloneConflict] = useState<CloneConflict | null>(null);
 
@@ -221,6 +225,36 @@ export function GalleryManager() {
     });
   }, [courses, search, subjectFilter, languageFilter, difficultyFilter]);
 
+  function toggleSort(field: "stars" | "clones" | "language") {
+    if (sortField === field) {
+      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection(field === "language" ? "asc" : "desc");
+    }
+  }
+
+  const sortedCourses = useMemo(() => {
+    if (!sortField) return filteredCourses;
+    return [...filteredCourses].sort((a, b) => {
+      let cmp = 0;
+      if (sortField === "stars") {
+        const aStars = getGalleryShare(a)?.starCount ?? 0;
+        const bStars = getGalleryShare(b)?.starCount ?? 0;
+        cmp = aStars - bStars;
+      } else if (sortField === "clones") {
+        const aClones = getGalleryShare(a)?.cloneCount ?? 0;
+        const bClones = getGalleryShare(b)?.cloneCount ?? 0;
+        cmp = aClones - bClones;
+      } else if (sortField === "language") {
+        const aLang = (LANGUAGE_NAMES[a.language] ?? a.language ?? "").toLowerCase();
+        const bLang = (LANGUAGE_NAMES[b.language] ?? b.language ?? "").toLowerCase();
+        cmp = aLang.localeCompare(bLang);
+      }
+      return sortDirection === "asc" ? cmp : -cmp;
+    });
+  }, [filteredCourses, sortField, sortDirection]);
+
   if (loading) {
     return <p className="text-muted-foreground">Loading...</p>;
   }
@@ -283,17 +317,23 @@ export function GalleryManager() {
             <tr>
               <th className="text-left p-3 font-medium">{t("admin:gallery.courseTitle")}</th>
               <th className="text-left p-3 font-medium">{t("admin:gallery.owner")}</th>
-              <th className="text-left p-3 font-medium">{t("admin:gallery.language")}</th>
+              <th className="text-left p-3 font-medium cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort("language")}>
+                {t("admin:gallery.language")} {sortField === "language" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+              </th>
               <th className="text-left p-3 font-medium">{t("admin:gallery.eligibility")}</th>
               <th className="text-left p-3 font-medium">{t("admin:gallery.galleryStatus")}</th>
-              <th className="text-left p-3 font-medium">{t("admin:gallery.stars")}</th>
-              <th className="text-left p-3 font-medium">{t("admin:gallery.clones")}</th>
+              <th className="text-left p-3 font-medium cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort("stars")}>
+                {t("admin:gallery.stars")} {sortField === "stars" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+              </th>
+              <th className="text-left p-3 font-medium cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort("clones")}>
+                {t("admin:gallery.clones")} {sortField === "clones" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+              </th>
               <th className="text-left p-3 font-medium">{t("admin:gallery.tags")}</th>
               <th className="text-left p-3 font-medium">{t("admin:accessCodes.actions")}</th>
             </tr>
           </thead>
           <tbody>
-            {filteredCourses.map((course) => {
+            {sortedCourses.map((course) => {
               const galleryShare = getGalleryShare(course);
               const isListed = course.shares.some((s) => s.isGalleryListed);
               const listedShare = course.shares.find((s) => s.isGalleryListed);

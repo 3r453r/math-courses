@@ -101,7 +101,7 @@ export function ShareDialog({ courseId, open, onOpenChange }: ShareDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t("shareCourse")}</DialogTitle>
           <DialogDescription>{t("shareLinkDescription")}</DialogDescription>

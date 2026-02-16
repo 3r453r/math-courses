@@ -50,7 +50,6 @@ export default function DashboardPage() {
   const setLanguage = useAppStore((s) => s.setLanguage);
   const [courses, setCourses] = useState<CourseWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
   const { t } = useTranslation(["dashboard", "common", "login", "export"]);
@@ -68,9 +67,6 @@ export default function DashboardPage() {
         if (data.accessStatus === "suspended") {
           router.push("/redeem");
           return;
-        }
-        if (["admin", "owner"].includes(data.role)) {
-          setIsAdmin(true);
         }
         fetchCourses();
       })
@@ -183,11 +179,6 @@ export default function DashboardPage() {
               }}
             />
             <div className="hidden md:flex gap-2 items-center">
-              {isAdmin && (
-                <Button variant="outline" onClick={() => router.push("/admin")}>
-                  Admin
-                </Button>
-              )}
               <Button variant="outline" onClick={() => router.push("/gallery")}>
                 {t("dashboard:gallery")}
               </Button>
@@ -224,7 +215,7 @@ export default function DashboardPage() {
                 {t("dashboard:newCourse")}
               </Button>
             </div>
-            <MobileMenu isAdmin={isAdmin} showProgress={hasReadyCourses} onImport={() => importRef.current?.click()} />
+            <MobileMenu showProgress={hasReadyCourses} onImport={() => importRef.current?.click()} />
           </div>
         </div>
       </header>
