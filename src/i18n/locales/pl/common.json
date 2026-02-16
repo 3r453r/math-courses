@@ -22,5 +22,7 @@
   "language": "Język",
   "yes": "Tak",
   "no": "Nie",
-  "apiKeyRequiredHint": "Skonfiguruj klucz API w Ustawieniach, aby korzystać z tej funkcji."
+  "apiKeyRequiredHint": "Skonfiguruj klucz API w Ustawieniach, aby korzystać z tej funkcji.",
+  "gallery": "Galeria",
+  "progress": "Postępy"
 }

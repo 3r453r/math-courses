@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { AccessCodeManager } from "@/components/admin/AccessCodeManager";
 import { UserManager } from "@/components/admin/UserManager";
 import { GalleryManager } from "@/components/admin/GalleryManager";
+import { GenerationLogManager } from "@/components/admin/GenerationLogManager";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserMenu } from "@/components/UserMenu";
 
-type Tab = "accessCodes" | "users" | "gallery";
+type Tab = "accessCodes" | "users" | "gallery" | "generationLogs";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -40,8 +41,8 @@ export default function AdminPage() {
 
   const isOwner = role === "owner";
   const availableTabs: Tab[] = isOwner
-    ? ["accessCodes", "users", "gallery"]
-    : ["gallery"];
+    ? ["accessCodes", "users", "gallery", "generationLogs"]
+    : ["gallery", "generationLogs"];
 
   return (
     <div className="min-h-screen bg-background">
@@ -77,6 +78,7 @@ export default function AdminPage() {
         {tab === "accessCodes" && isOwner && <AccessCodeManager />}
         {tab === "users" && isOwner && <UserManager />}
         {tab === "gallery" && <GalleryManager />}
+        {tab === "generationLogs" && <GenerationLogManager />}
       </main>
     </div>
   );

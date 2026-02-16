@@ -27,5 +27,9 @@
   "readyToTest": "Gotowy sprawdzić swoje rozumienie?",
   "quizPrompt": "Rozwiąż quiz, aby sprawdzić opanowanie materiału z tej lekcji.",
   "takeQuiz": "Rozwiąż quiz",
-  "vizMalformedWarning": "Niektóre wizualizacje zostały usunięte z powodu błędów. Możesz chcieć ponownie wygenerować tę lekcję."
+  "vizMalformedWarning": "Niektóre wizualizacje zostały usunięte z powodu błędów. Możesz chcieć ponownie wygenerować tę lekcję.",
+  "home": "Panel główny",
+  "layer": "Warstwa {{number}}",
+  "prevLesson": "Poprzednia lekcja",
+  "nextLesson": "Następna lekcja"
 }

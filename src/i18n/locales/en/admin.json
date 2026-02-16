@@ -3,7 +3,8 @@
   "tabs": {
     "accessCodes": "Access Codes",
     "users": "Users",
-    "gallery": "Gallery"
+    "gallery": "Gallery",
+    "generationLogs": "Generation Logs"
   },
   "accessCodes": {
     "generate": "Generate Codes",
@@ -93,5 +94,74 @@
       "cancel": "Cancel",
       "viewOriginal": "View original course"
     }
+  },
+  "generationLogs": {
+    "stats": {
+      "total": "Total",
+      "successRate": "Success Rate",
+      "repaired": "Repaired",
+      "failed": "Failed"
+    },
+    "filters": {
+      "allTypes": "All Types",
+      "allOutcomes": "All Outcomes",
+      "allModels": "All Models",
+      "from": "From",
+      "to": "To"
+    },
+    "columns": {
+      "timestamp": "Timestamp",
+      "type": "Type",
+      "model": "Model",
+      "outcome": "Outcome",
+      "duration": "Duration",
+      "layers": "Layers",
+      "error": "Error"
+    },
+    "outcomes": {
+      "success": "Success",
+      "repaired_layer0": "Repaired L0",
+      "repaired_layer1": "Repaired L1",
+      "repaired_layer2": "Repaired L2",
+      "failed": "Failed"
+    },
+    "detail": {
+      "title": "Generation Log Detail",
+      "metadata": "Metadata",
+      "provider": "Provider",
+      "schema": "Schema",
+      "language": "Language",
+      "difficulty": "Difficulty",
+      "courseId": "Course ID",
+      "lessonId": "Lesson ID",
+      "duration": "Duration",
+      "repairPipeline": "Repair Pipeline",
+      "layer0": "Layer 0 (repairText)",
+      "layer1": "Layer 1 (direct coercion)",
+      "layer2": "Layer 2 (AI repack)",
+      "result": "Result",
+      "hadWrapper": "Had wrapper",
+      "repackModel": "Repack model",
+      "zodErrors": "Zod Validation Errors",
+      "path": "Path",
+      "code": "Code",
+      "message": "Message",
+      "rawOutput": "Raw AI Output",
+      "prompt": "Prompt Text",
+      "characters": "{{count}} characters",
+      "noErrors": "No Zod errors recorded",
+      "notCalled": "Not called",
+      "notAvailable": "Not available"
+    },
+    "generateReport": "Generate Report",
+    "reportDownloaded": "Debug report downloaded",
+    "noLogs": "No generation logs found.",
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "showing": "Showing {{from}}-{{to}} of {{total}}"
+    },
+    "copy": "Copy",
+    "copied": "Copied!"
   }
 }

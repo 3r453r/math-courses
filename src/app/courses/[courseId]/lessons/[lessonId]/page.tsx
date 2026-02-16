@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LessonContentRenderer } from "@/components/lesson/LessonContentRenderer";
+import { LessonBreadcrumbs } from "@/components/lesson/LessonBreadcrumbs";
 import { ScratchpadPanel } from "@/components/scratchpad";
 import { ChatPanel } from "@/components/chat";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -56,6 +57,19 @@ interface LessonDetail {
   quizzes?: QuizInfo[];
 }
 
+interface CourseNav {
+  title: string;
+  lessons: {
+    id: string;
+    title: string;
+    orderIndex: number;
+    status: string;
+    completedAt?: string | null;
+    isSupplementary: boolean;
+  }[];
+  edges: { fromLessonId: string; toLessonId: string }[];
+}
+
 const STALE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
 
 export default function LessonPage({
@@ -75,6 +89,7 @@ export default function LessonPage({
   const setChatSidebarOpen = useAppStore((s) => s.setChatSidebarOpen);
   const apiHeaders = useApiHeaders();
   const [lesson, setLesson] = useState<LessonDetail | null>(null);
+  const [courseNav, setCourseNav] = useState<CourseNav | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [generatingQuiz, setGeneratingQuiz] = useState(false);
@@ -89,6 +104,21 @@ export default function LessonPage({
       const found = course.lessons.find((l: LessonDetail) => l.id === lessonId);
       if (!found) throw new Error("Lesson not found");
       setLesson(found);
+      setCourseNav({
+        title: course.title,
+        lessons: course.lessons.map((l: LessonDetail & { completedAt?: string | null }) => ({
+          id: l.id,
+          title: l.title,
+          orderIndex: l.orderIndex,
+          status: l.status,
+          completedAt: l.completedAt,
+          isSupplementary: l.isSupplementary,
+        })),
+        edges: (course.edges ?? []).map((e: { fromLessonId: string; toLessonId: string }) => ({
+          fromLessonId: e.fromLessonId,
+          toLessonId: e.toLessonId,
+        })),
+      });
 
       // Sync generation state from backend status
       if (!localGenerationRef.current) {
@@ -158,6 +188,27 @@ export default function LessonPage({
 
     return () => clearInterval(interval);
   }, [generating, generatingQuiz, courseId, lessonId, t]);
+
+  // Alt+Left/Right keyboard shortcuts for prev/next lesson
+  useEffect(() => {
+    if (!courseNav) return;
+    const sorted = [...courseNav.lessons].sort((a, b) => a.orderIndex - b.orderIndex);
+    const currentIdx = sorted.findIndex((l) => l.id === lessonId);
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (!e.altKey) return;
+      if (e.key === "ArrowLeft" && currentIdx > 0) {
+        e.preventDefault();
+        router.push(`/courses/${courseId}/lessons/${sorted[currentIdx - 1].id}`);
+      } else if (e.key === "ArrowRight" && currentIdx < sorted.length - 1) {
+        e.preventDefault();
+        router.push(`/courses/${courseId}/lessons/${sorted[currentIdx + 1].id}`);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [courseNav, lessonId, courseId, router]);
 
   async function handleGenerate() {
     if (!hasAnyApiKey || !lesson || generating) return;
@@ -244,30 +295,25 @@ export default function LessonPage({
   return (
     <div className="fixed inset-0 bg-background flex flex-col" data-testid="lesson-page-wrapper">
       <header className="border-b shrink-0">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Button
-            variant="ghost"
-            onClick={() => router.push(`/courses/${courseId}`)}
-            className="shrink-0"
-          >
-            &larr; <span className="hidden sm:inline">{t("lesson:courseOverview")}</span>
-          </Button>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-muted-foreground">
-                {t("lesson:lessonIndex", { index: lesson.orderIndex })}
-              </span>
-              <Badge
-                variant={lesson.status === "ready" ? "default" : "outline"}
-              >
-                {lesson.status}
-              </Badge>
-              {lesson.isSupplementary && (
-                <Badge variant="secondary" className="hidden sm:inline-flex">{t("common:supplementary")}</Badge>
-              )}
-            </div>
-            <h1 className="text-xl font-bold truncate">{lesson.title}</h1>
-          </div>
+        <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+          {courseNav ? (
+            <LessonBreadcrumbs
+              courseId={courseId}
+              courseName={courseNav.title}
+              currentLessonId={lessonId}
+              lessons={courseNav.lessons}
+              edges={courseNav.edges}
+            />
+          ) : (
+            <Button
+              variant="ghost"
+              onClick={() => router.push(`/courses/${courseId}`)}
+              className="shrink-0"
+            >
+              &larr; <span className="hidden sm:inline">{t("lesson:courseOverview")}</span>
+            </Button>
+          )}
+          <div className="flex-1 min-w-0" />
           {/* Desktop buttons */}
           <div className="hidden md:inline-flex"><ThemeToggle /></div>
           <div className="hidden md:inline-flex"><UserMenu /></div>
