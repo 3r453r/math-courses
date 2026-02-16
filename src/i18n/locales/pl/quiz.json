@@ -46,5 +46,7 @@
   "addedPrerequisites_few": "Dodano {{count}} lekcje wstępne do kursu!",
   "addedPrerequisites_many": "Dodano {{count}} lekcji wstępnych do kursu!",
   "addedPrerequisites_other": "Dodano {{count}} lekcji wstępnych do kursu!",
-  "scoreResult": "Wynik: {{score}}%"
+  "scoreResult": "Wynik: {{score}}%",
+  "quizInstruction": "Każde pytanie może mieć jedną lub więcej poprawnych odpowiedzi. Zaznacz wszystkie pasujące.",
+  "selectOneOrMore": "Zaznacz jedną lub więcej odpowiedzi"
 }

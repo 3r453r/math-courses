@@ -161,7 +161,7 @@ export default function GalleryPage() {
           <div className="flex items-center justify-center py-20">
             <p className="text-muted-foreground">{t("gallery:loading")}</p>
           </div>
-        ) : !data || data.items.length === 0 ? (
+        ) : !data || (data.items.length === 0 && data.featured.length === 0) ? (
           <div className="flex items-center justify-center py-20">
             <p className="text-muted-foreground">{t("gallery:empty")}</p>
           </div>
