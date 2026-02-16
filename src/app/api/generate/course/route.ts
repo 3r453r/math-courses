@@ -1,7 +1,7 @@
 export const maxDuration = 300;
 
 import { generateObject, NoObjectGeneratedError } from "ai";
-import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, createRepairFunction } from "@/lib/ai/client";
+import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, createRepairFunction, createRepairTracker } from "@/lib/ai/client";
 import { courseStructureSchema, type CourseStructureOutput } from "@/lib/ai/schemas/courseSchema";
 import { buildCourseStructurePrompt } from "@/lib/ai/prompts/courseStructure";
 import { mockCourseStructure } from "@/lib/ai/mockData";
@@ -10,6 +10,8 @@ import { serializeSubjects } from "@/lib/subjects";
 import { NextResponse } from "next/server";
 import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
 import { getCheapestModel, repackWithAI, tryCoerceAndValidate } from "@/lib/ai/repairSchema";
+import { createGenerationLogger } from "@/lib/ai/generationLogger";
+import type { z } from "zod";
 
 export async function POST(request: Request) {
   const { userId, error } = await getAuthUser();
@@ -72,27 +74,56 @@ export async function POST(request: Request) {
         language: courseLanguage,
       });
 
+      const logger = createGenerationLogger({
+        generationType: "course",
+        schemaName: "courseStructureSchema",
+        modelId: model,
+        userId,
+        courseId: courseId ?? undefined,
+        language: courseLanguage,
+        difficulty: difficulty || "intermediate",
+        promptText: systemPrompt,
+      });
+
+      const tracker = createRepairTracker();
+
       try {
         const { object } = await generateObject({
           model: modelInstance,
           schema: courseStructureSchema,
           prompt: systemPrompt,
           providerOptions: getProviderOptions(model),
-          experimental_repairText: createRepairFunction(courseStructureSchema),
+          experimental_repairText: createRepairFunction(courseStructureSchema, tracker),
         });
         courseStructure = object;
+        logger.recordLayer0(tracker);
       } catch (genErr) {
+        logger.recordLayer0(tracker);
         if (NoObjectGeneratedError.isInstance(genErr) && genErr.text) {
           console.log(`[course-gen] Schema mismatch, attempting recovery...`);
+
+          // Layer 1
+          let hadWrapper = false;
+          const zodCollector: { issues: z.ZodIssue[] } = { issues: [] };
           try {
             const parsed = JSON.parse(genErr.text);
-            const coerced = tryCoerceAndValidate(parsed, courseStructureSchema);
+            hadWrapper = "parameter" in parsed;
+            const target = hadWrapper && typeof parsed.parameter === "object" ? parsed.parameter : parsed;
+            const coerced = tryCoerceAndValidate(target, courseStructureSchema, zodCollector);
             if (coerced) {
               console.log(`[course-gen] Direct coercion succeeded`);
               courseStructure = coerced;
             }
           } catch { /* not valid JSON */ }
 
+          logger.recordLayer1({
+            rawText: genErr.text,
+            hadWrapper,
+            success: !!courseStructure,
+            zodErrors: zodCollector.issues,
+          });
+
+          // Layer 2
           if (!courseStructure) {
             const cheapModel = getCheapestModel(apiKeys);
             if (cheapModel) {
@@ -102,14 +133,24 @@ export async function POST(request: Request) {
                 console.log(`[course-gen] AI repack succeeded`);
                 courseStructure = repacked as CourseStructureOutput;
               }
+              logger.recordLayer2({ modelId: cheapModel, success: !!repacked });
             }
           }
 
-          if (!courseStructure) throw genErr;
+          if (!courseStructure) {
+            logger.recordFailure(genErr.message);
+            await logger.finalize();
+            throw genErr;
+          }
         } else {
+          const errMsg = genErr instanceof Error ? genErr.message : String(genErr);
+          logger.recordFailure(errMsg);
+          await logger.finalize();
           throw genErr;
         }
       }
+
+      await logger.finalize();
     }
 
     // If we have a courseId, save the generated structure to the database

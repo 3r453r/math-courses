@@ -281,7 +281,11 @@ export function coerceToSchema(raw: unknown, schema: any): unknown {
  * Attempt to coerce and validate raw data against a Zod schema.
  * Returns the validated object or null.
  */
-export function tryCoerceAndValidate<T>(raw: unknown, schema: z.ZodType<T>): T | null {
+export function tryCoerceAndValidate<T>(
+  raw: unknown,
+  schema: z.ZodType<T>,
+  zodErrorCollector?: { issues: z.ZodIssue[] },
+): T | null {
   try {
     const coerced = coerceToSchema(raw, schema);
 
@@ -301,6 +305,11 @@ export function tryCoerceAndValidate<T>(raw: unknown, schema: z.ZodType<T>): T |
     const result = schema.safeParse(coerced);
     if (result.success) {
       return result.data;
+    }
+
+    // Collect Zod errors for logging if collector provided
+    if (zodErrorCollector) {
+      zodErrorCollector.issues = result.error.issues;
     }
 
     // Log Zod validation errors

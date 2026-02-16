@@ -1,7 +1,7 @@
 export const maxDuration = 300;
 
 import { generateObject, NoObjectGeneratedError } from "ai";
-import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, createRepairFunction } from "@/lib/ai/client";
+import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, createRepairFunction, createRepairTracker } from "@/lib/ai/client";
 import { mockDiagnostic } from "@/lib/ai/mockData";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
@@ -9,6 +9,8 @@ import { diagnosticSchema, type DiagnosticOutput } from "@/lib/ai/schemas/diagno
 import { buildDiagnosticPrompt } from "@/lib/ai/prompts/quizGeneration";
 import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
 import { getCheapestModel, repackWithAI, tryCoerceAndValidate } from "@/lib/ai/repairSchema";
+import { createGenerationLogger } from "@/lib/ai/generationLogger";
+import type { z } from "zod";
 
 export async function POST(request: Request) {
   const { userId, error } = await getAuthUser();
@@ -80,27 +82,56 @@ export async function POST(request: Request) {
         language: course.language,
       });
 
+      const logger = createGenerationLogger({
+        generationType: "diagnostic",
+        schemaName: "diagnosticSchema",
+        modelId: model,
+        userId,
+        courseId,
+        language: course.language,
+        difficulty: course.difficulty,
+        promptText: prompt,
+      });
+
+      const tracker = createRepairTracker();
+
       try {
         const { object } = await generateObject({
           model: modelInstance,
           schema: diagnosticSchema,
           prompt,
           providerOptions: getProviderOptions(model),
-          experimental_repairText: createRepairFunction(diagnosticSchema),
+          experimental_repairText: createRepairFunction(diagnosticSchema, tracker),
         });
         result = object;
+        logger.recordLayer0(tracker);
       } catch (genErr) {
+        logger.recordLayer0(tracker);
         if (NoObjectGeneratedError.isInstance(genErr) && genErr.text) {
           console.log(`[diagnostic-gen] Schema mismatch, attempting recovery...`);
+
+          // Layer 1
+          let hadWrapper = false;
+          const zodCollector: { issues: z.ZodIssue[] } = { issues: [] };
           try {
             const parsed = JSON.parse(genErr.text);
-            const coerced = tryCoerceAndValidate(parsed, diagnosticSchema);
+            hadWrapper = "parameter" in parsed;
+            const target = hadWrapper && typeof parsed.parameter === "object" ? parsed.parameter : parsed;
+            const coerced = tryCoerceAndValidate(target, diagnosticSchema, zodCollector);
             if (coerced) {
               console.log(`[diagnostic-gen] Direct coercion succeeded`);
               result = coerced;
             }
           } catch { /* not valid JSON */ }
 
+          logger.recordLayer1({
+            rawText: genErr.text,
+            hadWrapper,
+            success: !!result,
+            zodErrors: zodCollector.issues,
+          });
+
+          // Layer 2
           if (!result) {
             const cheapModel = getCheapestModel(apiKeys);
             if (cheapModel) {
@@ -110,14 +141,24 @@ export async function POST(request: Request) {
                 console.log(`[diagnostic-gen] AI repack succeeded`);
                 result = repacked as DiagnosticOutput;
               }
+              logger.recordLayer2({ modelId: cheapModel, success: !!repacked });
             }
           }
 
-          if (!result) throw genErr;
+          if (!result) {
+            logger.recordFailure(genErr.message);
+            await logger.finalize();
+            throw genErr;
+          }
         } else {
+          const errMsg = genErr instanceof Error ? genErr.message : String(genErr);
+          logger.recordFailure(errMsg);
+          await logger.finalize();
           throw genErr;
         }
       }
+
+      await logger.finalize();
     }
 
     await prisma.diagnosticQuiz.update({
