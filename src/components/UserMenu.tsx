@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useTranslation } from "react-i18next";
-import { User, LogOut, Shield } from "lucide-react";
+import { User, LogOut, Shield, LayoutGrid, BarChart3, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,7 +18,7 @@ import {
 export function UserMenu() {
   const router = useRouter();
   const { data: session } = useSession();
-  const { t } = useTranslation(["login"]);
+  const { t } = useTranslation(["login", "common"]);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -54,12 +54,25 @@ export function UserMenu() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => router.push("/gallery")}>
+          <LayoutGrid className="size-4 mr-2" />
+          {t("common:gallery")}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/progress")}>
+          <BarChart3 className="size-4 mr-2" />
+          {t("common:progress")}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/setup")}>
+          <Settings className="size-4 mr-2" />
+          {t("common:settings")}
+        </DropdownMenuItem>
         {isAdmin && (
           <DropdownMenuItem onClick={() => router.push("/admin")}>
             <Shield className="size-4 mr-2" />
             Admin
           </DropdownMenuItem>
         )}
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>
           <LogOut className="size-4 mr-2" />
           {t("login:signOut")}

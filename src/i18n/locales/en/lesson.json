@@ -27,5 +27,9 @@
   "readyToTest": "Ready to test your understanding?",
   "quizPrompt": "Take a quiz to check your grasp of this lesson's material.",
   "takeQuiz": "Take Quiz",
-  "vizMalformedWarning": "Some visualizations were removed because they contained errors. You may want to regenerate this lesson."
+  "vizMalformedWarning": "Some visualizations were removed because they contained errors. You may want to regenerate this lesson.",
+  "home": "Dashboard",
+  "layer": "Layer {{number}}",
+  "prevLesson": "Previous lesson",
+  "nextLesson": "Next lesson"
 }

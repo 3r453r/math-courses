@@ -34,6 +34,7 @@ import { ContextDocGuideDialog } from "@/components/ContextDocGuideDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserMenu } from "@/components/UserMenu";
 import { evaluateCourseCompletion, DEFAULT_THRESHOLDS } from "@/lib/quiz/courseCompletion";
+import { computeDagLayers } from "@/lib/course/dagLayers";
 import { MoreVertical } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -174,56 +175,8 @@ export default function CourseOverviewPage({
   // Build adjacency info for a simple visual layout
   const lessonGraph = useMemo(() => {
     if (!course) return { layers: [] as Lesson[][], edgeList: [] as Edge[] };
-
-    const lessons = course.lessons;
-    const edges = course.edges;
-
-    // Build in-degree map for topological sort / layer assignment
-    const inDegree = new Map<string, number>();
-    const children = new Map<string, string[]>();
-    for (const l of lessons) {
-      inDegree.set(l.id, 0);
-      children.set(l.id, []);
-    }
-    for (const e of edges) {
-      inDegree.set(e.toLessonId, (inDegree.get(e.toLessonId) ?? 0) + 1);
-      children.get(e.fromLessonId)?.push(e.toLessonId);
-    }
-
-    // BFS layer assignment
-    const layers: Lesson[][] = [];
-    const lessonMap = new Map(lessons.map((l) => [l.id, l]));
-    const assigned = new Set<string>();
-    let currentLayer = lessons.filter((l) => (inDegree.get(l.id) ?? 0) === 0);
-
-    while (currentLayer.length > 0) {
-      layers.push(currentLayer);
-      currentLayer.forEach((l) => assigned.add(l.id));
-      const nextLayer: Lesson[] = [];
-      for (const l of currentLayer) {
-        for (const childId of children.get(l.id) ?? []) {
-          if (assigned.has(childId)) continue;
-          const remaining = edges.filter(
-            (e) => e.toLessonId === childId && !assigned.has(e.fromLessonId)
-          );
-          if (remaining.length === 0) {
-            const child = lessonMap.get(childId);
-            if (child && !nextLayer.find((n) => n.id === childId)) {
-              nextLayer.push(child);
-            }
-          }
-        }
-      }
-      currentLayer = nextLayer;
-    }
-
-    // Add any unassigned lessons (orphans) to the last layer
-    const orphans = lessons.filter((l) => !assigned.has(l.id));
-    if (orphans.length > 0) {
-      layers.push(orphans);
-    }
-
-    return { layers, edgeList: edges };
+    const layers = computeDagLayers(course.lessons, course.edges);
+    return { layers, edgeList: course.edges };
   }, [course]);
 
   // Compute formula display data — reactive to editing mode

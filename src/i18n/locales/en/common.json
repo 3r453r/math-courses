@@ -20,5 +20,7 @@
   "language": "Language",
   "yes": "Yes",
   "no": "No",
-  "apiKeyRequiredHint": "Configure an API key in Settings to use this feature."
+  "apiKeyRequiredHint": "Configure an API key in Settings to use this feature.",
+  "gallery": "Gallery",
+  "progress": "Progress"
 }

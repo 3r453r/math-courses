@@ -3,7 +3,8 @@
   "tabs": {
     "accessCodes": "Kody dostępu",
     "users": "Użytkownicy",
-    "gallery": "Galeria"
+    "gallery": "Galeria",
+    "generationLogs": "Logi generowania"
   },
   "accessCodes": {
     "generate": "Generuj kody",
@@ -93,5 +94,74 @@
       "cancel": "Anuluj",
       "viewOriginal": "Zobacz oryginalny kurs"
     }
+  },
+  "generationLogs": {
+    "stats": {
+      "total": "Łącznie",
+      "successRate": "Skuteczność",
+      "repaired": "Naprawione",
+      "failed": "Nieudane"
+    },
+    "filters": {
+      "allTypes": "Wszystkie typy",
+      "allOutcomes": "Wszystkie wyniki",
+      "allModels": "Wszystkie modele",
+      "from": "Od",
+      "to": "Do"
+    },
+    "columns": {
+      "timestamp": "Czas",
+      "type": "Typ",
+      "model": "Model",
+      "outcome": "Wynik",
+      "duration": "Czas trwania",
+      "layers": "Warstwy",
+      "error": "Błąd"
+    },
+    "outcomes": {
+      "success": "Sukces",
+      "repaired_layer0": "Naprawiono L0",
+      "repaired_layer1": "Naprawiono L1",
+      "repaired_layer2": "Naprawiono L2",
+      "failed": "Nieudane"
+    },
+    "detail": {
+      "title": "Szczegóły logu generowania",
+      "metadata": "Metadane",
+      "provider": "Dostawca",
+      "schema": "Schemat",
+      "language": "Język",
+      "difficulty": "Poziom trudności",
+      "courseId": "ID kursu",
+      "lessonId": "ID lekcji",
+      "duration": "Czas trwania",
+      "repairPipeline": "Potok naprawy",
+      "layer0": "Warstwa 0 (repairText)",
+      "layer1": "Warstwa 1 (bezpośrednia koercja)",
+      "layer2": "Warstwa 2 (AI repack)",
+      "result": "Wynik",
+      "hadWrapper": "Miał wrapper",
+      "repackModel": "Model repacku",
+      "zodErrors": "Błędy walidacji Zod",
+      "path": "Ścieżka",
+      "code": "Kod",
+      "message": "Wiadomość",
+      "rawOutput": "Surowe wyjście AI",
+      "prompt": "Tekst promptu",
+      "characters": "{{count}} znaków",
+      "noErrors": "Brak błędów Zod",
+      "notCalled": "Nie wywołano",
+      "notAvailable": "Niedostępne"
+    },
+    "generateReport": "Generuj raport",
+    "reportDownloaded": "Raport diagnostyczny pobrany",
+    "noLogs": "Brak logów generowania.",
+    "pagination": {
+      "previous": "Poprzednia",
+      "next": "Następna",
+      "showing": "Wyświetlanie {{from}}-{{to}} z {{total}}"
+    },
+    "copy": "Kopiuj",
+    "copied": "Skopiowano!"
   }
 }
