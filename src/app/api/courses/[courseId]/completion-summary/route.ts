@@ -1,5 +1,5 @@
 import { generateObject, NoObjectGeneratedError } from "ai";
-import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, createRepairFunction } from "@/lib/ai/client";
+import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiKey, MODELS, createRepairFunction, createRepairTracker } from "@/lib/ai/client";
 import { completionSummarySchema, type CompletionSummaryOutput } from "@/lib/ai/schemas/completionSummarySchema";
 import { buildCompletionSummaryPrompt } from "@/lib/ai/prompts/completionSummary";
 import { mockCompletionSummary } from "@/lib/ai/mockData";
@@ -8,6 +8,8 @@ import { prisma } from "@/lib/db";
 import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 import { getCheapestModel, repackWithAI, tryCoerceAndValidate } from "@/lib/ai/repairSchema";
+import { createGenerationLogger } from "@/lib/ai/generationLogger";
+import type { z } from "zod";
 
 export async function GET(
   request: Request,
@@ -167,27 +169,57 @@ export async function POST(
         passed: completionResult.passed,
         language: course.language,
       });
+
+      const logger = createGenerationLogger({
+        generationType: "completion_summary",
+        schemaName: "completionSummarySchema",
+        modelId: model,
+        userId,
+        courseId,
+        language: course.language,
+        difficulty: course.difficulty,
+        promptText: prompt,
+      });
+
+      const tracker = createRepairTracker();
+
       try {
         const result = await generateObject({
           model: modelInstance,
           schema: completionSummarySchema,
           prompt,
           providerOptions: getProviderOptions(model),
-          experimental_repairText: createRepairFunction(completionSummarySchema),
+          experimental_repairText: createRepairFunction(completionSummarySchema, tracker),
         });
         object = result.object;
+        logger.recordLayer0(tracker);
       } catch (genErr) {
+        logger.recordLayer0(tracker);
         if (NoObjectGeneratedError.isInstance(genErr) && genErr.text) {
           console.log(`[completion-gen] Schema mismatch, attempting recovery...`);
+
+          // Layer 1
+          let hadWrapper = false;
+          const zodCollector: { issues: z.ZodIssue[] } = { issues: [] };
           try {
             const parsed = JSON.parse(genErr.text);
-            const coerced = tryCoerceAndValidate(parsed, completionSummarySchema);
+            hadWrapper = "parameter" in parsed;
+            const target = hadWrapper && typeof parsed.parameter === "object" ? parsed.parameter : parsed;
+            const coerced = tryCoerceAndValidate(target, completionSummarySchema, zodCollector);
             if (coerced) {
               console.log(`[completion-gen] Direct coercion succeeded`);
               object = coerced;
             }
           } catch { /* not valid JSON */ }
 
+          logger.recordLayer1({
+            rawText: genErr.text,
+            hadWrapper,
+            success: !!object,
+            zodErrors: zodCollector.issues,
+          });
+
+          // Layer 2
           if (!object) {
             const cheapModel = getCheapestModel(apiKeys);
             if (cheapModel) {
@@ -197,14 +229,24 @@ export async function POST(
                 console.log(`[completion-gen] AI repack succeeded`);
                 object = repacked as CompletionSummaryOutput;
               }
+              logger.recordLayer2({ modelId: cheapModel, success: !!repacked });
             }
           }
 
-          if (!object) throw genErr;
+          if (!object) {
+            logger.recordFailure(genErr.message);
+            await logger.finalize();
+            throw genErr;
+          }
         } else {
+          const errMsg = genErr instanceof Error ? genErr.message : String(genErr);
+          logger.recordFailure(errMsg);
+          await logger.finalize();
           throw genErr;
         }
       }
+
+      await logger.finalize();
     }
 
     // Save to database (upsert to handle regeneration)
