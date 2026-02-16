@@ -1,7 +1,8 @@
 "use client";
 
 import { Suspense, useState, useEffect, useRef } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle } from "lucide-react";
@@ -215,6 +216,16 @@ function AutoScrollToSignIn() {
 
 export default function LoginPage() {
   const { t } = useTranslation(["login"]);
+  const { status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/");
+    }
+  }, [status, router]);
+
+  if (status === "authenticated") return null;
 
   return (
     <div className="min-h-screen bg-background">
