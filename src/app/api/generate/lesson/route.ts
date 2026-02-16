@@ -218,6 +218,20 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
       },
     });
 
+    // Auto-update course status to "ready" when all lessons are generated
+    const siblingLessons = await prisma.lesson.findMany({
+      where: { courseId: body.courseId, isSupplementary: false },
+      select: { status: true, contentJson: true },
+    });
+    const allGenerated = siblingLessons.length > 0 &&
+      siblingLessons.every(l => l.status !== "pending" && l.contentJson !== null);
+    if (allGenerated) {
+      await prisma.course.update({
+        where: { id: body.courseId },
+        data: { status: "ready" },
+      }).catch(() => {});
+    }
+
     return NextResponse.json({
       lesson: lessonContent,
       ...(vizWarnings.length > 0 && { warnings: vizWarnings }),

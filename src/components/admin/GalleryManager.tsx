@@ -69,6 +69,7 @@ interface CloneConflict {
 export function GalleryManager() {
   const { t } = useTranslation(["admin"]);
   const [courses, setCourses] = useState<GalleryCourse[]>([]);
+  const [callerRole, setCallerRole] = useState<string>("admin");
   const [loading, setLoading] = useState(true);
   const [editingTags, setEditingTags] = useState<string | null>(null);
   const [tagsInput, setTagsInput] = useState("");
@@ -90,7 +91,9 @@ export function GalleryManager() {
     try {
       const res = await fetch("/api/admin/gallery");
       if (res.ok) {
-        setCourses(await res.json());
+        const data = await res.json();
+        setCourses(data.courses);
+        setCallerRole(data.role);
       }
     } catch (err) {
       console.error("Failed to fetch courses:", err);
@@ -301,7 +304,10 @@ export function GalleryManager() {
                   <td className="p-3">
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <p className="font-medium">{course.title}</p>
+                        <a href={`/courses/${course.id}`} target="_blank" rel="noopener noreferrer"
+                           className="font-medium hover:underline text-primary">
+                          {course.title}
+                        </a>
                         {course.clonedFromId && (
                           <Badge variant="outline" className="text-[10px] px-1 py-0">
                             {t("admin:gallery.cloned")}
@@ -414,9 +420,9 @@ export function GalleryManager() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          disabled={!course.eligibility.isEligible}
+                          disabled={!course.eligibility.isEligible && callerRole !== "owner"}
                           onClick={() => addToGallery(course)}
-                          title={!course.eligibility.isEligible ? t("admin:gallery.notEligible") : ""}
+                          title={!course.eligibility.isEligible && callerRole !== "owner" ? t("admin:gallery.notEligible") : ""}
                         >
                           {course.shares.length > 0
                             ? t("admin:gallery.addToGallery")
