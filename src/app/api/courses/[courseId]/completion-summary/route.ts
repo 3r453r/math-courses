@@ -7,7 +7,7 @@ import { evaluateCourseCompletion } from "@/lib/quiz/courseCompletion";
 import { prisma } from "@/lib/db";
 import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
-import { getCheapestModel, repackWithAI, tryCoerceAndValidate } from "@/lib/ai/repairSchema";
+import { getCheapestModel, repackWithAI, tryCoerceAndValidate, unwrapParameter, type WrapperType } from "@/lib/ai/repairSchema";
 import { createGenerationLogger } from "@/lib/ai/generationLogger";
 import type { z } from "zod";
 
@@ -200,11 +200,13 @@ export async function POST(
 
           // Layer 1
           let hadWrapper = false;
+          let detectedWrapperType: WrapperType = null;
           const zodCollector: { issues: z.ZodIssue[] } = { issues: [] };
           try {
             const parsed = JSON.parse(genErr.text);
-            hadWrapper = "parameter" in parsed;
-            const target = hadWrapper && typeof parsed.parameter === "object" ? parsed.parameter : parsed;
+            const { unwrapped: target, wasWrapped, wrapperType } = unwrapParameter(parsed);
+            hadWrapper = wasWrapped;
+            detectedWrapperType = wrapperType;
             const coerced = tryCoerceAndValidate(target, completionSummarySchema, zodCollector);
             if (coerced) {
               console.log(`[completion-gen] Direct coercion succeeded`);
@@ -215,6 +217,7 @@ export async function POST(
           logger.recordLayer1({
             rawText: genErr.text,
             hadWrapper,
+            wrapperType: detectedWrapperType,
             success: !!object,
             zodErrors: zodCollector.issues,
           });

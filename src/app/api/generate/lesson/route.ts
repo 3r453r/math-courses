@@ -8,7 +8,7 @@ import { buildLanguageInstruction } from "@/lib/ai/prompts/languageInstruction";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
-import { getCheapestModel, repackWithAI, tryCoerceAndValidate } from "@/lib/ai/repairSchema";
+import { getCheapestModel, repackWithAI, tryCoerceAndValidate, unwrapParameter, type WrapperType } from "@/lib/ai/repairSchema";
 import { validateAndRepairVisualizations } from "@/lib/content/vizValidation";
 import { createGenerationLogger } from "@/lib/ai/generationLogger";
 import type { z } from "zod";
@@ -171,17 +171,19 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
 
           // Try direct coercion on the raw text (Layer 1)
           let hadWrapper = false;
+          let detectedWrapperType: WrapperType = null;
           const zodCollector: { issues: z.ZodIssue[] } = { issues: [] };
           try {
             const parsed = JSON.parse(genErr.text);
             const topKeys = Object.keys(parsed);
             console.log(`[lesson-gen] Parsed top-level keys: [${topKeys.join(", ")}]`);
-            hadWrapper = "parameter" in parsed;
-            console.log(`[lesson-gen] Has "parameter" wrapper: ${hadWrapper}`);
 
-            // Unwrap parameter before coercion
-            const target = hadWrapper && typeof parsed.parameter === "object" ? parsed.parameter : parsed;
-            if (hadWrapper) {
+            // Unwrap parameter before coercion (handles both object and stringified JSON)
+            const { unwrapped: target, wasWrapped, wrapperType } = unwrapParameter(parsed);
+            hadWrapper = wasWrapped;
+            detectedWrapperType = wrapperType;
+            console.log(`[lesson-gen] Has "parameter" wrapper: ${hadWrapper}${wrapperType ? ` (type=${wrapperType})` : ""}`);
+            if (hadWrapper && typeof target === "object" && target !== null) {
               console.log(`[lesson-gen] Unwrapped "parameter", inner keys: [${Object.keys(target).join(", ")}]`);
             }
 
@@ -199,6 +201,7 @@ Please REGENERATE the lesson with EXTRA emphasis on these weak areas:
           logger.recordLayer1({
             rawText: genErr.text,
             hadWrapper,
+            wrapperType: detectedWrapperType,
             success: !!lessonContent,
             zodErrors: zodCollector.issues,
           });

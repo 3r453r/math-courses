@@ -3,6 +3,7 @@ import type { z } from "zod";
 import { prisma } from "@/lib/db";
 import type { RepairTracker } from "./client";
 import { getProviderForModel } from "./client";
+import type { WrapperType } from "./repairSchema";
 
 const RAW_TEXT_MAX_BYTES = 200 * 1024; // 200KB
 
@@ -36,6 +37,7 @@ export interface GenerationLogContext {
 interface Layer1Data {
   rawText: string;
   hadWrapper: boolean;
+  wrapperType?: WrapperType;
   success: boolean;
   zodErrors?: z.ZodIssue[];
 }
@@ -56,11 +58,13 @@ export class GenerationLogger {
   private _layer0Error: string | null = null;
   private _layer0RawText: string | null = null;
   private _layer0RawTextLength = 0;
+  private _layer0WrapperType: WrapperType = null;
 
   // Layer 1
   private _layer1Called = false;
   private _layer1Success = false;
   private _layer1HadWrapper = false;
+  private _layer1WrapperType: WrapperType = null;
   private _layer1RawText: string | null = null;
   private _layer1ZodErrors: z.ZodIssue[] | undefined;
 
@@ -84,6 +88,7 @@ export class GenerationLogger {
     this._layer0Error = tracker.error;
     this._layer0RawText = tracker.rawText;
     this._layer0RawTextLength = tracker.rawTextLength;
+    this._layer0WrapperType = tracker.wrapperType;
   }
 
   /** Record Layer 1 catch-block coercion attempt. */
@@ -91,6 +96,7 @@ export class GenerationLogger {
     this._layer1Called = true;
     this._layer1Success = data.success;
     this._layer1HadWrapper = data.hadWrapper;
+    this._layer1WrapperType = data.wrapperType ?? null;
     this._layer1RawText = data.rawText;
     this._layer1ZodErrors = data.zodErrors;
   }
@@ -196,6 +202,9 @@ export class GenerationLogger {
         provider = "unknown";
       }
 
+      // Best wrapper type: prefer Layer 1 (catch block) over Layer 0 (repair function)
+      const wrapperType = this._layer1WrapperType ?? this._layer0WrapperType ?? null;
+
       await prisma.aiGenerationLog.create({
         data: {
           generationType: this.context.generationType,
@@ -213,6 +222,7 @@ export class GenerationLogger {
           layer1Called: this._layer1Called,
           layer1Success: this._layer1Success,
           layer1HadWrapper: this._layer1HadWrapper,
+          wrapperType,
           layer2Called: this._layer2Called,
           layer2Success: this._layer2Success,
           layer2ModelId: this._layer2ModelId,

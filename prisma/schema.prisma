@@ -357,6 +357,7 @@ model AiGenerationLog {
   layer1Called    Boolean  @default(false)
   layer1Success  Boolean  @default(false)
   layer1HadWrapper Boolean @default(false)
+  wrapperType      String?  // "object"|"string"|"string-repaired" — null when no wrapper detected
 
   // Layer 2 (AI repack)
   layer2Called    Boolean  @default(false)

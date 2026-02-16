@@ -15,7 +15,7 @@ import { NextResponse } from "next/server";
 import { triviaSchema } from "@/lib/ai/schemas/triviaSchema";
 import { buildTriviaPrompt } from "@/lib/ai/prompts/triviaGeneration";
 import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
-import { getCheapestModel, tryCoerceAndValidate } from "@/lib/ai/repairSchema";
+import { getCheapestModel, tryCoerceAndValidate, unwrapParameter, type WrapperType } from "@/lib/ai/repairSchema";
 import { createGenerationLogger } from "@/lib/ai/generationLogger";
 import type { z } from "zod";
 
@@ -122,11 +122,13 @@ export async function POST(request: Request) {
 
           // Layer 1 (trivia has no Layer 2 / repackWithAI)
           let hadWrapper = false;
+          let detectedWrapperType: WrapperType = null;
           const zodCollector: { issues: z.ZodIssue[] } = { issues: [] };
           try {
             const parsed = JSON.parse(genErr.text);
-            hadWrapper = "parameter" in parsed;
-            const target = hadWrapper && typeof parsed.parameter === "object" ? parsed.parameter : parsed;
+            const { unwrapped: target, wasWrapped, wrapperType } = unwrapParameter(parsed);
+            hadWrapper = wasWrapped;
+            detectedWrapperType = wrapperType;
             const coerced = tryCoerceAndValidate(target, triviaSchema, zodCollector);
             if (coerced) {
               console.log(`[trivia-gen] Direct coercion succeeded`);
@@ -139,6 +141,7 @@ export async function POST(request: Request) {
           logger.recordLayer1({
             rawText: genErr.text,
             hadWrapper,
+            wrapperType: detectedWrapperType,
             success: !!result,
             zodErrors: zodCollector.issues,
           });

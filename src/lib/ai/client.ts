@@ -2,7 +2,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import type { z } from "zod";
-import { tryCoerceAndValidate } from "./repairSchema";
+import { tryCoerceAndValidate, unwrapParameter, type WrapperType } from "./repairSchema";
 
 export type AIProvider = "anthropic" | "openai" | "google";
 
@@ -110,6 +110,7 @@ export interface RepairTracker {
   rawText: string | null;
   rawTextLength: number;
   repairResult: "coercion-success" | "unwrapped-only" | "json-parse-failed" | "returned-null" | null;
+  wrapperType: WrapperType;
   error: string | null;
 }
 
@@ -119,6 +120,7 @@ export function createRepairTracker(): RepairTracker {
     rawText: null,
     rawTextLength: 0,
     repairResult: null,
+    wrapperType: null,
     error: null,
   };
 }
@@ -174,14 +176,23 @@ export function createRepairFunction(schema: z.ZodType, tracker?: RepairTracker)
         const topKeys = Object.keys(parsed);
         console.log(`[repair] Parsed top-level keys: [${topKeys.join(", ")}]`);
         if ("parameter" in parsed) {
-          console.log(`[repair] Found "parameter" wrapper, inner keys: [${Object.keys(parsed.parameter || {}).join(", ")}]`);
+          const paramType = typeof parsed.parameter;
+          const paramPreview = paramType === "string"
+            ? `string(length=${(parsed.parameter as string).length})`
+            : paramType === "object" && parsed.parameter !== null
+              ? `object(keys=[${Object.keys(parsed.parameter as object).join(", ")}])`
+              : paramType;
+          console.log(`[repair] Found "parameter" wrapper, type=${paramPreview}`);
         }
       }
 
-      // Unwrap Anthropic {"parameter":{...}} wrapping
-      if (parsed && typeof parsed === "object" && "parameter" in parsed && typeof parsed.parameter === "object") {
-        parsed = parsed.parameter;
-        console.log(`[repair] Unwrapped "parameter" wrapper`);
+      // Unwrap Anthropic {"parameter":...} wrapping (object or stringified JSON)
+      if (parsed && typeof parsed === "object") {
+        const { unwrapped, wasWrapped, wrapperType } = unwrapParameter(parsed as Record<string, unknown>);
+        if (wasWrapped) {
+          parsed = unwrapped;
+          if (tracker) tracker.wrapperType = wrapperType;
+        }
       }
 
       // Try schema coercion

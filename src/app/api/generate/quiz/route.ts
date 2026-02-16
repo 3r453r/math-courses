@@ -8,7 +8,7 @@ import { NextResponse } from "next/server";
 import { quizSchema, type QuizOutput } from "@/lib/ai/schemas/quizSchema";
 import { buildQuizPrompt } from "@/lib/ai/prompts/quizGeneration";
 import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
-import { getCheapestModel, repackWithAI, tryCoerceAndValidate } from "@/lib/ai/repairSchema";
+import { getCheapestModel, repackWithAI, tryCoerceAndValidate, unwrapParameter, type WrapperType } from "@/lib/ai/repairSchema";
 import { createGenerationLogger } from "@/lib/ai/generationLogger";
 import type { z } from "zod";
 
@@ -143,11 +143,13 @@ Include a higher proportion of questions (at least 50%) targeting these weak top
 
           // Layer 1
           let hadWrapper = false;
+          let detectedWrapperType: WrapperType = null;
           const zodCollector: { issues: z.ZodIssue[] } = { issues: [] };
           try {
             const parsed = JSON.parse(genErr.text);
-            hadWrapper = "parameter" in parsed;
-            const target = hadWrapper && typeof parsed.parameter === "object" ? parsed.parameter : parsed;
+            const { unwrapped: target, wasWrapped, wrapperType } = unwrapParameter(parsed);
+            hadWrapper = wasWrapped;
+            detectedWrapperType = wrapperType;
             const coerced = tryCoerceAndValidate(target, quizSchema, zodCollector);
             if (coerced) {
               console.log(`[quiz-gen] Direct coercion succeeded`);
@@ -158,6 +160,7 @@ Include a higher proportion of questions (at least 50%) targeting these weak top
           logger.recordLayer1({
             rawText: genErr.text,
             hadWrapper,
+            wrapperType: detectedWrapperType,
             success: !!result,
             zodErrors: zodCollector.issues,
           });
