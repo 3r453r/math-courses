@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getAuthUserAnyStatus } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 
 /**
  * POST /api/access-codes/redeem
@@ -23,25 +24,8 @@ export async function POST(request: Request) {
       where: { code: trimmedCode },
     });
 
-    if (!accessCode || !accessCode.isActive) {
+    if (!accessCode) {
       return NextResponse.json({ error: "Invalid access code" }, { status: 400 });
-    }
-
-    if (accessCode.expiresAt && accessCode.expiresAt < new Date()) {
-      return NextResponse.json({ error: "Access code has expired" }, { status: 400 });
-    }
-
-    if (accessCode.currentUses >= accessCode.maxUses) {
-      return NextResponse.json({ error: "Access code has reached maximum uses" }, { status: 400 });
-    }
-
-    // Check if user already redeemed this code
-    const existing = await prisma.accessCodeRedemption.findUnique({
-      where: { accessCodeId_userId: { accessCodeId: accessCode.id, userId } },
-    });
-
-    if (existing) {
-      return NextResponse.json({ error: "You have already redeemed this code" }, { status: 400 });
     }
 
     // Check if user is already active
@@ -54,24 +38,53 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Your account is already active" }, { status: 400 });
     }
 
-    // Redeem: increment usage, create redemption, activate user
-    await prisma.$transaction([
-      prisma.accessCode.update({
-        where: { id: accessCode.id },
-        data: { currentUses: { increment: 1 } },
-      }),
-      prisma.accessCodeRedemption.create({
-        data: { accessCodeId: accessCode.id, userId },
-      }),
-      prisma.user.update({
-        where: { id: userId },
-        data: {
-          accessStatus: "active",
-          accessGrantedAt: new Date(),
-          accessSource: "code",
-        },
-      }),
-    ]);
+    try {
+      await prisma.$transaction(async (tx) => {
+        const now = new Date();
+        const updated = await tx.accessCode.updateMany({
+          where: {
+            id: accessCode.id,
+            isActive: true,
+            currentUses: { lt: accessCode.maxUses },
+            OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+          },
+          data: { currentUses: { increment: 1 } },
+        });
+
+        if (updated.count === 0) {
+          throw new Error("INVALID_OR_EXPIRED_OR_EXHAUSTED");
+        }
+
+        await tx.accessCodeRedemption.create({
+          data: { accessCodeId: accessCode.id, userId },
+        });
+
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            accessStatus: "active",
+            accessGrantedAt: now,
+            accessSource: "code",
+          },
+        });
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message === "INVALID_OR_EXPIRED_OR_EXHAUSTED") {
+        return NextResponse.json({ error: "Invalid, expired, or exhausted access code" }, { status: 400 });
+      }
+
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002" &&
+        Array.isArray(error.meta?.target) &&
+        error.meta.target.includes("accessCodeId") &&
+        error.meta.target.includes("userId")
+      ) {
+        return NextResponse.json({ error: "You have already redeemed this code" }, { status: 400 });
+      }
+
+      throw error;
+    }
 
     return NextResponse.json({ success: true, message: "Access granted" });
   } catch (error) {
