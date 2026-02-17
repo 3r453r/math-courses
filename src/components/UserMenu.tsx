@@ -20,7 +20,6 @@ export function UserMenu() {
   const { data: session } = useSession();
   const { t } = useTranslation(["login", "common"]);
   const [isAdmin, setIsAdmin] = useState(false);
-
   useEffect(() => {
     if (!session?.user) return;
     fetch("/api/user/status")

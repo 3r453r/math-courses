@@ -29,7 +29,7 @@ test.describe("Setup Flow", () => {
 
     // Should redirect to dashboard
     await page.waitForURL("/", { timeout: 10000 });
-    await expect(page.getByText("Learning Courses")).toBeVisible();
+    await expect(page.getByText("StemForge")).toBeVisible();
   });
 
   test("Test and Save & Continue buttons are visible", async ({

@@ -21,6 +21,7 @@ interface AppState {
   voiceTriggerEnabled: boolean;
   voiceTriggerWord: string;
   contextDocGuideDismissed: boolean;
+  installPromptDismissed: boolean;
   setProviderApiKey: (provider: AIProvider, key: string | null) => void;
   setSidebarOpen: (open: boolean) => void;
   setChatSidebarOpen: (open: boolean) => void;
@@ -39,6 +40,7 @@ interface AppState {
   setVoiceTriggerEnabled: (enabled: boolean) => void;
   setVoiceTriggerWord: (word: string) => void;
   setContextDocGuideDismissed: (v: boolean) => void;
+  setInstallPromptDismissed: (v: boolean) => void;
   setApiKeys: (keys: ProviderApiKeys) => void;
 }
 
@@ -61,6 +63,7 @@ export const useAppStore = create<AppState>()(
       voiceTriggerEnabled: false,
       voiceTriggerWord: "",
       contextDocGuideDismissed: false,
+      installPromptDismissed: false,
       setProviderApiKey: (provider, key) =>
         set((state) => ({
           apiKeys: {
@@ -104,6 +107,7 @@ export const useAppStore = create<AppState>()(
       setVoiceTriggerEnabled: (enabled) => set({ voiceTriggerEnabled: enabled }),
       setVoiceTriggerWord: (word) => set({ voiceTriggerWord: word }),
       setContextDocGuideDismissed: (v) => set({ contextDocGuideDismissed: v }),
+      setInstallPromptDismissed: (v) => set({ installPromptDismissed: v }),
       setApiKeys: (keys) => set({ apiKeys: keys }),
     }),
     {

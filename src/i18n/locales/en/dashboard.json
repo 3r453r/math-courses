@@ -1,9 +1,9 @@
 {
-  "title": "Learning Courses",
+  "title": "StemForge",
   "subtitle": "AI-powered learning platform",
   "newCourse": "New Course",
   "loadingCourses": "Loading courses...",
-  "welcomeTitle": "Welcome to Learning Courses",
+  "welcomeTitle": "Welcome to StemForge",
   "welcomeDescription": "Create your first course to get started. The AI will help you design a structured learning path with lessons, quizzes, and interactive visualizations.",
   "createFirstCourse": "Create Your First Course",
   "viewProgress": "Progress",
