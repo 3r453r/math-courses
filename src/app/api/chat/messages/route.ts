@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
-import { getAuthUser, verifyLessonOwnership } from "@/lib/auth-utils";
+import { getAuthUser, getAuthUserFromRequest, verifyLessonOwnership } from "@/lib/auth-utils";
 
 export async function GET(request: Request) {
   const { userId, error } = await getAuthUser();
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { userId, error: authError } = await getAuthUser();
+  const { userId, error: authError } = await getAuthUserFromRequest(request);
   if (authError) return authError;
 
   try {
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const { userId, error: deleteAuthError } = await getAuthUser();
+  const { userId, error: deleteAuthError } = await getAuthUserFromRequest(request);
   if (deleteAuthError) return deleteAuthError;
 
   const { searchParams } = new URL(request.url);

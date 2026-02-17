@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { getAuthUserAnyStatus } from "@/lib/auth-utils";
+import { getAuthUserAnyStatusFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 
 /**
@@ -8,7 +8,7 @@ import { NextResponse } from "next/server";
  * Accessible to pending users (any-status auth).
  */
 export async function POST(request: Request) {
-  const { userId, error: authError } = await getAuthUserAnyStatus();
+  const { userId, error: authError } = await getAuthUserAnyStatusFromRequest(request);
   if (authError) return authError;
 
   try {

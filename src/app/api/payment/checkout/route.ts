@@ -1,4 +1,4 @@
-import { getAuthUserAnyStatus } from "@/lib/auth-utils";
+import { getAuthUserAnyStatusFromRequest } from "@/lib/auth-utils";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
@@ -10,7 +10,7 @@ import { isDevBypassEnabled } from "@/lib/dev-bypass";
  * In dev bypass mode, skips Stripe and directly activates the user.
  */
 export async function POST(request: Request) {
-  const { userId, error: authError } = await getAuthUserAnyStatus();
+  const { userId, error: authError } = await getAuthUserAnyStatusFromRequest(request);
   if (authError) return authError;
 
   // Dev bypass: skip Stripe and directly activate the user

@@ -5,14 +5,14 @@ import { buildCompletionSummaryPrompt } from "@/lib/ai/prompts/completionSummary
 import { mockCompletionSummary } from "@/lib/ai/mockData";
 import { evaluateCourseCompletion } from "@/lib/quiz/courseCompletion";
 import { prisma } from "@/lib/db";
-import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
+import { getAuthUser, getAuthUserFromRequest, verifyCourseOwnership } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 import { getCheapestModel, repackWithAI, tryCoerceAndValidate, unwrapParameter, type WrapperType } from "@/lib/ai/repairSchema";
 import { createGenerationLogger } from "@/lib/ai/generationLogger";
 import type { z } from "zod";
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ courseId: string }> }
 ) {
   const { userId, error: authError } = await getAuthUser();
@@ -46,7 +46,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ courseId: string }> }
 ) {
-  const { userId, error: authError } = await getAuthUser();
+  const { userId, error: authError } = await getAuthUserFromRequest(request);
   if (authError) return authError;
 
   const apiKeys = getApiKeysFromRequest(request);
