@@ -166,6 +166,42 @@ Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Au
 - Phase 9: Access Gating, Payment & Course Gallery — access codes, roles, Stripe payment, admin panel, public course gallery (DONE)
 - Phase 10: Polish & UX — animations, responsive design, dark mode, keyboard navigation, i18n, voice input, notebook, color themes (DONE)
 
+## Security Best-Practice Additions
+
+These items should be treated as active hardening work alongside feature development:
+
+1. **Atomic redemption and payment state transitions**
+   - Ensure access code redemption and payment activation flows are transaction-safe under concurrent requests.
+   - Prefer conditional updates (`updateMany` with guarded predicates) to prevent race conditions around `maxUses` / `currentUses`.
+
+2. **Rate limiting for abuse-prone routes**
+   - Add per-user + per-IP throttling for high-risk endpoints (auth-adjacent mutations, code redemption, chat, AI generation, API-key validation).
+   - Return `429` with `Retry-After` and log limiter hits for monitoring.
+
+3. **CSRF / Origin protection on cookie-authenticated mutations**
+   - Validate `Origin`/`Referer` for non-idempotent API requests that rely on session cookies.
+   - Keep explicit allowlists for trusted origins and exempt signed third-party callbacks (e.g., Stripe webhook) where signature verification is used.
+
+4. **Data minimization for AI logging and debug dumps**
+   - Keep raw prompt/output storage behind explicit debug flags and default to off.
+   - Redact sensitive prompt fragments where feasible and define a retention strategy for AI generation logs.
+
+5. **Write-only style API key UX**
+   - Avoid returning fully decrypted provider keys after initial save.
+   - Prefer masked status metadata in read APIs and explicit key rotation/replacement flows.
+
+6. **Uniform request validation**
+   - Standardize on schema validation (e.g., Zod) for all API route inputs (body/query/path-derived fields).
+   - Keep validation close to route entrypoints and fail fast with consistent 4xx error payloads.
+
+7. **Auditability of privileged actions**
+   - Add structured audit logs for role/access changes, site-config edits, and admin curation actions.
+   - Record actor, target, diff, and timestamp to support incident response.
+
+8. **Operational security monitoring**
+   - Track repeated 401/403/429 patterns and webhook verification failures.
+   - Add alerting thresholds so abuse and misconfiguration are visible early.
+
 ## Deployment
 
 - **Platform**: Vercel (auto-deploys from `production` branch)
@@ -176,4 +212,3 @@ Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Au
 - **Production Turso credentials**: Stored in `.env.turso-prod` (gitignored, NOT auto-loaded by Next.js). To apply schema changes to production: `source .env.turso-prod && npx prisma db push`
 - **NEVER** set `TURSO_DATABASE_URL` in `.env.local` — it causes `pnpm dev` to write to the production database
 - **Dev bypass production guard**: `isDevBypassEnabled()` in `src/lib/dev-bypass.ts` blocks `AUTH_DEV_BYPASS` in production (`NODE_ENV=production`) unless `NEXT_TEST_MODE=1` (E2E tests). Also logs a warning when bypass is active with a remote database (`TURSO_DATABASE_URL` set)
-
