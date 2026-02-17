@@ -401,14 +401,14 @@ export default function LessonPage({
       </header>
 
       <div
-        className={`flex-1 min-h-0 ${(scratchpadOpen || chatSidebarOpen) && hasContent ? "flex" : "overflow-y-auto"}`}
+        className={`flex-1 min-h-0 ${(scratchpadOpen || chatSidebarOpen) && hasContent ? "flex overflow-y-auto md:overflow-hidden" : "overflow-y-auto"}`}
         data-testid="lesson-scroll-container"
       >
           <main
             data-testid="lesson-main"
             className={
               (scratchpadOpen || chatSidebarOpen) && hasContent
-                ? "hidden md:block md:w-3/5 lg:w-1/2 overflow-y-auto px-6 pt-8 pb-4"
+                ? "flex-1 md:w-3/5 lg:w-1/2 md:overflow-y-auto px-6 pt-8 pb-4"
                 : "flex-1 container mx-auto px-4 py-8 max-w-4xl"
             }
           >
@@ -448,8 +448,8 @@ export default function LessonPage({
               </Card>
             ) : (
               <div>
-                <div className="flex items-center justify-between mb-6">
-                  <div>
+                <div className="flex items-center justify-between flex-wrap gap-2 mb-6">
+                  <div className="min-w-0">
                     <h2 className="text-2xl font-bold">{lesson.title}</h2>
                     <p className="text-sm text-muted-foreground mt-1">
                       {lesson.summary}
@@ -483,7 +483,7 @@ export default function LessonPage({
                         </div>
                       </div>
                     ) : lesson.quizzes?.[0]?.attempts?.[0] ? (
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
                         <div className="flex items-center gap-3">
                           <div>
                             <p className="font-medium text-sm">{t("lesson:lessonQuiz")}</p>
@@ -516,7 +516,7 @@ export default function LessonPage({
                         </Button>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
                         <div>
                           <p className="font-medium text-sm">{t("lesson:readyToTest")}</p>
                           <p className="text-xs text-muted-foreground">
@@ -543,7 +543,7 @@ export default function LessonPage({
 
           {(scratchpadOpen || chatSidebarOpen) && hasContent && (
             <aside
-              className="w-full md:w-2/5 lg:w-1/2 shrink-0 h-full"
+              className="fixed inset-0 z-50 bg-background md:relative md:inset-auto md:z-auto md:w-2/5 lg:w-1/2 shrink-0 h-full"
               data-testid={scratchpadOpen ? "scratchpad-aside" : "chat-aside"}
             >
               {scratchpadOpen ? (
