@@ -12,6 +12,7 @@ import {
 import { mockTrivia } from "@/lib/ai/mockData";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { triviaSchema } from "@/lib/ai/schemas/triviaSchema";
 import { buildTriviaPrompt } from "@/lib/ai/prompts/triviaGeneration";
 import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
@@ -19,9 +20,23 @@ import { getCheapestModel, tryCoerceAndValidate, unwrapParameter, type WrapperTy
 import { createGenerationLogger } from "@/lib/ai/generationLogger";
 import type { z } from "zod";
 
+const GENERATE_TRIVIA_RATE_LIMIT = {
+  namespace: "generate:trivia",
+  windowMs: 60_000,
+  maxRequests: 10,
+} as const;
+
 export async function POST(request: Request) {
   const { userId, error } = await getAuthUser();
   if (error) return error;
+
+  const rateLimitResponse = enforceRateLimit({
+    request,
+    userId,
+    route: "/api/generate/trivia",
+    config: GENERATE_TRIVIA_RATE_LIMIT,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
 
   const apiKeys = getApiKeysFromRequest(request);
   if (!hasAnyApiKey(apiKeys)) {

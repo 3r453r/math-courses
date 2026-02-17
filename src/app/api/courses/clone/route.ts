@@ -1,15 +1,30 @@
 import { prisma } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 /**
  * Clone a shared course to the current user's account.
  * Creates a deep copy: Course + Lessons + Edges + Quizzes.
  * Strips: notes, chat messages, quiz attempts, completion summary.
  */
+const COURSE_CLONE_RATE_LIMIT = {
+  namespace: "courses:clone",
+  windowMs: 60_000,
+  maxRequests: 10,
+} as const;
+
 export async function POST(request: Request) {
   const { userId, error: authError } = await getAuthUser();
   if (authError) return authError;
+
+  const rateLimitResponse = enforceRateLimit({
+    request,
+    userId,
+    route: "/api/courses/clone",
+    config: COURSE_CLONE_RATE_LIMIT,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
 
   try {
     const { shareToken } = await request.json();

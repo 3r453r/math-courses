@@ -177,3 +177,15 @@ Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Au
 - **NEVER** set `TURSO_DATABASE_URL` in `.env.local` — it causes `pnpm dev` to write to the production database
 - **Dev bypass production guard**: `isDevBypassEnabled()` in `src/lib/dev-bypass.ts` blocks `AUTH_DEV_BYPASS` in production (`NODE_ENV=production`) unless `NEXT_TEST_MODE=1` (E2E tests). Also logs a warning when bypass is active with a remote database (`TURSO_DATABASE_URL` set)
 
+## Operational notes: API rate limiting
+
+- Shared utility: `src/lib/rate-limit.ts` (fixed-window, user-id key with IP fallback).
+- On limiter hit, handlers return `429` with `Retry-After` and log a structured JSON event (`event: "rate_limit_exceeded"`).
+- Tune per-route thresholds via `*_RATE_LIMIT` constants near each handler.
+- Current protected routes include:
+  - access code redemption
+  - API key verification
+  - chat
+  - all `/api/generate/*` endpoints
+  - auth-adjacent mutations (course create/clone/import/share mutations)
+- Coarse edge guard in `src/proxy.ts` adds IP-based API throttling (`edge:api` and stricter `edge:sensitive` namespaces) to catch quick-win abuse before route handlers.

@@ -5,10 +5,25 @@ import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@
 import { buildLanguageInstruction } from "@/lib/ai/prompts/languageInstruction";
 import { prisma } from "@/lib/db";
 import { getAuthUser, verifyLessonOwnership } from "@/lib/auth-utils";
+import { enforceRateLimit } from "@/lib/rate-limit";
+
+const CHAT_RATE_LIMIT = {
+  namespace: "chat",
+  windowMs: 60_000,
+  maxRequests: 30,
+} as const;
 
 export async function POST(request: Request) {
   const { userId, error } = await getAuthUser();
   if (error) return error;
+
+  const rateLimitResponse = enforceRateLimit({
+    request,
+    userId,
+    route: "/api/chat",
+    config: CHAT_RATE_LIMIT,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
 
   const apiKeys = getApiKeysFromRequest(request);
   if (!hasAnyApiKey(apiKeys)) {
@@ -21,16 +36,21 @@ export async function POST(request: Request) {
     return new Response("lessonId required", { status: 400 });
   }
 
-  // Convert UIMessage format (parts array) to CoreMessage format (content string)
+    // Convert UIMessage format (parts array) to CoreMessage format (content string)
   // that streamText expects. Also filter out empty assistant messages.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const messages = (rawMessages as any[]).reduce((acc: any[], msg: any) => {
+  type RawMessage = {
+    role: string;
+    content?: string;
+    parts?: Array<{ type?: string; text?: string }>;
+  };
+
+  const messages = (rawMessages as RawMessage[]).reduce<Array<{ role: string; content: string }>>((acc, msg) => {
     // Extract text content from UIMessage parts or use content directly
     let content: string;
     if (msg.parts) {
       content = msg.parts
-        .filter((p: any) => p.type === "text")
-        .map((p: any) => p.text)
+        .filter((p) => p.type === "text")
+        .map((p) => p.text ?? "")
         .join("");
     } else {
       content = msg.content ?? "";

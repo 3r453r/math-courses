@@ -5,6 +5,7 @@ import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiK
 import { mockDiagnostic } from "@/lib/ai/mockData";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { diagnosticSchema, type DiagnosticOutput } from "@/lib/ai/schemas/diagnosticSchema";
 import { buildDiagnosticPrompt } from "@/lib/ai/prompts/quizGeneration";
 import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
@@ -12,9 +13,23 @@ import { getCheapestModel, repackWithAI, tryCoerceAndValidate, unwrapParameter, 
 import { createGenerationLogger } from "@/lib/ai/generationLogger";
 import type { z } from "zod";
 
+const GENERATE_DIAGNOSTIC_RATE_LIMIT = {
+  namespace: "generate:diagnostic",
+  windowMs: 60_000,
+  maxRequests: 10,
+} as const;
+
 export async function POST(request: Request) {
   const { userId, error } = await getAuthUser();
   if (error) return error;
+
+  const rateLimitResponse = enforceRateLimit({
+    request,
+    userId,
+    route: "/api/generate/diagnostic",
+    config: GENERATE_DIAGNOSTIC_RATE_LIMIT,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
 
   const apiKeys = getApiKeysFromRequest(request);
   if (!hasAnyApiKey(apiKeys)) {
