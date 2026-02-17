@@ -131,8 +131,14 @@ export function createRepairTracker(): RepairTracker {
  * runs programmatic schema coercion (strip unknown fields, coerce types,
  * normalize enums, default missing arrays).
  */
+function isDebugDumpEnabled(): boolean {
+  return process.env.AI_DEBUG_DUMPS === "true";
+}
+
 function dumpToFile(filename: string, data: string) {
   if (typeof window !== "undefined") return; // client-side: no-op
+  if (!isDebugDumpEnabled()) return;
+
   try {
     // Dynamic require to avoid bundling Node.js modules for the browser
     // eslint-disable-next-line @typescript-eslint/no-require-imports

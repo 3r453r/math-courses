@@ -151,7 +151,10 @@
       "characters": "{{count}} characters",
       "noErrors": "No Zod errors recorded",
       "notCalled": "Not called",
-      "notAvailable": "Not available"
+      "notAvailable": "Not available",
+      "restricted": "Unavailable: raw payload access is restricted to owners or log owners.",
+      "retention": "Sensitive payload TTL",
+      "redactedAt": "Payload redacted at"
     },
     "generateReport": "Generate Report",
     "reportDownloaded": "Debug report downloaded",

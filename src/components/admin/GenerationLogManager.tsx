@@ -53,12 +53,17 @@ interface LogEntry {
   language: string | null;
   difficulty: string | null;
   createdAt: string;
+  rawOutputRedacted: boolean;
+  promptRedacted: boolean;
+  sensitiveTextExpiresAt: string | null;
+  sensitiveTextRedactedAt: string | null;
 }
 
 interface LogDetail extends LogEntry {
   rawOutputText: string | null;
   promptText: string | null;
   layer0Error: string | null;
+  rawPayloadAvailable: boolean;
 }
 
 // ─── Helpers ───
@@ -624,6 +629,14 @@ export function GenerationLogManager() {
                     value={logDetail.difficulty || "—"}
                   />
                   <MetaRow
+                    label={t("admin:generationLogs.detail.retention")}
+                    value={logDetail.sensitiveTextExpiresAt ? new Date(logDetail.sensitiveTextExpiresAt).toLocaleString() : "—"}
+                  />
+                  <MetaRow
+                    label={t("admin:generationLogs.detail.redactedAt")}
+                    value={logDetail.sensitiveTextRedactedAt ? new Date(logDetail.sensitiveTextRedactedAt).toLocaleString() : "—"}
+                  />
+                  <MetaRow
                     label={t("admin:generationLogs.detail.courseId")}
                     value={logDetail.courseId || "—"}
                   />
@@ -755,7 +768,9 @@ export function GenerationLogManager() {
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    {t("admin:generationLogs.detail.notAvailable")}
+                    {logDetail.rawPayloadAvailable
+                      ? t("admin:generationLogs.detail.notAvailable")
+                      : t("admin:generationLogs.detail.restricted")}
                   </p>
                 )}
               </CollapsibleSection>
@@ -782,7 +797,9 @@ export function GenerationLogManager() {
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      {t("admin:generationLogs.detail.notAvailable")}
+                      {logDetail.rawPayloadAvailable
+                      ? t("admin:generationLogs.detail.notAvailable")
+                      : t("admin:generationLogs.detail.restricted")}
                     </p>
                   )}
                 </CollapsibleSection>
