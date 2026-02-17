@@ -34,3 +34,10 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## AI logging hardening
+
+- File-based debug dumps are **disabled by default** and only written when `AI_DEBUG_DUMPS=true`.
+- Persisted AI logs redact/hash long prompt sections (including context documents and long user-provided text).
+- Sensitive prompt/raw payload fields in `AiGenerationLog` are retained temporarily and then redacted by TTL (`AI_LOG_SENSITIVE_TTL_HOURS`, default: 24).
+- Admin log detail views may hide raw payloads when access is restricted or after retention redaction.

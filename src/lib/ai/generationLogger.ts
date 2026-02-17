@@ -1,9 +1,10 @@
-import { createHash } from "crypto";
 import type { z } from "zod";
 import { prisma } from "@/lib/db";
 import type { RepairTracker } from "./client";
 import { getProviderForModel } from "./client";
 import type { WrapperType } from "./repairSchema";
+import { sanitizePromptForPersistence, sanitizeTextForPersistence } from "./logSanitizer";
+import { getSensitiveTextExpiryDate } from "./generationLogRetention";
 
 const RAW_TEXT_MAX_BYTES = 200 * 1024; // 200KB
 
@@ -158,10 +159,7 @@ export class GenerationLogger {
     return { text: null, length: 0 };
   }
 
-  /** Compute SHA-256 hash of the prompt text. */
-  private hashPrompt(text: string): string {
-    return createHash("sha256").update(text).digest("hex");
-  }
+
 
   /**
    * Write one row to AiGenerationLog. Fire-and-forget (never throws).
@@ -178,10 +176,14 @@ export class GenerationLogger {
 
       // Only store prompt on non-success outcomes (saves space)
       const isNonSuccess = outcome !== "success";
-      const promptText = isNonSuccess ? (this.context.promptText ?? null) : null;
-      const promptHash = this.context.promptText
-        ? this.hashPrompt(this.context.promptText)
-        : null;
+      const rawSanitized = sanitizeTextForPersistence(rawText, "rawOutput");
+      const promptSanitized = isNonSuccess
+        ? sanitizePromptForPersistence(this.context.promptText ?? null)
+        : { sanitized: null, redacted: false, hash: this.context.promptText ? sanitizePromptForPersistence(this.context.promptText).hash : null };
+      const promptHash = promptSanitized.hash;
+
+      const hasSensitivePayload = Boolean(rawSanitized.sanitized || promptSanitized.sanitized);
+      const sensitiveTextExpiresAt = hasSensitivePayload ? getSensitiveTextExpiryDate() : null;
 
       // Serialize Zod errors
       let zodErrors: string | null = null;
@@ -226,12 +228,16 @@ export class GenerationLogger {
           layer2Called: this._layer2Called,
           layer2Success: this._layer2Success,
           layer2ModelId: this._layer2ModelId,
-          rawOutputText: this.truncateRawText(rawText),
+          rawOutputText: this.truncateRawText(rawSanitized.sanitized),
           rawOutputLen: rawLen > 0 ? rawLen : null,
+          rawOutputRedacted: rawSanitized.redacted,
           zodErrors,
           errorMessage: this._errorMessage,
           promptHash,
-          promptText,
+          promptText: promptSanitized.sanitized,
+          promptRedacted: promptSanitized.redacted,
+          sensitiveTextExpiresAt,
+          sensitiveTextRedactedAt: null,
           language: this.context.language ?? null,
           difficulty: this.context.difficulty ?? null,
         },

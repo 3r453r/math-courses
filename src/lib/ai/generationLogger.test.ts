@@ -33,6 +33,7 @@ function makeTracker(overrides: Partial<RepairTracker> = {}): RepairTracker {
     rawText: null,
     rawTextLength: 0,
     repairResult: null,
+    wrapperType: null,
     error: null,
     ...overrides,
   };
@@ -181,7 +182,7 @@ describe("GenerationLogger", () => {
         schemaName: "lessonContentSchema",
         modelId: "claude-opus-4-6",
       });
-      const shortText = "x".repeat(1000);
+      const shortText = "x".repeat(200);
       logger.recordLayer1({
         rawText: shortText,
         hadWrapper: false,
@@ -193,7 +194,8 @@ describe("GenerationLogger", () => {
       expect(createCall).toHaveBeenCalledOnce();
       const data = createCall.mock.calls[0][0].data;
       expect(data.rawOutputText).toBe(shortText);
-      expect(data.rawOutputLen).toBe(1000);
+      expect(data.rawOutputLen).toBe(200);
+      expect(data.rawOutputRedacted).toBe(false);
     });
 
     it("truncates text over 200KB with marker", async () => {
@@ -213,8 +215,8 @@ describe("GenerationLogger", () => {
 
       const createCall = vi.mocked(prisma.aiGenerationLog.create);
       const data = createCall.mock.calls[0][0].data;
-      expect(data.rawOutputText!.length).toBeLessThan(300_000);
-      expect(data.rawOutputText).toContain("[TRUNCATED:");
+      expect(data.rawOutputText).toContain("[REDACTED:rawOutput");
+      expect(data.rawOutputRedacted).toBe(true);
       expect(data.rawOutputLen).toBe(300_000);
     });
   });
@@ -249,6 +251,30 @@ describe("GenerationLogger", () => {
       expect(data.promptText).toBeNull();
       // Hash is still stored for grouping
       expect(data.promptHash).toBeTruthy();
+    });
+  });
+
+
+  describe("redaction and retention", () => {
+    it("redacts long prompt sections and sets TTL fields", async () => {
+      const logger = createGenerationLogger({
+        generationType: "lesson",
+        schemaName: "lessonContentSchema",
+        modelId: "claude-opus-4-6",
+        promptText: `COURSE CONTEXT DOCUMENT:
+${"x".repeat(2000)}
+
+LESSON CONTENT GUIDELINES:
+Keep it concise`,
+      });
+      logger.recordFailure("failed");
+      await logger.finalize();
+
+      const data = vi.mocked(prisma.aiGenerationLog.create).mock.calls[0][0].data;
+      expect(data.promptText).toContain("[REDACTED:contextDoc");
+      expect(data.promptRedacted).toBe(true);
+      expect(data.sensitiveTextExpiresAt).toBeTruthy();
+      expect(data.sensitiveTextRedactedAt).toBeNull();
     });
   });
 

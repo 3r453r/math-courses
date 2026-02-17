@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
+import { cleanupExpiredGenerationLogPayloads } from "@/lib/ai/generationLogRetention";
 
 /**
  * GET /api/admin/generation-logs — Query AI generation logs with filters
@@ -20,6 +21,7 @@ export async function GET(request: Request) {
   if (authError) return authError;
 
   try {
+    await cleanupExpiredGenerationLogPayloads();
     const url = new URL(request.url);
     const type = url.searchParams.get("type");
     const outcome = url.searchParams.get("outcome");
@@ -75,9 +77,13 @@ export async function GET(request: Request) {
           layer2Success: true,
           layer2ModelId: true,
           rawOutputLen: true,
+          rawOutputRedacted: true,
           zodErrors: true,
           errorMessage: true,
           promptHash: true,
+          promptRedacted: true,
+          sensitiveTextExpiresAt: true,
+          sensitiveTextRedactedAt: true,
           language: true,
           difficulty: true,
           createdAt: true,
