@@ -55,7 +55,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ courseId: string; noteId: string }> }
 ) {
   const { userId, error: authError } = await getAuthUserFromRequest(request);
