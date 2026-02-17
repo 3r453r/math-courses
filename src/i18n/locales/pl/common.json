@@ -24,5 +24,8 @@
   "no": "Nie",
   "apiKeyRequiredHint": "Skonfiguruj klucz API w Ustawieniach, aby korzystać z tej funkcji.",
   "gallery": "Galeria",
-  "progress": "Postępy"
+  "progress": "Postępy",
+  "newVersionAvailable": "Dostępna nowa wersja",
+  "newVersionRefresh": "Odśwież, aby pobrać najnowsze aktualizacje.",
+  "refresh": "Odśwież"
 }

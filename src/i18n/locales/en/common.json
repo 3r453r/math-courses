@@ -22,5 +22,8 @@
   "no": "No",
   "apiKeyRequiredHint": "Configure an API key in Settings to use this feature.",
   "gallery": "Gallery",
-  "progress": "Progress"
+  "progress": "Progress",
+  "newVersionAvailable": "New version available",
+  "newVersionRefresh": "Refresh to get the latest updates.",
+  "refresh": "Refresh"
 }
