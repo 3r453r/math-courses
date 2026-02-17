@@ -21,7 +21,10 @@ export function HowItWorksSection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {STEPS.map(({ icon: Icon, key }, i) => (
             <div key={key} className="text-center space-y-3">
-              <div className="inline-flex items-center justify-center size-14 rounded-full bg-primary/10 text-primary">
+              <div
+                className="inline-flex items-center justify-center size-14 rounded-full text-white"
+                style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
+              >
                 <Icon className="size-7" />
               </div>
               <div className="text-sm font-medium text-muted-foreground">

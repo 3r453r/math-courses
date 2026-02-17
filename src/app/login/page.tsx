@@ -25,6 +25,7 @@ import {
   getPlatform,
   getOpenInBrowserUrl,
 } from "@/lib/detectInAppBrowser";
+import { BrandMark } from "@/components/BrandMark";
 import {
   HeroSection,
   HowItWorksSection,
@@ -252,7 +253,9 @@ export default function LoginPage() {
       <FeaturedCoursesSection />
 
       <section id="sign-in" className="py-16">
+        <div className="mx-auto max-w-sm h-[3px] rounded-full mb-12" style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }} />
         <div className="max-w-sm mx-auto text-center space-y-6">
+          <BrandMark size={28} className="mx-auto text-brand-from" />
           <h2 className="text-3xl font-bold">{t("login:signInSection.title")}</h2>
           <Suspense>
             <LoginForm />

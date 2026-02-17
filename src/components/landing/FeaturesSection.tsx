@@ -38,7 +38,10 @@ export function FeaturesSection() {
           {FEATURES.map(({ icon: Icon, key }) => (
             <Card key={key} className="border-border/50">
               <CardHeader className="space-y-2">
-                <div className="inline-flex items-center justify-center size-10 rounded-lg bg-primary/10 text-primary">
+                <div
+                  className="inline-flex items-center justify-center size-10 rounded-lg text-white"
+                  style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
+                >
                   <Icon className="size-5" />
                 </div>
                 <CardTitle className="text-base">

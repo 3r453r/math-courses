@@ -38,6 +38,21 @@ export const metadata: Metadata = {
     description:
       "AI-powered learning platform with structured courses, quizzes, and adaptive recommendations.",
     type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Learning Courses — AI-powered structured learning",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Learning Courses",
+    description:
+      "AI-powered learning platform with structured courses, quizzes, and adaptive recommendations.",
+    images: ["/og-image.png"],
   },
 };
 
