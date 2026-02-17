@@ -78,23 +78,31 @@ export async function GET(
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
-    return NextResponse.json({
-      shareToken,
-      course: {
-        title: course.title,
-        description: course.description,
-        topic: course.topic,
-        focusAreas: course.focusAreas,
-        difficulty: course.difficulty,
-        language: course.language,
-        contextDoc: course.contextDoc,
-        status: course.status,
-        authorName: course.user?.name ?? null,
-        lessons: course.lessons,
-        edges: course.edges,
-        completionSummary: course.completionSummary,
+    return NextResponse.json(
+      {
+        shareToken,
+        course: {
+          title: course.title,
+          description: course.description,
+          topic: course.topic,
+          focusAreas: course.focusAreas,
+          difficulty: course.difficulty,
+          language: course.language,
+          contextDoc: course.contextDoc,
+          status: course.status,
+          authorName: course.user?.name ?? null,
+          lessons: course.lessons,
+          edges: course.edges,
+          completionSummary: course.completionSummary,
+        },
       },
-    });
+      {
+        headers: {
+          "Cache-Control":
+            "public, max-age=60, s-maxage=180, stale-while-revalidate=300",
+        },
+      }
+    );
   } catch (error) {
     console.error("Failed to fetch shared course:", error);
     return NextResponse.json(

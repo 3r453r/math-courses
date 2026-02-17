@@ -51,12 +51,25 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: securityHeaders,
       },
+      // Public pages — CDN-cacheable (no auth cookie)
       {
-        source: "/((?!_next/static|_next/image|api/).*)",
+        source: "/(login|gallery|pricing|shared/:path*|preview/:path*)",
         headers: [
           {
             key: "Cache-Control",
-            value: "no-cache, must-revalidate",
+            value:
+              "public, max-age=60, s-maxage=300, stale-while-revalidate=600",
+          },
+        ],
+      },
+      // Authenticated app pages — private, revalidate every time
+      {
+        source:
+          "/((?!_next/static|_next/image|api/|login|gallery|pricing|shared/|preview/|sw\\.js|manifest\\.json).*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "private, no-cache",
           },
         ],
       },

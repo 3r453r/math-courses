@@ -124,15 +124,23 @@ export async function GET(request: NextRequest) {
       hasPreview: s.previewLessonId != null,
     }));
 
-    return NextResponse.json({
-      items,
-      featured: featuredItems,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-      filters: { subjects, difficulties, languages },
-    });
+    return NextResponse.json(
+      {
+        items,
+        featured: featuredItems,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        filters: { subjects, difficulties, languages },
+      },
+      {
+        headers: {
+          "Cache-Control":
+            "public, max-age=30, s-maxage=120, stale-while-revalidate=300",
+        },
+      }
+    );
   } catch (error) {
     console.error("Failed to list gallery:", error);
     return NextResponse.json({ error: "Failed to list gallery" }, { status: 500 });

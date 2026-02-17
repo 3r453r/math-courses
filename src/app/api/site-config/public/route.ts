@@ -19,7 +19,12 @@ export async function GET() {
       configMap[c.key] = c.value;
     }
 
-    return NextResponse.json(configMap);
+    return NextResponse.json(configMap, {
+      headers: {
+        "Cache-Control":
+          "public, max-age=120, s-maxage=600, stale-while-revalidate=1200",
+      },
+    });
   } catch (error) {
     console.error("Failed to get public config:", error);
     return NextResponse.json({ error: "Failed to get config" }, { status: 500 });
