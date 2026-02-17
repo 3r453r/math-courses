@@ -115,6 +115,13 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
     return { inMathMode, surroundingText };
   }, []);
 
+  const handleClose = useCallback(() => {
+    if (saveStatus === "unsaved") {
+      save(); // fire-and-forget — panel closes immediately
+    }
+    onClose();
+  }, [saveStatus, save, onClose]);
+
   if (isLoading) {
     return (
       <div className="w-full border-l bg-background flex items-center justify-center">
@@ -127,7 +134,7 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
     return (
       <div className="w-full border-l bg-background flex flex-col items-center justify-center gap-2 p-4">
         <p className="text-sm text-destructive">{error}</p>
-        <Button variant="outline" size="sm" onClick={onClose}>
+        <Button variant="outline" size="sm" onClick={handleClose}>
           {t("common:close")}
         </Button>
       </div>
@@ -148,7 +155,7 @@ export function ScratchpadPanel({ lessonId, onClose }: ScratchpadPanelProps) {
               {t("common:retry")}
             </Button>
           )}
-          <Button variant="ghost" size="sm" className="h-6 px-2" onClick={onClose}>
+          <Button variant="ghost" size="sm" className="h-6 px-2" onClick={handleClose}>
             ✕
           </Button>
         </div>

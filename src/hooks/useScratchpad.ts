@@ -32,6 +32,7 @@ export function useScratchpad(lessonId: string): UseScratchpadReturn {
   const [error, setError] = useState<string | null>(null);
 
   const noteIdRef = useRef<string | null>(null);
+  const contentRef = useRef("");
   const lastSavedContentRef = useRef("");
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -54,6 +55,7 @@ export function useScratchpad(lessonId: string): UseScratchpadReturn {
         if (!isMountedRef.current) return;
         noteIdRef.current = note.id;
         setContentState(note.content);
+        contentRef.current = note.content;
         lastSavedContentRef.current = note.content;
         if (note.updatedAt) setLastSavedAt(new Date(note.updatedAt));
       })
@@ -116,6 +118,7 @@ export function useScratchpad(lessonId: string): UseScratchpadReturn {
   const setContent = useCallback(
     (newContent: string) => {
       setContentState(newContent);
+      contentRef.current = newContent;
 
       if (newContent !== lastSavedContentRef.current) {
         setSaveStatus("unsaved");
@@ -173,6 +176,20 @@ export function useScratchpad(lessonId: string): UseScratchpadReturn {
 
     return () => clearTimeout(timer);
   }, [content, saveStatus]);
+
+  // Save on unmount if dirty (covers navigation, panel switch, etc.)
+  useEffect(() => {
+    return () => {
+      if (contentRef.current !== lastSavedContentRef.current && noteIdRef.current) {
+        fetch("/api/notes/scratchpad", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: noteIdRef.current, content: contentRef.current }),
+          keepalive: true,
+        });
+      }
+    };
+  }, []);
 
   // Cleanup timers on unmount
   useEffect(() => {
