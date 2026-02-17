@@ -90,6 +90,7 @@ export default function LessonPage({
   const apiHeaders = useApiHeaders();
   const [lesson, setLesson] = useState<LessonDetail | null>(null);
   const [courseNav, setCourseNav] = useState<CourseNav | null>(null);
+  const [mobilePanelHeight, setMobilePanelHeight] = useState<"peek" | "half" | "full">("half");
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [generatingQuiz, setGeneratingQuiz] = useState(false);
@@ -291,6 +292,12 @@ export default function LessonPage({
   }
 
   const hasContent = !!lesson.contentJson;
+  const mobilePanelHeightClass =
+    mobilePanelHeight === "peek"
+      ? "h-[30svh]"
+      : mobilePanelHeight === "full"
+        ? "h-[92svh]"
+        : "h-[58svh]";
 
   return (
     <div className="fixed inset-0 bg-background flex flex-col" data-testid="lesson-page-wrapper">
@@ -324,6 +331,7 @@ export default function LessonPage({
                 size="sm"
                 onClick={() => {
                   if (!chatSidebarOpen) setScratchpadOpen(false);
+                  if (!chatSidebarOpen) setMobilePanelHeight("half");
                   setChatSidebarOpen(!chatSidebarOpen);
                 }}
                 title={t("lesson:toggleChat")}
@@ -349,6 +357,7 @@ export default function LessonPage({
                 size="sm"
                 onClick={() => {
                   if (!scratchpadOpen) setChatSidebarOpen(false);
+                  if (!scratchpadOpen) setMobilePanelHeight("half");
                   setScratchpadOpen(!scratchpadOpen);
                 }}
                 title={t("lesson:toggleScratchpad")}
@@ -383,12 +392,14 @@ export default function LessonPage({
                 <>
                   <DropdownMenuItem onClick={() => {
                     if (!chatSidebarOpen) setScratchpadOpen(false);
+                    if (!chatSidebarOpen) setMobilePanelHeight("half");
                     setChatSidebarOpen(!chatSidebarOpen);
                   }}>
                     {t("lesson:chat")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => {
                     if (!scratchpadOpen) setChatSidebarOpen(false);
+                    if (!scratchpadOpen) setMobilePanelHeight("half");
                     setScratchpadOpen(!scratchpadOpen);
                   }}>
                     {t("lesson:scratchpad")}
@@ -542,23 +553,85 @@ export default function LessonPage({
           </main>
 
           {(scratchpadOpen || chatSidebarOpen) && hasContent && (
-            <aside
-              className="fixed inset-0 z-50 bg-background md:relative md:inset-auto md:z-auto md:w-2/5 lg:w-1/2 shrink-0 h-full"
-              data-testid={scratchpadOpen ? "scratchpad-aside" : "chat-aside"}
-            >
-              {scratchpadOpen ? (
-                <ScratchpadPanel
-                  lessonId={lessonId}
-                  onClose={() => setScratchpadOpen(false)}
-                />
-              ) : (
-                <ChatPanel
-                  lessonId={lessonId}
-                  courseId={courseId}
-                  onClose={() => setChatSidebarOpen(false)}
-                />
-              )}
-            </aside>
+            <>
+              <aside
+                className={`fixed inset-x-0 bottom-0 z-50 md:hidden ${mobilePanelHeightClass}`}
+                data-testid={scratchpadOpen ? "scratchpad-aside" : "chat-aside"}
+              >
+                <div className="h-full rounded-t-xl border border-b-0 bg-background shadow-2xl flex flex-col overflow-hidden">
+                  <div className="shrink-0 border-b px-3 py-2 flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      className="mx-auto h-1.5 w-12 rounded-full bg-muted"
+                      aria-label="Resize panel"
+                      onClick={() =>
+                        setMobilePanelHeight((prev) =>
+                          prev === "peek" ? "half" : prev === "half" ? "full" : "peek"
+                        )
+                      }
+                    />
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setMobilePanelHeight("peek")}
+                      >
+                        30%
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setMobilePanelHeight("half")}
+                      >
+                        60%
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setMobilePanelHeight("full")}
+                      >
+                        90%
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="min-h-0 flex-1">
+                    {scratchpadOpen ? (
+                      <ScratchpadPanel
+                        lessonId={lessonId}
+                        onClose={() => setScratchpadOpen(false)}
+                      />
+                    ) : (
+                      <ChatPanel
+                        lessonId={lessonId}
+                        courseId={courseId}
+                        onClose={() => setChatSidebarOpen(false)}
+                      />
+                    )}
+                  </div>
+                </div>
+              </aside>
+
+              <aside
+                className="hidden md:relative md:inset-auto md:z-auto md:w-2/5 lg:w-1/2 shrink-0 h-full md:block"
+                data-testid={scratchpadOpen ? "scratchpad-aside" : "chat-aside"}
+              >
+                {scratchpadOpen ? (
+                  <ScratchpadPanel
+                    lessonId={lessonId}
+                    onClose={() => setScratchpadOpen(false)}
+                  />
+                ) : (
+                  <ChatPanel
+                    lessonId={lessonId}
+                    courseId={courseId}
+                    onClose={() => setChatSidebarOpen(false)}
+                  />
+                )}
+              </aside>
+            </>
           )}
       </div>
     </div>
