@@ -14,6 +14,10 @@
 /coverage
 /test-results/
 /playwright-report/
+/.playwright-mcp/
+
+# dev screenshots in root (not public/ assets)
+/*.png
 
 # next.js
 /.next/

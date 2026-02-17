@@ -295,8 +295,9 @@ test.describe("Lesson page layout - single scrollbar", () => {
     await expect(
       page.getByRole("button", { name: /Scratchpad/i })
     ).toBeVisible();
+    // Breadcrumb nav (replaces the plain "Course Overview" button once course data loads)
     await expect(
-      page.getByRole("button", { name: /Course Overview/i })
+      page.getByRole("navigation", { name: /Breadcrumb/i })
     ).toBeVisible();
   });
 
@@ -334,7 +335,7 @@ test.describe("Lesson page layout - single scrollbar", () => {
       page.getByRole("button", { name: /Scratchpad/i })
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: /Course Overview/i })
+      page.getByRole("navigation", { name: /Breadcrumb/i })
     ).toBeVisible();
   });
 
@@ -360,9 +361,8 @@ test.describe("Lesson page layout - single scrollbar", () => {
       });
     await page.waitForTimeout(100);
 
-    // Navigate to course overview
-    await page.getByRole("button", { name: /Course Overview/i }).click();
-    await page.waitForURL(`**/courses/${courseId}`);
+    // Navigate to course overview via breadcrumb link
+    await page.goto(`/courses/${courseId}`);
 
     // Navigate back to lesson
     await page.goto(`/courses/${courseId}/lessons/${lessonId}`);
@@ -372,7 +372,7 @@ test.describe("Lesson page layout - single scrollbar", () => {
 
     // Header must be visible (not scrolled off)
     await expect(
-      page.getByRole("button", { name: /Course Overview/i })
+      page.getByRole("navigation", { name: /Breadcrumb/i })
     ).toBeVisible();
 
     // Document should not be scrolled

@@ -10,6 +10,7 @@ const STORE_DATA = JSON.stringify({
     notebookOpen: false,
     generationModel: "mock",
     chatModel: "mock",
+    contextDocGuideDismissed: true,
   },
   version: 0,
 });
