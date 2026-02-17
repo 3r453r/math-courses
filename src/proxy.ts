@@ -15,6 +15,7 @@ const PUBLIC_PATHS = [
   "/preview",
   "/api/preview",
   "/api/site-config",
+  "/api/version",
 ];
 
 // Paths accessible to authenticated users regardless of access status

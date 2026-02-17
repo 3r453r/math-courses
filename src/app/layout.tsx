@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { I18nProvider } from "@/components/I18nProvider";
 import { SessionProvider } from "@/components/SessionProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { VersionCheck } from "@/components/VersionCheck";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -69,6 +70,7 @@ export default function RootLayout({
             <I18nProvider>
               {children}
             </I18nProvider>
+            <VersionCheck />
             <Toaster />
           </SessionProvider>
         </ThemeProvider>
