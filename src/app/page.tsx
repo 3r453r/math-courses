@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { InstallButton } from "@/components/InstallButton";
 import { UserMenu } from "@/components/UserMenu";
 import { MobileMenu } from "@/components/MobileMenu";
 
@@ -158,6 +159,7 @@ export default function DashboardPage() {
           </div>
           <div className="flex gap-2 items-center">
             <ThemeToggle />
+            <InstallButton />
             <UserMenu />
             <Button
               variant="ghost"

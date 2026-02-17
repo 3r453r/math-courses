@@ -25,5 +25,9 @@
   "progress": "Progress",
   "newVersionAvailable": "New version available",
   "newVersionRefresh": "Refresh to get the latest updates.",
-  "refresh": "Refresh"
+  "refresh": "Refresh",
+  "installApp": "Install App",
+  "installAppDescription": "Install this app for a better experience.",
+  "install": "Install",
+  "installAppFallback": "Use your browser's \"Install\" or \"Add to Home Screen\" option to install this app."
 }

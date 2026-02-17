@@ -16,7 +16,7 @@ export function LandingFooter() {
           <div className="flex items-center gap-2">
             <BrandMark size={20} className="text-brand-from" />
             <span className="text-sm font-semibold bg-gradient-to-r from-brand-from to-brand-to bg-clip-text text-transparent">
-              Learning Courses
+              StemForge
             </span>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-muted-foreground">

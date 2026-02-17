@@ -27,5 +27,9 @@
   "progress": "Postępy",
   "newVersionAvailable": "Dostępna nowa wersja",
   "newVersionRefresh": "Odśwież, aby pobrać najnowsze aktualizacje.",
-  "refresh": "Odśwież"
+  "refresh": "Odśwież",
+  "installApp": "Zainstaluj aplikację",
+  "installAppDescription": "Zainstaluj tę aplikację, aby korzystać z niej wygodniej.",
+  "install": "Zainstaluj",
+  "installAppFallback": "Użyj opcji \u201EZainstaluj\u201D lub \u201EDodaj do ekranu głównego\u201D w przeglądarce, aby zainstalować tę aplikację."
 }

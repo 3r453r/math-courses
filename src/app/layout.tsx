@@ -4,6 +4,7 @@ import { I18nProvider } from "@/components/I18nProvider";
 import { SessionProvider } from "@/components/SessionProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { VersionCheck } from "@/components/VersionCheck";
+import { InstallPrompt } from "@/components/InstallPrompt";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -13,8 +14,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "Learning Courses",
-    template: "%s | Learning Courses",
+    default: "StemForge",
+    template: "%s — StemForge",
   },
   description:
     "AI-powered learning platform that generates structured courses with lessons organized as a prerequisite graph. Supports math, physics, CS, and any STEM subject.",
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Learning Courses",
+    title: "StemForge",
   },
   icons: {
     icon: [
@@ -35,7 +36,7 @@ export const metadata: Metadata = {
     "theme-color": "#6366f1",
   },
   openGraph: {
-    title: "Learning Courses",
+    title: "StemForge",
     description:
       "AI-powered learning platform with structured courses, quizzes, and adaptive recommendations.",
     type: "website",
@@ -44,13 +45,13 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Learning Courses — AI-powered structured learning",
+        alt: "StemForge — AI-powered structured learning",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Learning Courses",
+    title: "StemForge",
     description:
       "AI-powered learning platform with structured courses, quizzes, and adaptive recommendations.",
     images: ["/og-image.png"],
@@ -64,6 +65,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.__deferredInstallPrompt=null;window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__deferredInstallPrompt=e});`,
+          }}
+        />
+      </head>
       <body className="font-sans antialiased">
         <ThemeProvider>
           <SessionProvider>
@@ -71,6 +79,7 @@ export default function RootLayout({
               {children}
             </I18nProvider>
             <VersionCheck />
+            <InstallPrompt />
             <Toaster />
           </SessionProvider>
         </ThemeProvider>

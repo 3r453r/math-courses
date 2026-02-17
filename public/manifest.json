@@ -1,6 +1,6 @@
 {
-  "name": "Learning Courses",
-  "short_name": "Courses",
+  "name": "StemForge",
+  "short_name": "StemForge",
   "description": "AI-powered structured learning courses",
   "start_url": "/",
   "display": "standalone",
