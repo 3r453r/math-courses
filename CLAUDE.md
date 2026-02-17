@@ -142,6 +142,11 @@ Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Au
 - **Toast notifications** via `sonner` — `toast.success()`, `toast.error()`
 - **Component organization**: `src/components/<feature>/` with barrel `index.ts` exports (e.g., `lesson/`, `math/`, `scratchpad/`, `quiz/`, `chat/`)
 - **API keys** passed to generation endpoints via `x-api-keys` JSON header (or legacy `x-api-key` for single Anthropic key)
+- **API key management API** (`src/app/api/user/api-key/route.ts`):
+  - `GET` returns metadata only (never plaintext): `{ present, maskedSuffix, lastUpdated }` per provider
+  - `PUT` replaces/updates only provided provider keys (merge semantics)
+  - `DELETE` revokes either one provider (`?provider=...`) or all providers
+  - Includes migration-safe parsing for legacy `encryptedApiKeys` JSON shapes (plaintext string values and older encrypted field names)
 - **Content format**: lesson content stored as JSON string in `contentJson` field, parsed at render time
 - **AI SDK v6**: `useChat` uses transport-based API — `TextStreamChatTransport` for text streaming, `sendMessage()` instead of `handleSubmit()`, `status` instead of `isLoading`, messages are `UIMessage` with `parts` array (not `content` string)
 - **Turso/libsql**: `src/lib/db.ts` supports both local `file:` URLs (dev/test) and remote `libsql://` (Turso production). Set `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` for production
@@ -212,3 +217,9 @@ These items should be treated as active hardening work alongside feature develop
 - **Production Turso credentials**: Stored in `.env.turso-prod` (gitignored, NOT auto-loaded by Next.js). To apply schema changes to production: `source .env.turso-prod && npx prisma db push`
 - **NEVER** set `TURSO_DATABASE_URL` in `.env.local` — it causes `pnpm dev` to write to the production database
 - **Dev bypass production guard**: `isDevBypassEnabled()` in `src/lib/dev-bypass.ts` blocks `AUTH_DEV_BYPASS` in production (`NODE_ENV=production`) unless `NEXT_TEST_MODE=1` (E2E tests). Also logs a warning when bypass is active with a remote database (`TURSO_DATABASE_URL` set)
+
+## Recent changes / findings
+
+- Setup page (`src/app/setup/page.tsx`) now treats server-side keys as metadata-only: existing keys are shown as masked suffixes and users must re-enter full values to rotate/replace a key.
+- Added route tests at `src/app/api/user/api-key/route.test.ts` to assert plaintext keys are never returned by `GET /api/user/api-key`, including legacy JSON-shape handling.
+

@@ -44,6 +44,12 @@ interface ProviderConfig {
   helpSteps: string;
 }
 
+interface ProviderKeyMetadata {
+  present: boolean;
+  maskedSuffix: string | null;
+  lastUpdated: string | null;
+}
+
 const PROVIDERS: ProviderConfig[] = [
   {
     id: "anthropic",
@@ -102,27 +108,24 @@ export default function SetupPage() {
     google: !apiKeys.anthropic && !apiKeys.openai,
   });
   const [syncToServer, setSyncToServer] = useState(false);
+  const [serverKeyMetadata, setServerKeyMetadata] = useState<Partial<Record<AIProvider, ProviderKeyMetadata>>>({});
 
-  // On mount, try to fetch server-side API keys if none in localStorage
+  // On mount, fetch server-side key metadata.
   useEffect(() => {
-    const hasAnyKey = apiKeys.anthropic || apiKeys.openai || apiKeys.google;
-    if (hasAnyKey) return;
     fetch("/api/user/api-key")
       .then((res) => res.ok ? res.json() : null)
       .then((data) => {
         if (data?.apiKeys) {
-          const keys = data.apiKeys as Record<string, string>;
-          for (const [provider, key] of Object.entries(keys)) {
-            if (key) {
-              setProviderApiKey(provider as AIProvider, key);
-              setDraftKeys((prev) => ({ ...prev, [provider]: key }));
+          const metadata = data.apiKeys as Partial<Record<AIProvider, ProviderKeyMetadata>>;
+          setServerKeyMetadata(metadata);
+          for (const [provider, entry] of Object.entries(metadata)) {
+            if (entry?.present) {
               setTestStatus((prev) => ({ ...prev, [provider]: "valid" }));
             }
           }
         }
       })
       .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Available models: only from providers that have a key configured
@@ -131,8 +134,11 @@ export default function SetupPage() {
     if (draftKeys.anthropic?.trim()) providers.add("anthropic");
     if (draftKeys.openai?.trim()) providers.add("openai");
     if (draftKeys.google?.trim()) providers.add("google");
+    if (serverKeyMetadata.anthropic?.present) providers.add("anthropic");
+    if (serverKeyMetadata.openai?.present) providers.add("openai");
+    if (serverKeyMetadata.google?.present) providers.add("google");
     return providers;
-  }, [draftKeys]);
+  }, [draftKeys, serverKeyMetadata]);
 
   const availableModels = useMemo(() => {
     return MODEL_REGISTRY.filter((m) => configuredProviders.has(m.provider));
@@ -182,13 +188,27 @@ export default function SetupPage() {
     setTestErrors((prev) => ({ ...prev, [provider]: "" }));
   }
 
+  async function handleRevoke(provider: AIProvider) {
+    setDraftKeys((prev) => ({ ...prev, [provider]: "" }));
+    setProviderApiKey(provider, null);
+    setTestStatus((prev) => ({ ...prev, [provider]: "idle" }));
+    setTestErrors((prev) => ({ ...prev, [provider]: "" }));
+    setServerKeyMetadata((prev) => ({ ...prev, [provider]: { present: false, maskedSuffix: null, lastUpdated: null } }));
+
+    try {
+      await fetch(`/api/user/api-key?provider=${provider}`, { method: "DELETE" });
+    } catch {
+      // Non-blocking
+    }
+  }
+
   async function handleSave() {
     // Save all non-empty keys to store
     for (const provider of PROVIDERS) {
       const key = draftKeys[provider.id]?.trim();
       if (key) {
         setProviderApiKey(provider.id, key);
-      } else {
+      } else if (!serverKeyMetadata[provider.id]?.present) {
         setProviderApiKey(provider.id, null);
       }
     }
@@ -294,6 +314,21 @@ export default function SetupPage() {
                           {testStatus[provider.id] === "testing" ? t("setup:testing") : t("setup:testKey")}
                         </Button>
                       </div>
+                      {serverKeyMetadata[provider.id]?.present && !draftKeys[provider.id]?.trim() && (
+                        <p className="text-xs text-muted-foreground">
+                          Saved key: ••••{serverKeyMetadata[provider.id]?.maskedSuffix || "????"}
+                          {serverKeyMetadata[provider.id]?.lastUpdated && (
+                            <span> · updated {new Date(serverKeyMetadata[provider.id]!.lastUpdated!).toLocaleDateString()}</span>
+                          )}
+                        </p>
+                      )}
+                      {serverKeyMetadata[provider.id]?.present && (
+                        <div>
+                          <Button variant="ghost" size="sm" onClick={() => handleRevoke(provider.id)}>
+                            Revoke saved key
+                          </Button>
+                        </div>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {t("setup:getApiKeyFrom")}{" "}
