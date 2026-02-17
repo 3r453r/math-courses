@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { getAuthUser } from "@/lib/auth-utils";
+import { getAuthUserFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 
 /**
@@ -11,7 +11,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ shareToken: string }> }
 ) {
-  const { userId, error: authError } = await getAuthUser();
+  const { userId, error: authError } = await getAuthUserFromRequest(request);
   if (authError) return authError;
 
   try {

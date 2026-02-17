@@ -4,10 +4,10 @@ import { streamText } from "ai";
 import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
 import { buildLanguageInstruction } from "@/lib/ai/prompts/languageInstruction";
 import { prisma } from "@/lib/db";
-import { getAuthUser, verifyLessonOwnership } from "@/lib/auth-utils";
+import { getAuthUserFromRequest, verifyLessonOwnership } from "@/lib/auth-utils";
 
 export async function POST(request: Request) {
-  const { userId, error } = await getAuthUser();
+  const { userId, error } = await getAuthUserFromRequest(request);
   if (error) return error;
 
   const apiKeys = getApiKeysFromRequest(request);

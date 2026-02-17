@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/db";
-import { getAuthUser } from "@/lib/auth-utils";
+import { getAuthUserFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 import type { CourseExportJson } from "@/lib/export/toJson";
 import { serializeSubjects } from "@/lib/subjects";
 
 export async function POST(request: Request) {
-  const { userId, error: authError } = await getAuthUser();
+  const { userId, error: authError } = await getAuthUserFromRequest(request);
   if (authError) return authError;
 
   try {

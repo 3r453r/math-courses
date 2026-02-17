@@ -7,13 +7,13 @@ import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { quizSchema, type QuizOutput } from "@/lib/ai/schemas/quizSchema";
 import { buildQuizPrompt } from "@/lib/ai/prompts/quizGeneration";
-import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
+import { getAuthUserFromRequest, verifyCourseOwnership } from "@/lib/auth-utils";
 import { getCheapestModel, repackWithAI, tryCoerceAndValidate, unwrapParameter, type WrapperType } from "@/lib/ai/repairSchema";
 import { createGenerationLogger } from "@/lib/ai/generationLogger";
 import type { z } from "zod";
 
 export async function POST(request: Request) {
-  const { userId, error } = await getAuthUser();
+  const { userId, error } = await getAuthUserFromRequest(request);
   if (error) return error;
 
   const apiKeys = getApiKeysFromRequest(request);

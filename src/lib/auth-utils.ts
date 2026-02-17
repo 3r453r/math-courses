@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { validateCsrfRequest } from "@/lib/csrf";
 import { prisma } from "@/lib/db";
 import { isDevBypassEnabled } from "@/lib/dev-bypass";
 
@@ -35,6 +36,15 @@ export async function getAuthUser(): Promise<AuthResult> {
   }
 
   return result;
+}
+
+export async function getAuthUserFromRequest(request: Request): Promise<AuthResult> {
+  const csrfError = validateCsrfRequest(request);
+  if (csrfError) {
+    return { userId: null, role: null, accessStatus: null, error: csrfError };
+  }
+
+  return getAuthUser();
 }
 
 /**
@@ -91,6 +101,17 @@ export async function getAuthUserAnyStatus(): Promise<AuthResultAnyStatus> {
     accessStatus: user.accessStatus,
     error: null,
   };
+}
+
+export async function getAuthUserAnyStatusFromRequest(
+  request: Request
+): Promise<AuthResultAnyStatus> {
+  const csrfError = validateCsrfRequest(request);
+  if (csrfError) {
+    return { userId: null, role: null, accessStatus: null, error: csrfError };
+  }
+
+  return getAuthUserAnyStatus();
 }
 
 /**

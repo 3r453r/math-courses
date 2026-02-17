@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getAuthUser } from "@/lib/auth-utils";
+import { getAuthUserFromRequest } from "@/lib/auth-utils";
 import type { AIProvider } from "@/lib/ai/client";
 
 export async function POST(request: Request) {
-  const { error } = await getAuthUser();
+  const { error } = await getAuthUserFromRequest(request);
   if (error) return error;
 
   const body = await request.json();

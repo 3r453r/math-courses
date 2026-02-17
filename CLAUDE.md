@@ -43,7 +43,8 @@ pnpm test:all         # All of the above
 - `src/components/scratchpad/` — Per-lesson scratchpad with LaTeX slash-commands
 - `src/components/lesson/` — Lesson content renderer, section renderers, MathMarkdown
 - `src/lib/auth.ts` — Auth.js v5 configuration (OAuth providers, JWT sessions, Credentials dev bypass)
-- `src/lib/auth-utils.ts` — `getAuthUser()`, `getAuthUserAnyStatus()`, `requireAdmin()`, `requireOwner()`, `verifyCourseOwnership()`, `verifyLessonOwnership()` helpers
+- `src/lib/auth-utils.ts` — auth helpers: `getAuthUser()`, `getAuthUserAnyStatus()`, CSRF-aware `getAuthUserFromRequest(request)` / `getAuthUserAnyStatusFromRequest(request)`, `requireAdmin()`, `requireOwner()`, `verifyCourseOwnership()`, `verifyLessonOwnership()`
+- `src/lib/csrf.ts` — reusable CSRF guard (`Origin` + `Referer` fallback) for cookie-authenticated mutation requests
 - `src/lib/stripe.ts` — Stripe client singleton for payment processing
 - `src/components/admin/` — Admin panel components (AccessCodeManager, UserManager, GalleryManager)
 - `src/components/gallery/` — Gallery components (GalleryCard, StarRating, GalleryFilters)
@@ -136,7 +137,7 @@ Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Au
 ## Conventions
 
 - **Client components** use `"use client"` directive, fetch data in `useEffect`, manage local state with `useState`
-- **API routes** follow try/catch pattern with `NextResponse.json()` and consistent error shape `{ error: string }`. Every route starts with `const { userId, error } = await getAuthUser(); if (error) return error;` — exceptions: `/api/shared/[shareToken]` and `/api/gallery` are public (no auth); `/api/access-codes/redeem` and `/api/payment/checkout` use `getAuthUserAnyStatus()` (pending users OK); admin routes use `requireAdmin()`
+- **API routes** follow try/catch pattern with `NextResponse.json()` and consistent error shape `{ error: string }`. For cookie-authenticated **mutation handlers** (`POST`/`PUT`/`PATCH`/`DELETE`), call `getAuthUserFromRequest(request)` or `getAuthUserAnyStatusFromRequest(request)` first so CSRF checks (`Origin`, fallback `Referer`) run early. For read handlers (`GET`/`HEAD`), use `getAuthUser()` / `getAuthUserAnyStatus()` as appropriate. Third-party signed callbacks (e.g. Stripe webhook) stay exempt from CSRF guard and must rely on signature verification.
 - **Prisma singleton** via `src/lib/db.ts` — always import `prisma` from there, never instantiate directly
 - **Zustand store** (`src/stores/appStore.ts`) for global persisted state (API key, sidebar toggles, model selection); use custom hooks for local/transient state (e.g., `useScratchpad`)
 - **Toast notifications** via `sonner` — `toast.success()`, `toast.error()`

@@ -1,12 +1,12 @@
 import { prisma } from "@/lib/db";
-import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
+import { getAuthUserFromRequest, verifyCourseOwnership } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ courseId: string; noteId: string }> }
 ) {
-  const { userId, error: authError } = await getAuthUser();
+  const { userId, error: authError } = await getAuthUserFromRequest(request);
   if (authError) return authError;
 
   try {
@@ -58,7 +58,7 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ courseId: string; noteId: string }> }
 ) {
-  const { userId, error: authError } = await getAuthUser();
+  const { userId, error: authError } = await getAuthUserFromRequest(request);
   if (authError) return authError;
 
   try {

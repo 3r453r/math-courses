@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getAuthUser } from "@/lib/auth-utils";
+import { getAuthUser, getAuthUserFromRequest } from "@/lib/auth-utils";
 import { encryptApiKey, decryptApiKey } from "@/lib/crypto";
 import type { AIProvider } from "@/lib/ai/client";
 
@@ -41,7 +41,7 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const { userId, error } = await getAuthUser();
+  const { userId, error } = await getAuthUserFromRequest(request);
   if (error) return error;
 
   try {
@@ -80,7 +80,7 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const { userId, error } = await getAuthUser();
+  const { userId, error } = await getAuthUserFromRequest(request);
   if (error) return error;
 
   try {

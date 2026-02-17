@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { scoreQuiz } from "@/lib/quiz/scoring";
 import type { QuizQuestion, QuizAnswers } from "@/types/quiz";
-import { getAuthUser } from "@/lib/auth-utils";
+import { getAuthUserFromRequest } from "@/lib/auth-utils";
 
 interface DiagnosticQuestion {
   id: string;
@@ -13,7 +13,7 @@ interface DiagnosticQuestion {
 }
 
 export async function POST(request: Request) {
-  const { userId, error } = await getAuthUser();
+  const { userId, error } = await getAuthUserFromRequest(request);
   if (error) return error;
 
   try {

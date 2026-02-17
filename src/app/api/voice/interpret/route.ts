@@ -4,10 +4,10 @@ import { generateText } from "ai";
 import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
 import { buildVoiceInterpretationPrompt } from "@/lib/ai/prompts/voiceInterpretation";
 import { NextResponse } from "next/server";
-import { getAuthUser } from "@/lib/auth-utils";
+import { getAuthUserFromRequest } from "@/lib/auth-utils";
 
 export async function POST(request: Request) {
-  const { error } = await getAuthUser();
+  const { error } = await getAuthUserFromRequest(request);
   if (error) return error;
 
   const apiKeys = getApiKeysFromRequest(request);

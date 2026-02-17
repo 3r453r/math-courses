@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { evaluateCourseCompletion } from "@/lib/quiz/courseCompletion";
-import { getAuthUser } from "@/lib/auth-utils";
+import { getAuthUser, getAuthUserFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -88,7 +88,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { userId, error: authError } = await getAuthUser();
+  const { userId, error: authError } = await getAuthUserFromRequest(request);
   if (authError) return authError;
 
   try {
