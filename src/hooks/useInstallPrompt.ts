@@ -96,7 +96,7 @@ export function useInstallPrompt() {
     }
     setIsStandalone(
       window.matchMedia("(display-mode: standalone)").matches ||
-        (navigator as Record<string, unknown>).standalone === true
+        (navigator as unknown as Record<string, unknown>).standalone === true
     );
   }, []);
 
