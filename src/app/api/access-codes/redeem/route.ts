@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getAuthUserAnyStatus } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 
 /**
  * POST /api/access-codes/redeem
