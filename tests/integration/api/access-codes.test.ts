@@ -112,7 +112,7 @@ describe("access code redemption", () => {
 
     expect(response.status).toBe(400);
     const data = await response.json();
-    expect(data.error).toBe("Access code has expired");
+    expect(data.error).toBe("Invalid, expired, or exhausted access code");
   });
 
   it("rejects a maxed-out access code", async () => {
@@ -142,7 +142,7 @@ describe("access code redemption", () => {
     );
 
     expect(response.status).toBe(400);
-    expect((await response.json()).error).toBe("Access code has reached maximum uses");
+    expect((await response.json()).error).toBe("Invalid, expired, or exhausted access code");
   });
 
   it("prevents double redemption by the same user", async () => {
@@ -180,6 +180,64 @@ describe("access code redemption", () => {
 
     expect(response.status).toBe(400);
     expect((await response.json()).error).toBe("You have already redeemed this code");
+
+    const updatedCode = await prisma.accessCode.findUnique({ where: { id: code.id } });
+    expect(updatedCode?.currentUses).toBe(0);
+  });
+
+  it("handles concurrent redemption attempts without over-consuming usage", async () => {
+    const prisma = getTestPrisma();
+    const secondUserId = "user-2";
+
+    await prisma.user.create({
+      data: {
+        id: secondUserId,
+        email: "second@example.com",
+        name: "Second User",
+        emailVerified: new Date(),
+        accessStatus: "pending",
+      },
+    });
+
+    await prisma.user.update({
+      where: { id: TEST_USER_ID },
+      data: { accessStatus: "pending", accessGrantedAt: null, accessSource: null },
+    });
+
+    const code = await prisma.accessCode.create({
+      data: { code: "RACE0001", type: "general", maxUses: 1, currentUses: 0 },
+    });
+
+    vi.mocked(authUtils.getAuthUserAnyStatus)
+      .mockResolvedValueOnce({ userId: TEST_USER_ID, role: "user", accessStatus: "pending", error: null })
+      .mockResolvedValueOnce({ userId: secondUserId, role: "user", accessStatus: "pending", error: null });
+
+    const req1 = redeemPost(
+      new Request("http://localhost/api/access-codes/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: "RACE0001" }),
+      })
+    );
+
+    const req2 = redeemPost(
+      new Request("http://localhost/api/access-codes/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: "RACE0001" }),
+      })
+    );
+
+    const [response1, response2] = await Promise.all([req1, req2]);
+    const statuses = [response1.status, response2.status].sort();
+
+    expect(statuses).toEqual([200, 400]);
+
+    const updatedCode = await prisma.accessCode.findUnique({ where: { id: code.id } });
+    expect(updatedCode?.currentUses).toBe(1);
+
+    const redemptions = await prisma.accessCodeRedemption.findMany({ where: { accessCodeId: code.id } });
+    expect(redemptions).toHaveLength(1);
   });
 });
 
