@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 const CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
-const INITIAL_DELAY = 3000; // 3 seconds
 
 export function useVersionCheck() {
   const { t } = useTranslation("common");
@@ -38,7 +37,8 @@ export function useVersionCheck() {
       }
     }
 
-    const initialTimer = setTimeout(checkVersion, INITIAL_DELAY);
+    // Check immediately on mount (no delay)
+    checkVersion();
     const interval = setInterval(checkVersion, CHECK_INTERVAL);
 
     function onVisibilityChange() {
@@ -48,10 +48,18 @@ export function useVersionCheck() {
     }
     document.addEventListener("visibilitychange", onVisibilityChange);
 
+    // pageshow fires on iOS Safari bfcache restore (visibilitychange misses it)
+    function onPageShow(event: PageTransitionEvent) {
+      if (event.persisted) {
+        checkVersion();
+      }
+    }
+    window.addEventListener("pageshow", onPageShow);
+
     return () => {
-      clearTimeout(initialTimer);
       clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pageshow", onPageShow);
     };
   }, [t]);
 }

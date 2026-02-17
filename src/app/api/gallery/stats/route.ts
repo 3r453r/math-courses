@@ -16,13 +16,21 @@ export async function GET() {
       }),
     ]);
 
-    return NextResponse.json({
-      totalCourses,
-      totalRatings: ratingAgg._count.id,
-      averageRating: ratingAgg._avg.rating
-        ? Math.round(ratingAgg._avg.rating * 10) / 10
-        : null,
-    });
+    return NextResponse.json(
+      {
+        totalCourses,
+        totalRatings: ratingAgg._count.id,
+        averageRating: ratingAgg._avg.rating
+          ? Math.round(ratingAgg._avg.rating * 10) / 10
+          : null,
+      },
+      {
+        headers: {
+          "Cache-Control":
+            "public, max-age=60, s-maxage=300, stale-while-revalidate=600",
+        },
+      }
+    );
   } catch (error) {
     console.error("Failed to get gallery stats:", error);
     return NextResponse.json({ error: "Failed to get stats" }, { status: 500 });

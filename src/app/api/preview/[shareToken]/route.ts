@@ -122,7 +122,12 @@ export async function GET(
         : null,
     };
 
-    return NextResponse.json(response);
+    return NextResponse.json(response, {
+      headers: {
+        "Cache-Control":
+          "public, max-age=60, s-maxage=180, stale-while-revalidate=300",
+      },
+    });
   } catch (error) {
     console.error("Failed to fetch preview data:", error);
     return NextResponse.json({ error: "Failed to fetch preview" }, { status: 500 });
