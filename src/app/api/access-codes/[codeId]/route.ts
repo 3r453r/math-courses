@@ -1,15 +1,15 @@
 import { prisma } from "@/lib/db";
-import { requireOwner } from "@/lib/auth-utils";
+import { requireOwnerFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 
 /**
  * DELETE /api/access-codes/[codeId] — Deactivate an access code (admin only)
  */
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ codeId: string }> }
 ) {
-  const { error: authError } = await requireOwner();
+  const { error: authError } = await requireOwnerFromRequest(request);
   if (authError) return authError;
 
   try {

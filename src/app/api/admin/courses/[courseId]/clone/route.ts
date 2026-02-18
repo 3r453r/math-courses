@@ -1,15 +1,15 @@
 import { prisma } from "@/lib/db";
-import { requireOwner } from "@/lib/auth-utils";
+import { requireOwnerFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 
 /**
  * POST /api/admin/courses/[courseId]/clone — Clone any course into owner's account (owner only)
  */
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ courseId: string }> }
 ) {
-  const { userId, error: authError } = await requireOwner();
+  const { userId, error: authError } = await requireOwnerFromRequest(request);
   if (authError) return authError;
 
   try {

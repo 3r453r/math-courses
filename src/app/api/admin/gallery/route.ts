@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth-utils";
+import { requireAdmin, requireAdminFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 
@@ -124,7 +124,7 @@ export async function GET() {
  * with isGalleryListed: true and no expiry.
  */
 export async function POST(request: Request) {
-  const { role, error: authError } = await requireAdmin();
+  const { role, error: authError } = await requireAdminFromRequest(request);
   if (authError) return authError;
 
   try {

@@ -45,8 +45,8 @@ test.describe("Scratchpad", () => {
     // Open scratchpad
     await page.getByRole("button", { name: /Scratchpad/i }).click();
 
-    // Find the editor textarea and type
-    const editor = page.locator("textarea").first();
+    // Find the editor textarea in the desktop aside and type
+    const editor = page.locator("[data-testid='scratchpad-aside'] textarea");
     await editor.waitFor({ timeout: 5000 });
     await editor.fill("Hello LaTeX world!");
 
@@ -63,7 +63,7 @@ test.describe("Scratchpad", () => {
 
     // Open scratchpad and type
     await page.getByRole("button", { name: /Scratchpad/i }).click();
-    const editor = page.locator("textarea").first();
+    const editor = page.locator("[data-testid='scratchpad-aside'] textarea");
     await editor.waitFor({ timeout: 5000 });
     await editor.fill("Persistent note content");
 
@@ -80,7 +80,7 @@ test.describe("Scratchpad", () => {
 
     // Reopen scratchpad
     await page.getByRole("button", { name: /Scratchpad/i }).click();
-    const editor2 = page.locator("textarea").first();
+    const editor2 = page.locator("[data-testid='scratchpad-aside'] textarea");
     await editor2.waitFor({ timeout: 5000 });
 
     // Content should be preserved

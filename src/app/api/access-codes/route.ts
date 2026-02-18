@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireOwner } from "@/lib/auth-utils";
+import { requireOwner, requireOwnerFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 
@@ -41,7 +41,7 @@ function generateCode(): string {
  * Body: { count?: number, type?: string, maxUses?: number, expiresAt?: string }
  */
 export async function POST(request: Request) {
-  const { userId, error: authError } = await requireOwner();
+  const { userId, error: authError } = await requireOwnerFromRequest(request);
   if (authError) return authError;
 
   try {

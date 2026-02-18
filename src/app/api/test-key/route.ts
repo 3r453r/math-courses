@@ -1,10 +1,25 @@
 import { NextResponse } from "next/server";
-import { getAuthUser } from "@/lib/auth-utils";
+import { getAuthUserFromRequest } from "@/lib/auth-utils";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import type { AIProvider } from "@/lib/ai/client";
 
+const TEST_KEY_RATE_LIMIT = {
+  namespace: "test-key",
+  windowMs: 60_000,
+  maxRequests: 10,
+} as const;
+
 export async function POST(request: Request) {
-  const { error } = await getAuthUser();
+  const { userId, error } = await getAuthUserFromRequest(request);
   if (error) return error;
+
+  const rateLimitResponse = enforceRateLimit({
+    request,
+    userId,
+    route: "/api/test-key",
+    config: TEST_KEY_RATE_LIMIT,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
 
   const body = await request.json();
   const { provider, apiKey } = body as { provider?: AIProvider; apiKey?: string };

@@ -57,3 +57,6 @@ next-env.d.ts
 
 # debug dumps
 /.debug-dumps/
+
+# claude code local settings (contains allowed-command tokens)
+.claude/settings.local.json

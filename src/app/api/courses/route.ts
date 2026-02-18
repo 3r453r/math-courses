@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/db";
 import { evaluateCourseCompletion } from "@/lib/quiz/courseCompletion";
-import { getAuthUser } from "@/lib/auth-utils";
+import { getAuthUser, getAuthUserFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 export async function GET() {
   const { userId, error } = await getAuthUser();
@@ -87,9 +88,23 @@ export async function GET() {
   }
 }
 
+const COURSE_CREATE_RATE_LIMIT = {
+  namespace: "courses:create",
+  windowMs: 60_000,
+  maxRequests: 10,
+} as const;
+
 export async function POST(request: Request) {
-  const { userId, error: authError } = await getAuthUser();
+  const { userId, error: authError } = await getAuthUserFromRequest(request);
   if (authError) return authError;
+
+  const rateLimitResponse = enforceRateLimit({
+    request,
+    userId,
+    route: "/api/courses",
+    config: COURSE_CREATE_RATE_LIMIT,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
 
   try {
     const body = await request.json();

@@ -367,6 +367,7 @@ model AiGenerationLog {
   // Raw AI output for replication
   rawOutputText  String?  // up to 200KB, truncated with marker
   rawOutputLen   Int?     // always stored even if text is truncated
+  rawOutputRedacted Boolean @default(false)
 
   // Validation details
   zodErrors      String?  // JSON array of {path, code, message}
@@ -375,6 +376,11 @@ model AiGenerationLog {
   // Prompt fingerprint for grouping
   promptHash     String?  // SHA-256 hex
   promptText     String?  // stored only on non-success outcomes
+  promptRedacted Boolean @default(false)
+
+  // Retention for sensitive payloads
+  sensitiveTextExpiresAt DateTime?
+  sensitiveTextRedactedAt DateTime?
 
   // Request metadata
   language       String?
@@ -387,4 +393,5 @@ model AiGenerationLog {
   @@index([modelId])
   @@index([createdAt])
   @@index([courseId])
+  @@index([sensitiveTextExpiresAt])
 }

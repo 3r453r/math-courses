@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { validateCsrfRequest } from "@/lib/csrf";
 import { prisma } from "@/lib/db";
 import { isDevBypassEnabled } from "@/lib/dev-bypass";
 
@@ -35,6 +36,15 @@ export async function getAuthUser(): Promise<AuthResult> {
   }
 
   return result;
+}
+
+export async function getAuthUserFromRequest(request: Request): Promise<AuthResult> {
+  const csrfError = validateCsrfRequest(request);
+  if (csrfError) {
+    return { userId: null, role: null, accessStatus: null, error: csrfError };
+  }
+
+  return getAuthUser();
 }
 
 /**
@@ -93,6 +103,17 @@ export async function getAuthUserAnyStatus(): Promise<AuthResultAnyStatus> {
   };
 }
 
+export async function getAuthUserAnyStatusFromRequest(
+  request: Request
+): Promise<AuthResultAnyStatus> {
+  const csrfError = validateCsrfRequest(request);
+  if (csrfError) {
+    return { userId: null, role: null, accessStatus: null, error: csrfError };
+  }
+
+  return getAuthUserAnyStatus();
+}
+
 /**
  * Check that the current user is an admin.
  * Returns 403 if not admin, 401 if not authenticated.
@@ -119,6 +140,46 @@ export async function requireAdmin(): Promise<AuthResult> {
  */
 export async function requireOwner(): Promise<AuthResult> {
   const result = await getAuthUser();
+  if (result.error) return result;
+
+  if (result.role !== "owner") {
+    return {
+      userId: null,
+      role: null,
+      accessStatus: null,
+      error: NextResponse.json({ error: "Owner access required" }, { status: 403 }),
+    };
+  }
+
+  return result;
+}
+
+/**
+ * Check that the current user is an admin (CSRF-aware).
+ * Validates Origin/Referer headers before checking auth — use for mutation handlers.
+ */
+export async function requireAdminFromRequest(request: Request): Promise<AuthResult> {
+  const result = await getAuthUserFromRequest(request);
+  if (result.error) return result;
+
+  if (!["admin", "owner"].includes(result.role)) {
+    return {
+      userId: null,
+      role: null,
+      accessStatus: null,
+      error: NextResponse.json({ error: "Admin access required" }, { status: 403 }),
+    };
+  }
+
+  return result;
+}
+
+/**
+ * Check that the current user is an owner (CSRF-aware).
+ * Validates Origin/Referer headers before checking auth — use for mutation handlers.
+ */
+export async function requireOwnerFromRequest(request: Request): Promise<AuthResult> {
+  const result = await getAuthUserFromRequest(request);
   if (result.error) return result;
 
   if (result.role !== "owner") {

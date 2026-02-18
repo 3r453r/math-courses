@@ -74,8 +74,8 @@ test.describe("Lesson Viewing", () => {
     const scratchpadBtn = page.getByRole("button", { name: /Scratchpad/i });
     await scratchpadBtn.click();
 
-    // Scratchpad panel should be visible — look for the textarea
-    await expect(page.locator("textarea").first()).toBeVisible({
+    // Scratchpad panel should be visible — look for the textarea in desktop aside
+    await expect(page.locator("[data-testid='scratchpad-aside'] textarea")).toBeVisible({
       timeout: 5000,
     });
   });

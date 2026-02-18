@@ -258,7 +258,7 @@ describe("POST /api/preview/[shareToken]/score", () => {
 
 describe("PATCH /api/admin/gallery/[shareId] — preview", () => {
   it("sets previewLessonId on a gallery share", async () => {
-    vi.mocked(authUtils.requireAdmin).mockResolvedValueOnce({
+    vi.mocked(authUtils.requireAdminFromRequest).mockResolvedValueOnce({
       userId: "admin-1", role: "admin", accessStatus: "active", error: null,
     });
 
@@ -278,7 +278,7 @@ describe("PATCH /api/admin/gallery/[shareId] — preview", () => {
   });
 
   it("clears previewLessonId when set to null", async () => {
-    vi.mocked(authUtils.requireAdmin).mockResolvedValueOnce({
+    vi.mocked(authUtils.requireAdminFromRequest).mockResolvedValueOnce({
       userId: "admin-1", role: "admin", accessStatus: "active", error: null,
     });
 
@@ -298,7 +298,7 @@ describe("PATCH /api/admin/gallery/[shareId] — preview", () => {
   });
 
   it("rejects lesson that doesn't belong to the course", async () => {
-    vi.mocked(authUtils.requireAdmin).mockResolvedValueOnce({
+    vi.mocked(authUtils.requireAdminFromRequest).mockResolvedValueOnce({
       userId: "admin-1", role: "admin", accessStatus: "active", error: null,
     });
 
@@ -338,7 +338,7 @@ describe("Site Config API", () => {
   });
 
   it("PATCH /api/admin/site-config upserts config (admin)", async () => {
-    vi.mocked(authUtils.requireAdmin).mockResolvedValueOnce({
+    vi.mocked(authUtils.requireAdminFromRequest).mockResolvedValueOnce({
       userId: "admin-1", role: "admin", accessStatus: "active", error: null,
     });
 

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { getAuthUser, verifyCourseOwnership } from "@/lib/auth-utils";
+import { getAuthUser, getAuthUserFromRequest, verifyCourseOwnership } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 
 interface NotebookPage {
@@ -85,7 +85,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ courseId: string }> }
 ) {
-  const { userId, error: authError } = await getAuthUser();
+  const { userId, error: authError } = await getAuthUserFromRequest(request);
   if (authError) return authError;
 
   try {

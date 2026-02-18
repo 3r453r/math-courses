@@ -1,6 +1,14 @@
 import { prisma } from "@/lib/db";
-import { getAuthUserAnyStatus } from "@/lib/auth-utils";
+import { getAuthUserAnyStatusFromRequest } from "@/lib/auth-utils";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
+import { Prisma } from "@/generated/prisma/client";
+
+const ACCESS_CODE_REDEEM_RATE_LIMIT = {
+  namespace: "access-codes:redeem",
+  windowMs: 60_000,
+  maxRequests: 5,
+} as const;
 
 /**
  * POST /api/access-codes/redeem
@@ -8,8 +16,16 @@ import { NextResponse } from "next/server";
  * Accessible to pending users (any-status auth).
  */
 export async function POST(request: Request) {
-  const { userId, error: authError } = await getAuthUserAnyStatus();
+  const { userId, error: authError } = await getAuthUserAnyStatusFromRequest(request);
   if (authError) return authError;
+
+  const rateLimitResponse = enforceRateLimit({
+    request,
+    userId,
+    route: "/api/access-codes/redeem",
+    config: ACCESS_CODE_REDEEM_RATE_LIMIT,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
 
   try {
     const { code } = await request.json();
@@ -23,25 +39,8 @@ export async function POST(request: Request) {
       where: { code: trimmedCode },
     });
 
-    if (!accessCode || !accessCode.isActive) {
+    if (!accessCode) {
       return NextResponse.json({ error: "Invalid access code" }, { status: 400 });
-    }
-
-    if (accessCode.expiresAt && accessCode.expiresAt < new Date()) {
-      return NextResponse.json({ error: "Access code has expired" }, { status: 400 });
-    }
-
-    if (accessCode.currentUses >= accessCode.maxUses) {
-      return NextResponse.json({ error: "Access code has reached maximum uses" }, { status: 400 });
-    }
-
-    // Check if user already redeemed this code
-    const existing = await prisma.accessCodeRedemption.findUnique({
-      where: { accessCodeId_userId: { accessCodeId: accessCode.id, userId } },
-    });
-
-    if (existing) {
-      return NextResponse.json({ error: "You have already redeemed this code" }, { status: 400 });
     }
 
     // Check if user is already active
@@ -54,24 +53,50 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Your account is already active" }, { status: 400 });
     }
 
-    // Redeem: increment usage, create redemption, activate user
-    await prisma.$transaction([
-      prisma.accessCode.update({
-        where: { id: accessCode.id },
-        data: { currentUses: { increment: 1 } },
-      }),
-      prisma.accessCodeRedemption.create({
-        data: { accessCodeId: accessCode.id, userId },
-      }),
-      prisma.user.update({
-        where: { id: userId },
-        data: {
-          accessStatus: "active",
-          accessGrantedAt: new Date(),
-          accessSource: "code",
-        },
-      }),
-    ]);
+    try {
+      await prisma.$transaction(async (tx) => {
+        const now = new Date();
+        const updated = await tx.accessCode.updateMany({
+          where: {
+            id: accessCode.id,
+            isActive: true,
+            currentUses: { lt: accessCode.maxUses },
+            OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+          },
+          data: { currentUses: { increment: 1 } },
+        });
+
+        if (updated.count === 0) {
+          throw new Error("INVALID_OR_EXPIRED_OR_EXHAUSTED");
+        }
+
+        await tx.accessCodeRedemption.create({
+          data: { accessCodeId: accessCode.id, userId },
+        });
+
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            accessStatus: "active",
+            accessGrantedAt: now,
+            accessSource: "code",
+          },
+        });
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message === "INVALID_OR_EXPIRED_OR_EXHAUSTED") {
+        return NextResponse.json({ error: "Invalid, expired, or exhausted access code" }, { status: 400 });
+      }
+
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        return NextResponse.json({ error: "You have already redeemed this code" }, { status: 400 });
+      }
+
+      throw error;
+    }
 
     return NextResponse.json({ success: true, message: "Access granted" });
   } catch (error) {
