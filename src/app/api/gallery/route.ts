@@ -2,12 +2,26 @@ import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { parseSubjects } from "@/lib/subjects";
+import { enforceRateLimit } from "@/lib/rate-limit";
+
+const PUBLIC_GALLERY_RATE_LIMIT = {
+  namespace: "public:gallery",
+  windowMs: 60_000,
+  maxRequests: 40,
+} as const;
 
 /**
  * GET /api/gallery — List gallery courses (public, no auth required)
  * Query params: page, limit, language, difficulty, sort (stars/clones/recent), search
  */
 export async function GET(request: NextRequest) {
+  const rateLimitResponse = enforceRateLimit({
+    request,
+    route: "/api/gallery",
+    config: PUBLIC_GALLERY_RATE_LIMIT,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const { searchParams } = request.nextUrl;
     const page = Math.max(1, Number(searchParams.get("page") ?? 1));

@@ -1,6 +1,13 @@
 import { prisma } from "@/lib/db";
 import { getAuthUser, getAuthUserFromRequest, verifyCourseOwnership } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const createNotebookPageSchema = z.object({
+  title: z.string().max(200).optional(),
+  orderIndex: z.number().int().min(0).max(1000).optional(),
+});
 
 interface NotebookPage {
   id: string;
@@ -92,8 +99,9 @@ export async function POST(
     const { courseId } = await params;
     const { error: ownerError } = await verifyCourseOwnership(courseId, userId);
     if (ownerError) return ownerError;
-    const body = await request.json();
-    const { title, orderIndex } = body as { title?: string; orderIndex?: number };
+    const { data: body, error: parseError } = await parseBody(request, createNotebookPageSchema);
+    if (parseError) return parseError;
+    const { title, orderIndex } = body;
 
     // Verify course exists
     const course = await prisma.course.findUnique({ where: { id: courseId } });

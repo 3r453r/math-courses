@@ -3,6 +3,16 @@ import { getAuthUser, getAuthUserFromRequest, verifyCourseOwnership } from "@/li
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { enforceRateLimit } from "@/lib/rate-limit";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const createShareSchema = z.object({
+  expiresAt: z.string().datetime().nullable().optional(),
+});
+
+const deleteShareSchema = z.object({
+  shareId: z.string().min(1, "shareId required").max(50),
+});
 
 const COURSE_SHARE_MUTATION_RATE_LIMIT = {
   namespace: "courses:share:mutation",
@@ -31,7 +41,9 @@ export async function POST(
     const { error: ownerError } = await verifyCourseOwnership(courseId, userId);
     if (ownerError) return ownerError;
 
-    const body = await request.json().catch(() => ({}));
+    const { data: body, error: parseError } = await parseBody(request, createShareSchema);
+    if (parseError) return parseError;
+
     const expiresAt = body.expiresAt ? new Date(body.expiresAt) : null;
 
     const share = await prisma.courseShare.create({
@@ -109,10 +121,10 @@ export async function DELETE(
     const { error: ownerError } = await verifyCourseOwnership(courseId, userId);
     if (ownerError) return ownerError;
 
-    const { shareId } = await request.json();
-    if (!shareId) {
-      return NextResponse.json({ error: "shareId required" }, { status: 400 });
-    }
+    const { data: deleteBody, error: parseError } = await parseBody(request, deleteShareSchema);
+    if (parseError) return parseError;
+
+    const { shareId } = deleteBody;
 
     const share = await prisma.courseShare.findUnique({ where: { id: shareId } });
     if (!share || share.courseId !== courseId) {

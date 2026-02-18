@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { getAuthUserFromRequest } from "@/lib/auth-utils";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import type { AIProvider } from "@/lib/ai/client";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const testKeySchema = z.object({
+  provider: z.enum(["anthropic", "openai", "google"]).optional(),
+  apiKey: z.string().min(1, "No API key provided").max(500),
+});
 
 const TEST_KEY_RATE_LIMIT = {
   namespace: "test-key",
@@ -21,14 +28,11 @@ export async function POST(request: Request) {
   });
   if (rateLimitResponse) return rateLimitResponse;
 
-  const body = await request.json();
-  const { provider, apiKey } = body as { provider?: AIProvider; apiKey?: string };
+  const { data: body, error: parseError } = await parseBody(request, testKeySchema);
+  if (parseError) return parseError;
 
-  if (!apiKey) {
-    return NextResponse.json({ error: "No API key provided" }, { status: 401 });
-  }
-
-  const resolvedProvider = provider || "anthropic";
+  const { apiKey } = body;
+  const resolvedProvider: AIProvider = body.provider || "anthropic";
 
   try {
     switch (resolvedProvider) {

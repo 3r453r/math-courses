@@ -1,6 +1,15 @@
 import { prisma } from "@/lib/db";
 import { getAuthUserFromRequest, verifyCourseOwnership } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const updateNoteSchema = z.object({
+  title: z.string().max(200).optional(),
+  content: z.string().max(100000).optional(),
+}).refine((data) => data.title !== undefined || data.content !== undefined, {
+  message: "title or content required",
+});
 
 export async function PUT(
   request: Request,
@@ -13,15 +22,9 @@ export async function PUT(
     const { courseId, noteId } = await params;
     const { error: ownerError } = await verifyCourseOwnership(courseId, userId);
     if (ownerError) return ownerError;
-    const body = await request.json();
-    const { title, content } = body as { title?: string; content?: string };
-
-    if (title === undefined && content === undefined) {
-      return NextResponse.json(
-        { error: "title or content required" },
-        { status: 400 }
-      );
-    }
+    const { data: body, error: parseError } = await parseBody(request, updateNoteSchema);
+    if (parseError) return parseError;
+    const { title, content } = body;
 
     const note = await prisma.note.findUnique({ where: { id: noteId } });
     if (!note) {
