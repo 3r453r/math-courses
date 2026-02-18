@@ -1,0 +1,33 @@
+{
+  "pageTitle": "Regulamin",
+  "acceptPage": {
+    "title": "Witaj w społeczności uczących się",
+    "subtitle": "Dołączając, stajesz się częścią rosnącej biblioteki kursów generowanych przez AI. Oto jak to działa:",
+    "highlights": {
+      "community": {
+        "title": "Wspólna biblioteka nauki",
+        "description": "Kursy tworzą wspólną kolekcję, z której korzystają wszyscy."
+      },
+      "curation": {
+        "title": "Dbałość o jakość",
+        "description": "Nasz zespół może wyróżniać świetne kursy w publicznej galerii."
+      },
+      "attribution": {
+        "title": "Twoje autorstwo, Twój wybór",
+        "description": "Przypisz sobie autorstwo kursów w galerii w dowolnym momencie."
+      },
+      "preferences": {
+        "title": "Twoje preferencje mają znaczenie",
+        "description": "Wskaż, czy chcesz, aby Twoje kursy były brane pod uwagę do galerii."
+      }
+    },
+    "fullTermsLabel": "Pełna treść regulaminu",
+    "acceptButton": "Dołącz do społeczności",
+    "accepting": "Dołączanie...",
+    "mustAccept": "Proszę zapoznać się z regulaminem i zaakceptować go, aby kontynuować."
+  },
+  "versionNotice": "Nasz regulamin został zaktualizowany. Proszę zapoznać się z nową wersją i zaakceptować ją.",
+  "footer": {
+    "terms": "Regulamin"
+  }
+}

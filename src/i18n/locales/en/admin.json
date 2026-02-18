@@ -66,6 +66,7 @@
     "stars": "Stars",
     "notEligible": "Not fully generated",
     "eligible": "Eligible",
+    "optedOut": "User opted out",
     "eligibility": "Status",
     "lessonsGenerated": "{{generated}}/{{total}} lessons ready",
     "subject": "Subject",

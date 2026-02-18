@@ -66,6 +66,7 @@
     "stars": "Oceny",
     "notEligible": "Nie w pełni wygenerowany",
     "eligible": "Kwalifikuje się",
+    "optedOut": "Użytkownik zrezygnował",
     "eligibility": "Status",
     "lessonsGenerated": "{{generated}}/{{total}} lekcji gotowych",
     "subject": "Dziedzina",

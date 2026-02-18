@@ -196,6 +196,29 @@ export async function POST(request: Request) {
       },
     });
 
+    // Create notification for the course owner
+    try {
+      const courseForNotif = await prisma.course.findUnique({
+        where: { id: courseId },
+        select: { userId: true, title: true },
+      });
+      if (courseForNotif) {
+        await prisma.notification.create({
+          data: {
+            userId: courseForNotif.userId,
+            type: "gallery_listed",
+            data: JSON.stringify({
+              courseId,
+              courseTitle: courseForNotif.title,
+              shareToken: share.shareToken,
+            }),
+          },
+        });
+      }
+    } catch (notifError) {
+      console.error("Failed to create gallery notification:", notifError);
+    }
+
     return NextResponse.json(share, { status: 201 });
   } catch (error) {
     console.error("Failed to create gallery listing:", error);

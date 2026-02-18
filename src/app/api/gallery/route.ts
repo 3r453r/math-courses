@@ -47,8 +47,21 @@ export async function GET(request: NextRequest) {
     if (sort === "stars") orderBy = { starCount: "desc" };
     else if (sort === "clones") orderBy = { cloneCount: "desc" };
 
+    const courseSelect = {
+      title: true as const,
+      description: true as const,
+      topic: true as const,
+      subject: true as const,
+      difficulty: true as const,
+      language: true as const,
+      _count: { select: { lessons: true as const } },
+      user: { select: { name: true as const } },
+    };
+
+    const shareInclude = { course: { select: courseSelect } };
+
     // Fetch featured courses first (page 1 only) so we can exclude them from main query
-    let featured: Awaited<ReturnType<typeof prisma.courseShare.findMany>> = [];
+    let featured: Awaited<ReturnType<typeof prisma.courseShare.findMany<{ include: typeof shareInclude }>>> = [];
     if (page === 1) {
       featured = await prisma.courseShare.findMany({
         where: {
@@ -58,20 +71,7 @@ export async function GET(request: NextRequest) {
         },
         orderBy: { featuredAt: "desc" },
         take: 6,
-        include: {
-          course: {
-            select: {
-              title: true,
-              description: true,
-              topic: true,
-              subject: true,
-              difficulty: true,
-              language: true,
-              _count: { select: { lessons: true } },
-              user: { select: { name: true } },
-            },
-          },
-        },
+        include: shareInclude,
       });
     }
 
@@ -87,20 +87,7 @@ export async function GET(request: NextRequest) {
         orderBy,
         skip,
         take: limit,
-        include: {
-          course: {
-            select: {
-              title: true,
-              description: true,
-              topic: true,
-              subject: true,
-              difficulty: true,
-              language: true,
-              _count: { select: { lessons: true } },
-              user: { select: { name: true } },
-            },
-          },
-        },
+        include: shareInclude,
       }),
       prisma.courseShare.count({ where: mainWhere }),
     ]);
@@ -114,14 +101,16 @@ export async function GET(request: NextRequest) {
     const difficulties = [...new Set(allListings.map((s) => s.course.difficulty))].sort();
     const languages = [...new Set(allListings.map((s) => s.course.language).filter(Boolean))].sort();
 
-    // Add hasPreview flag derived from previewLessonId
+    // Add hasPreview flag and attribution info
     const items = shares.map((s) => ({
       ...s,
       hasPreview: s.previewLessonId != null,
+      creatorName: s.creatorClaimed ? s.course.user.name : null,
     }));
     const featuredItems = featured.map((s) => ({
       ...s,
       hasPreview: s.previewLessonId != null,
+      creatorName: s.creatorClaimed ? s.course.user.name : null,
     }));
 
     return NextResponse.json(

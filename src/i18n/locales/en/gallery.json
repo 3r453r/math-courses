@@ -24,7 +24,9 @@
     "featured": "Featured",
     "rating": "{{rating}} / 5",
     "cloneCount": "{{count}} clones",
-    "tryPreview": "Try Free Preview"
+    "tryPreview": "Try Free Preview",
+    "byAuthor": "by {{name}}",
+    "community": "Community"
   },
   "empty": "No courses found. Check back later!",
   "loading": "Loading courses...",

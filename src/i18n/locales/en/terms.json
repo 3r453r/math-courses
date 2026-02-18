@@ -1,0 +1,33 @@
+{
+  "pageTitle": "Terms of Service",
+  "acceptPage": {
+    "title": "Welcome to the Learning Community",
+    "subtitle": "By joining, you're part of a growing library of AI-generated courses. Here's how it works:",
+    "highlights": {
+      "community": {
+        "title": "Shared Learning Library",
+        "description": "Courses contribute to a community collection that helps everyone learn."
+      },
+      "curation": {
+        "title": "Quality Curation",
+        "description": "Our team may feature great courses in the public gallery."
+      },
+      "attribution": {
+        "title": "Your Credit, Your Choice",
+        "description": "Claim authorship on your gallery courses anytime."
+      },
+      "preferences": {
+        "title": "Your Preferences Matter",
+        "description": "Indicate whether you'd like courses considered for the gallery."
+      }
+    },
+    "fullTermsLabel": "Full Terms of Service",
+    "acceptButton": "Join the Community",
+    "accepting": "Joining...",
+    "mustAccept": "Please review and accept the Terms of Service to continue."
+  },
+  "versionNotice": "Our terms have been updated. Please review and accept the new version.",
+  "footer": {
+    "terms": "Terms"
+  }
+}

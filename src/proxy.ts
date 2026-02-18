@@ -48,6 +48,7 @@ const PUBLIC_PATHS = [
   "/api/preview",
   "/api/site-config",
   "/api/version",
+  "/terms",
 ];
 
 // Paths accessible to authenticated users regardless of access status
@@ -57,6 +58,7 @@ const PENDING_PATHS = [
   "/api/payment/checkout",
   "/payment",
   "/api/user",
+  "/terms/accept",
 ];
 
 function isPublicPath(pathname: string): boolean {

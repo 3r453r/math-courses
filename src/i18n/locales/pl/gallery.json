@@ -24,7 +24,9 @@
     "featured": "Wyróżniony",
     "rating": "{{rating}} / 5",
     "cloneCount": "{{count}} klonów",
-    "tryPreview": "Wypróbuj darmowy podgląd"
+    "tryPreview": "Wypróbuj darmowy podgląd",
+    "byAuthor": "autor: {{name}}",
+    "community": "Społeczność"
   },
   "empty": "Brak kursów. Sprawdź później!",
   "loading": "Ładowanie kursów...",

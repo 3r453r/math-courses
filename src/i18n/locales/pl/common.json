@@ -31,5 +31,11 @@
   "installApp": "Zainstaluj aplikację",
   "installAppDescription": "Zainstaluj tę aplikację, aby korzystać z niej wygodniej.",
   "install": "Zainstaluj",
-  "installAppFallback": "Użyj opcji \u201EZainstaluj\u201D lub \u201EDodaj do ekranu głównego\u201D w przeglądarce, aby zainstalować tę aplikację."
+  "installAppFallback": "Użyj opcji \u201EZainstaluj\u201D lub \u201EDodaj do ekranu głównego\u201D w przeglądarce, aby zainstalować tę aplikację.",
+  "notifications": {
+    "galleryListed": "Twój kurs \u201E{{title}}\u201D został dodany do galerii!",
+    "viewInGallery": "Zobacz w galerii",
+    "claimAuthorship": "Przypisz autorstwo",
+    "dismiss": "Zamknij"
+  }
 }

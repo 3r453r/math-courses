@@ -21,6 +21,7 @@ interface GalleryItem {
   tags: string;
   featuredAt: string | null;
   hasPreview?: boolean;
+  creatorName?: string | null;
   course: {
     title: string;
     description: string;
@@ -64,6 +65,11 @@ export function GalleryCard({ item, onClone, cloning, isAuthenticated }: Gallery
             </Badge>
           )}
         </div>
+        {item.creatorName && (
+          <p className="text-xs text-muted-foreground">
+            {t("gallery:card.byAuthor", { name: item.creatorName })}
+          </p>
+        )}
         <CardDescription className="line-clamp-2">
           {item.course.description}
         </CardDescription>

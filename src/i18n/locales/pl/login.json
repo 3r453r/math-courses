@@ -16,8 +16,8 @@
   "continueAnyway": "Spróbuj zalogować się mimo to",
   "tagline": "Kursy AI, spersonalizowane dla Ciebie",
   "hero": {
-    "title": "Ucz się dowolnego przedmiotu z kursami AI",
-    "subtitle": "Wybierz temat, a AI stworzy ustrukturyzowany kurs z lekcjami, quizami i interaktywnym tutorem — dopasowany do Twojego poziomu.",
+    "title": "Ucz się dowolnego przedmiotu. Dziel się tym, co tworzysz.",
+    "subtitle": "AI generuje ustrukturyzowane kursy z dowolnego tematu STEM — dziel się nimi z rosnącą społecznością uczących się.",
     "getStarted": "Zacznij",
     "browseGallery": "Przeglądaj galerię"
   },
@@ -33,8 +33,8 @@
       "description": "AI buduje ustrukturyzowany kurs z lekcjami połączonymi w graf zależności, a nie płaską listę."
     },
     "learn": {
-      "title": "Ucz się we własnym tempie",
-      "description": "Studiuj lekcje równolegle, rozwiązuj quizy, rozmawiaj z tutorem AI i śledź postępy."
+      "title": "Ucz się i dziel wiedzą",
+      "description": "Studiuj lekcje, rozwiązuj quizy, rozmawiaj z tutorem AI — i dziel się kursem ze społecznością."
     }
   },
   "features": {
@@ -56,21 +56,21 @@
       "description": "Zobacz, jak lekcje są ze sobą połączone. Ucz się równolegle, gdy wymagania wstępne są spełnione."
     },
     "export": {
-      "title": "Eksport i udostępnianie",
-      "description": "Eksportuj do Markdown, JSON lub drukuj. Udostępniaj kursy linkiem lub klonuj z galerii."
+      "title": "Dziel się wiedzą",
+      "description": "Udostępniaj kursy linkiem, eksportuj do Markdown lub PDF i twórz wspólną galerię kursów."
     },
     "gallery": {
-      "title": "Galeria kursów",
-      "description": "Przeglądaj kursy społeczności, wypróbuj darmowe podglądy i klonuj kursy do dostosowania."
+      "title": "Biblioteka społeczności",
+      "description": "Przeglądaj kursy tworzone przez uczących się z całego świata. Wypróbuj podglądy, klonuj i dostosowuj, lub dodaj własne."
     }
   },
   "featuredCourses": {
     "title": "Wyróżnione kursy",
-    "subtitle": "Wypróbuj darmowy podgląd — bez konta.",
+    "subtitle": "Tworzone przez uczących się, dla uczących się. Wypróbuj podgląd — bez konta.",
     "viewAll": "Zobacz wszystkie kursy"
   },
   "signInSection": {
-    "title": "Gotowy, by zacząć się uczyć?"
+    "title": "Gotowy, by uczyć się i dzielić wiedzą?"
   },
   "socialProof": {
     "courses": "Kursy",
@@ -79,6 +79,7 @@
   },
   "footer": {
     "gallery": "Galeria",
-    "pricing": "Cennik"
+    "pricing": "Cennik",
+    "terms": "Regulamin"
   }
 }

@@ -43,6 +43,16 @@ export async function GET(
           },
         },
         completionSummary: true,
+        shares: {
+          where: { isGalleryListed: true, isActive: true },
+          select: {
+            id: true,
+            shareToken: true,
+            creatorClaimed: true,
+            creatorClaimedAt: true,
+          },
+          take: 1,
+        },
       },
     });
 
@@ -69,13 +79,14 @@ export async function PATCH(
     const { error: ownerError } = await verifyCourseOwnership(courseId, userId);
     if (ownerError) return ownerError;
     const body = await request.json();
-    const { contextDoc, passThreshold, noLessonCanFail, lessonFailureThreshold, lessonWeights } = body;
+    const { contextDoc, passThreshold, noLessonCanFail, lessonFailureThreshold, lessonWeights, galleryEligible } = body;
 
     const updateData: Record<string, unknown> = {};
     if (typeof contextDoc === "string") updateData.contextDoc = contextDoc;
     if (typeof passThreshold === "number") updateData.passThreshold = passThreshold;
     if (typeof noLessonCanFail === "boolean") updateData.noLessonCanFail = noLessonCanFail;
     if (typeof lessonFailureThreshold === "number") updateData.lessonFailureThreshold = lessonFailureThreshold;
+    if (typeof galleryEligible === "boolean") updateData.galleryEligible = galleryEligible;
 
     if (Object.keys(updateData).length > 0) {
       await prisma.course.update({
