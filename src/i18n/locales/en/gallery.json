@@ -26,7 +26,10 @@
     "cloneCount": "{{count}} clones",
     "tryPreview": "Try Free Preview",
     "byAuthor": "by {{name}}",
-    "community": "Community"
+    "community": "Community",
+    "translateTo": "Translate to...",
+    "translating": "Translating...",
+    "translated": "Course translated to {{language}}!"
   },
   "empty": "No courses found. Check back later!",
   "loading": "Loading courses...",

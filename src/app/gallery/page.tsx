@@ -10,6 +10,8 @@ import { GalleryCard } from "@/components/gallery/GalleryCard";
 import { GalleryFilters } from "@/components/gallery/GalleryFilters";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserMenu } from "@/components/UserMenu";
+import { useApiHeaders } from "@/hooks/useApiHeaders";
+import { LANGUAGE_NAMES } from "@/lib/ai/prompts/languageInstruction";
 
 interface GalleryItem {
   shareToken: string;
@@ -43,9 +45,12 @@ export default function GalleryPage() {
   const { data: session } = useSession();
   const { t } = useTranslation(["gallery", "common"]);
 
+  const apiHeaders = useApiHeaders();
+
   const [data, setData] = useState<GalleryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [cloningToken, setCloningToken] = useState<string | null>(null);
+  const [translatingToken, setTranslatingToken] = useState<string | null>(null);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -116,6 +121,36 @@ export default function GalleryPage() {
     }
   }
 
+  async function handleTranslate(shareToken: string, targetLanguage: string) {
+    if (!session?.user) {
+      router.push("/login?callbackUrl=/gallery");
+      return;
+    }
+
+    const langName = LANGUAGE_NAMES[targetLanguage] ?? targetLanguage;
+    setTranslatingToken(shareToken);
+    try {
+      const res = await fetch(`/api/courses/_/regenerate-language`, {
+        method: "POST",
+        headers: apiHeaders,
+        body: JSON.stringify({ targetLanguage, shareToken }),
+      });
+
+      if (res.ok) {
+        const { id } = await res.json();
+        toast.success(t("gallery:card.translated", { language: langName }));
+        router.push(`/courses/${id}`);
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to translate");
+      }
+    } catch {
+      toast.error("Failed to translate course");
+    } finally {
+      setTranslatingToken(null);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -177,7 +212,9 @@ export default function GalleryPage() {
                       key={item.shareToken}
                       item={item}
                       onClone={handleClone}
+                      onTranslate={handleTranslate}
                       cloning={cloningToken === item.shareToken}
+                      translating={translatingToken === item.shareToken}
                       isAuthenticated={!!session?.user}
                     />
                   ))}

@@ -26,7 +26,10 @@
     "cloneCount": "{{count}} klonów",
     "tryPreview": "Wypróbuj darmowy podgląd",
     "byAuthor": "autor: {{name}}",
-    "community": "Społeczność"
+    "community": "Społeczność",
+    "translateTo": "Przetłumacz na...",
+    "translating": "Tłumaczenie...",
+    "translated": "Kurs przetłumaczony na {{language}}!"
   },
   "empty": "Brak kursów. Sprawdź później!",
   "loading": "Ładowanie kursów...",

@@ -58,5 +58,8 @@
   "attributionHelp": "Twoja nazwa wyświetlana będzie na karcie kursu w galerii.",
   "attributionClaimed": "Autorstwo przypisane",
   "attributionRemoved": "Autorstwo usunięte",
-  "attributionFailed": "Nie udało się zaktualizować autorstwa"
+  "attributionFailed": "Nie udało się zaktualizować autorstwa",
+  "translateTo": "Przetłumacz na...",
+  "translating": "Tłumaczenie...",
+  "courseTranslated": "Kurs przetłumaczony na {{language}}!"
 }
