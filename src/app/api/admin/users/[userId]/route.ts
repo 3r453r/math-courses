@@ -1,6 +1,15 @@
 import { prisma } from "@/lib/db";
 import { requireOwnerFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const updateUserSchema = z.object({
+  role: z.enum(["user", "admin", "owner"]).optional(),
+  accessStatus: z.enum(["pending", "active", "suspended"]).optional(),
+}).refine((data) => data.role !== undefined || data.accessStatus !== undefined, {
+  message: "At least one of role or accessStatus must be provided",
+});
 
 /**
  * PATCH /api/admin/users/[userId] — Update user role or access status (admin only)
@@ -14,7 +23,8 @@ export async function PATCH(
 
   try {
     const { userId } = await params;
-    const body = await request.json();
+    const { data: body, error: parseError } = await parseBody(request, updateUserSchema);
+    if (parseError) return parseError;
 
     // Prevent modification of owner accounts
     const targetUser = await prisma.user.findUnique({
@@ -31,25 +41,15 @@ export async function PATCH(
     const updateData: Record<string, unknown> = {};
 
     if (body.role !== undefined) {
-      if (!["user", "admin", "owner"].includes(body.role)) {
-        return NextResponse.json({ error: "Invalid role" }, { status: 400 });
-      }
       updateData.role = body.role;
     }
 
     if (body.accessStatus !== undefined) {
-      if (!["pending", "active", "suspended"].includes(body.accessStatus)) {
-        return NextResponse.json({ error: "Invalid access status" }, { status: 400 });
-      }
       updateData.accessStatus = body.accessStatus;
       if (body.accessStatus === "active") {
         updateData.accessGrantedAt = new Date();
         updateData.accessSource = "admin_grant";
       }
-    }
-
-    if (Object.keys(updateData).length === 0) {
-      return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
     }
 
     const user = await prisma.user.update({

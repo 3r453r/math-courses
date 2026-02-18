@@ -2,6 +2,15 @@ import { prisma } from "@/lib/db";
 import { requireOwner, requireOwnerFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const generateCodesSchema = z.object({
+  count: z.number().int().min(1).max(100).default(1),
+  type: z.string().max(50).default("general"),
+  maxUses: z.number().int().min(1).max(10000).default(1),
+  expiresAt: z.string().datetime().nullable().optional(),
+});
 
 /**
  * GET /api/access-codes — List all access codes with usage stats (admin only)
@@ -45,10 +54,12 @@ export async function POST(request: Request) {
   if (authError) return authError;
 
   try {
-    const body = await request.json();
-    const count = Math.min(body.count ?? 1, 100);
-    const type = body.type ?? "general";
-    const maxUses = body.maxUses ?? 1;
+    const { data: body, error: parseError } = await parseBody(request, generateCodesSchema);
+    if (parseError) return parseError;
+
+    const count = body.count;
+    const type = body.type;
+    const maxUses = body.maxUses;
     const expiresAt = body.expiresAt ? new Date(body.expiresAt) : null;
 
     const codes = [];

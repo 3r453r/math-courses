@@ -7,6 +7,21 @@ import { buildLanguageInstruction } from "@/lib/ai/prompts/languageInstruction";
 import { prisma } from "@/lib/db";
 import { getAuthUserFromRequest, verifyLessonOwnership } from "@/lib/auth-utils";
 import { enforceRateLimit } from "@/lib/rate-limit";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const chatSchema = z.object({
+  messages: z.array(z.object({
+    role: z.string().max(20),
+    content: z.string().max(100000).optional(),
+    parts: z.array(z.object({
+      type: z.string().max(20).optional(),
+      text: z.string().max(100000).optional(),
+    })).optional(),
+  })).max(200),
+  lessonId: z.string().min(1, "lessonId required").max(50),
+  model: z.string().max(100).optional(),
+});
 
 const CHAT_RATE_LIMIT = {
   namespace: "chat",
@@ -31,27 +46,27 @@ export async function POST(request: Request) {
     return new Response("API key required", { status: 401 });
   }
 
-  const { messages: rawMessages, lessonId, model } = await request.json();
+  const { data: chatBody, error: parseError } = await parseBody(request, chatSchema);
+  if (parseError) return parseError;
 
-  if (!lessonId) {
-    return new Response("lessonId required", { status: 400 });
-  }
+  const { messages: rawMessages, lessonId, model } = chatBody;
 
   // Convert UIMessage format (parts array) to CoreMessage format (content string)
   // that streamText expects. Also filter out empty assistant messages.
-  type ChatRole = "system" | "user" | "assistant";
   type RawMessage = {
     role: string;
     content?: string;
     parts?: Array<{ type?: string; text?: string }>;
   };
 
-  function isChatRole(role: string): role is ChatRole {
-    return role === "system" || role === "user" || role === "assistant";
+  function isAllowedChatRole(role: string): role is "user" | "assistant" {
+    // Only allow user/assistant — system role is server-controlled and must not
+    // be injectable from client messages.
+    return role === "user" || role === "assistant";
   }
 
   const messages = (rawMessages as RawMessage[]).reduce<ModelMessage[]>((acc, msg) => {
-    if (!isChatRole(msg.role)) return acc;
+    if (!isAllowedChatRole(msg.role)) return acc;
 
     // Extract text content from UIMessage parts or use content directly
     let content: string;

@@ -41,6 +41,15 @@ export async function POST(request: Request) {
     }
 
     try {
+      // Idempotency guard: skip if this Stripe session was already processed
+      const existingPayment = await prisma.payment.findUnique({
+        where: { stripeSessionId: session.id },
+      });
+      if (existingPayment) {
+        console.log(`[webhook] Payment already processed for session ${session.id}, skipping`);
+        return NextResponse.json({ received: true });
+      }
+
       // Generate a unique access code for audit trail
       const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
       const bytes = crypto.randomBytes(8);
@@ -50,21 +59,23 @@ export async function POST(request: Request) {
       }
 
       // Create access code, redemption, payment record, and activate user
-      const accessCode = await prisma.accessCode.create({
-        data: {
-          code: codeStr,
-          type: "payment",
-          maxUses: 1,
-          currentUses: 1,
-          isActive: false, // Already used
-        },
-      });
+      // All inside a single transaction to prevent orphaned records on retry
+      await prisma.$transaction(async (tx) => {
+        const accessCode = await tx.accessCode.create({
+          data: {
+            code: codeStr,
+            type: "payment",
+            maxUses: 1,
+            currentUses: 1,
+            isActive: false, // Already used
+          },
+        });
 
-      await prisma.$transaction([
-        prisma.accessCodeRedemption.create({
+        await tx.accessCodeRedemption.create({
           data: { accessCodeId: accessCode.id, userId },
-        }),
-        prisma.payment.create({
+        });
+
+        await tx.payment.create({
           data: {
             userId,
             stripeSessionId: session.id,
@@ -73,16 +84,17 @@ export async function POST(request: Request) {
             status: "completed",
             accessCodeId: accessCode.id,
           },
-        }),
-        prisma.user.update({
+        });
+
+        await tx.user.update({
           where: { id: userId },
           data: {
             accessStatus: "active",
             accessGrantedAt: new Date(),
             accessSource: "stripe",
           },
-        }),
-      ]);
+        });
+      });
     } catch (error) {
       console.error("Failed to process payment webhook:", error);
       // Return 200 to prevent Stripe retries — we log the error for manual resolution

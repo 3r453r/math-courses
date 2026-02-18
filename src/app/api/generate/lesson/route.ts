@@ -12,7 +12,15 @@ import { enforceRateLimit } from "@/lib/rate-limit";
 import { getCheapestModel, repackWithAI, tryCoerceAndValidate, unwrapParameter, type WrapperType } from "@/lib/ai/repairSchema";
 import { validateAndRepairVisualizations } from "@/lib/content/vizValidation";
 import { createGenerationLogger } from "@/lib/ai/generationLogger";
-import type { z } from "zod";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const generateLessonBodySchema = z.object({
+  lessonId: z.string().min(1).max(50),
+  courseId: z.string().min(1).max(50),
+  model: z.string().max(100).optional(),
+  weakTopics: z.array(z.string().max(200)).max(50).optional(),
+});
 
 const GENERATE_LESSON_RATE_LIMIT = {
   namespace: "generate:lesson",
@@ -37,15 +45,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "API key required" }, { status: 401 });
   }
 
-  let body: { lessonId?: string; courseId?: string; model?: string; weakTopics?: string[] } = {};
+  let body: z.infer<typeof generateLessonBodySchema> = { lessonId: "", courseId: "" };
 
   try {
-    body = await request.json();
+    const { data: parsed, error: parseError } = await parseBody(request, generateLessonBodySchema);
+    if (parseError) return parseError;
+    body = parsed;
     const { lessonId, courseId } = body;
-
-    if (!lessonId || !courseId) {
-      return NextResponse.json({ error: "lessonId and courseId required" }, { status: 400 });
-    }
 
     // Verify course ownership
     const { error: ownershipError } = await verifyCourseOwnership(courseId, userId);

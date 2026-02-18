@@ -18,7 +18,14 @@ import { buildTriviaPrompt } from "@/lib/ai/prompts/triviaGeneration";
 import { getAuthUserFromRequest, verifyCourseOwnership } from "@/lib/auth-utils";
 import { getCheapestModel, tryCoerceAndValidate, unwrapParameter, type WrapperType } from "@/lib/ai/repairSchema";
 import { createGenerationLogger } from "@/lib/ai/generationLogger";
-import type { z } from "zod";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const generateTriviaBodySchema = z.object({
+  courseId: z.string().min(1).max(50),
+  lessonId: z.string().max(50).optional(),
+  model: z.string().max(100).optional(),
+});
 
 const GENERATE_TRIVIA_RATE_LIMIT = {
   namespace: "generate:trivia",
@@ -44,7 +51,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = await request.json();
+    const { data: body, error: parseError } = await parseBody(request, generateTriviaBodySchema);
+    if (parseError) return parseError;
+
     const { courseId, lessonId, model } = body;
 
     if (!courseId) {

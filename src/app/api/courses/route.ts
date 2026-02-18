@@ -3,6 +3,21 @@ import { evaluateCourseCompletion } from "@/lib/quiz/courseCompletion";
 import { getAuthUser, getAuthUserFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 import { enforceRateLimit } from "@/lib/rate-limit";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const createCourseSchema = z.object({
+  title: z.string().max(200).optional(),
+  description: z.string().max(2000).optional(),
+  topic: z.string().max(500).optional(),
+  focusAreas: z.array(z.string().max(200)).max(20).optional(),
+  targetLessonCount: z.number().int().min(1).max(50).optional(),
+  difficulty: z.enum(["beginner", "intermediate", "advanced"]).optional(),
+  language: z.string().max(10).optional(),
+  passThreshold: z.number().min(0).max(1).optional(),
+  noLessonCanFail: z.boolean().optional(),
+  lessonFailureThreshold: z.number().min(0).max(1).optional(),
+});
 
 export async function GET() {
   const { userId, error } = await getAuthUser();
@@ -107,7 +122,9 @@ export async function POST(request: Request) {
   if (rateLimitResponse) return rateLimitResponse;
 
   try {
-    const body = await request.json();
+    const { data: body, error: parseError } = await parseBody(request, createCourseSchema);
+    if (parseError) return parseError;
+
     const {
       title, description, topic, focusAreas, targetLessonCount, difficulty, language,
       passThreshold, noLessonCanFail, lessonFailureThreshold,
@@ -116,9 +133,9 @@ export async function POST(request: Request) {
     const course = await prisma.course.create({
       data: {
         userId,
-        title,
-        description,
-        topic,
+        title: title ?? "",
+        description: description ?? "",
+        topic: topic ?? "",
         focusAreas: JSON.stringify(focusAreas || []),
         targetLessonCount: targetLessonCount || 10,
         difficulty: difficulty || "intermediate",

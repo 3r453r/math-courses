@@ -12,7 +12,18 @@ import { getAuthUserFromRequest, verifyCourseOwnership } from "@/lib/auth-utils"
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { getCheapestModel, repackWithAI, tryCoerceAndValidate, unwrapParameter, type WrapperType } from "@/lib/ai/repairSchema";
 import { createGenerationLogger } from "@/lib/ai/generationLogger";
-import type { z } from "zod";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const generateCourseBodySchema = z.object({
+  courseId: z.string().max(50).optional(),
+  topic: z.string().max(500).optional(),
+  description: z.string().max(2000).optional(),
+  focusAreas: z.array(z.string().max(200)).max(20).optional(),
+  lessonCount: z.number().int().min(1).max(50).optional(),
+  difficulty: z.string().max(50).optional(),
+  model: z.string().max(100).optional(),
+});
 
 const GENERATE_COURSE_RATE_LIMIT = {
   namespace: "generate:course",
@@ -37,18 +48,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "API key required" }, { status: 401 });
   }
 
-  let body: {
-    courseId?: string;
-    topic?: string;
-    description?: string;
-    focusAreas?: string[];
-    lessonCount?: number;
-    difficulty?: string;
-    model?: string;
-  } = {};
+  let body: z.infer<typeof generateCourseBodySchema> = {};
 
   try {
-    body = await request.json();
+    const { data: parsed, error: parseError } = await parseBody(request, generateCourseBodySchema);
+    if (parseError) return parseError;
+    body = parsed;
     const { courseId, topic, description, focusAreas, lessonCount, difficulty } = body;
 
     // Verify course ownership if courseId provided

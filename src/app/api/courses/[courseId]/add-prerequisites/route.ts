@@ -1,6 +1,15 @@
 import { prisma } from "@/lib/db";
 import { getAuthUserFromRequest, verifyCourseOwnership } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const addPrerequisitesSchema = z.object({
+  topics: z.array(z.object({
+    title: z.string().min(1).max(200),
+    summary: z.string().max(2000),
+  })).min(1, "At least one topic is required").max(20),
+});
 
 export async function POST(
   request: Request,
@@ -13,17 +22,10 @@ export async function POST(
     const { courseId } = await params;
     const { error: ownerError } = await verifyCourseOwnership(courseId, userId);
     if (ownerError) return ownerError;
-    const body = await request.json();
-    const { topics } = body as {
-      topics?: { title: string; summary: string }[];
-    };
+    const { data: body, error: parseError } = await parseBody(request, addPrerequisitesSchema);
+    if (parseError) return parseError;
 
-    if (!topics || topics.length === 0) {
-      return NextResponse.json(
-        { error: "At least one topic is required" },
-        { status: 400 }
-      );
-    }
+    const { topics } = body;
 
     const course = await prisma.course.findUnique({
       where: { id: courseId },

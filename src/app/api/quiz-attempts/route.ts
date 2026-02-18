@@ -3,18 +3,23 @@ import { NextResponse } from "next/server";
 import { scoreQuiz } from "@/lib/quiz/scoring";
 import type { QuizQuestion, QuizAnswers } from "@/types/quiz";
 import { getAuthUserFromRequest } from "@/lib/auth-utils";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const quizAttemptSchema = z.object({
+  quizId: z.string().min(1).max(50),
+  answers: z.record(z.string(), z.array(z.string().max(200))),
+});
 
 export async function POST(request: Request) {
   const { userId, error } = await getAuthUserFromRequest(request);
   if (error) return error;
 
   try {
-    const body = await request.json();
-    const { quizId, answers } = body as { quizId?: string; answers?: QuizAnswers };
+    const { data: body, error: parseError } = await parseBody(request, quizAttemptSchema);
+    if (parseError) return parseError;
 
-    if (!quizId || !answers) {
-      return NextResponse.json({ error: "quizId and answers required" }, { status: 400 });
-    }
+    const { quizId, answers } = body as { quizId: string; answers: QuizAnswers };
 
     const quizWithOwner = await prisma.quiz.findUnique({
       where: { id: quizId },

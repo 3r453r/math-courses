@@ -1,6 +1,13 @@
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { getAuthUser, getAuthUserFromRequest, verifyLessonOwnership } from "@/lib/auth-utils";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const updateScratchpadSchema = z.object({
+  id: z.string().min(1).max(50),
+  content: z.string().max(200000),
+});
 
 export async function GET(request: Request) {
   const { userId, error } = await getAuthUser();
@@ -55,15 +62,10 @@ export async function PUT(request: Request) {
   if (authError) return authError;
 
   try {
-    const body = await request.json();
-    const { id, content } = body as { id?: string; content?: string };
+    const { data: body, error: parseError } = await parseBody(request, updateScratchpadSchema);
+    if (parseError) return parseError;
 
-    if (!id || content === undefined) {
-      return NextResponse.json(
-        { error: "id and content required" },
-        { status: 400 }
-      );
-    }
+    const { id, content } = body;
 
     // Verify ownership through the note's lesson
     const existingNote = await prisma.note.findUnique({

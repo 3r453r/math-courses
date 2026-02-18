@@ -11,7 +11,13 @@ import { buildDiagnosticPrompt } from "@/lib/ai/prompts/quizGeneration";
 import { getAuthUserFromRequest, verifyCourseOwnership } from "@/lib/auth-utils";
 import { getCheapestModel, repackWithAI, tryCoerceAndValidate, unwrapParameter, type WrapperType } from "@/lib/ai/repairSchema";
 import { createGenerationLogger } from "@/lib/ai/generationLogger";
-import type { z } from "zod";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const generateDiagnosticBodySchema = z.object({
+  courseId: z.string().min(1).max(50),
+  model: z.string().max(100).optional(),
+});
 
 const GENERATE_DIAGNOSTIC_RATE_LIMIT = {
   namespace: "generate:diagnostic",
@@ -36,15 +42,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "API key required" }, { status: 401 });
   }
 
-  let body: { courseId?: string; model?: string } = {};
+  let body: z.infer<typeof generateDiagnosticBodySchema> = { courseId: "" };
 
   try {
-    body = await request.json();
+    const { data: parsed, error: parseError } = await parseBody(request, generateDiagnosticBodySchema);
+    if (parseError) return parseError;
+    body = parsed;
     const { courseId } = body;
-
-    if (!courseId) {
-      return NextResponse.json({ error: "courseId required" }, { status: 400 });
-    }
 
     // Verify course ownership
     const { error: ownershipError } = await verifyCourseOwnership(courseId, userId);

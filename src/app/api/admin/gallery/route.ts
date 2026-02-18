@@ -2,6 +2,13 @@ import { prisma } from "@/lib/db";
 import { requireAdmin, requireAdminFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const createGallerySchema = z.object({
+  courseId: z.string().min(1, "courseId is required").max(50),
+  cloneConflictAction: z.enum(["replace", "add"]).optional(),
+});
 
 /**
  * Walk the clone lineage chain upward (ancestors) and downward (descendants)
@@ -128,12 +135,10 @@ export async function POST(request: Request) {
   if (authError) return authError;
 
   try {
-    const body = await request.json();
-    const { courseId, cloneConflictAction } = body;
+    const { data: body, error: parseError } = await parseBody(request, createGallerySchema);
+    if (parseError) return parseError;
 
-    if (!courseId) {
-      return NextResponse.json({ error: "courseId is required" }, { status: 400 });
-    }
+    const { courseId, cloneConflictAction } = body;
 
     // Validate the course exists and is eligible
     const course = await prisma.course.findUnique({
