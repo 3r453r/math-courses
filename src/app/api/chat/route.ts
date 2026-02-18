@@ -1,6 +1,7 @@
 export const maxDuration = 300;
 
 import { streamText } from "ai";
+import type { ModelMessage } from "ai";
 import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
 import { buildLanguageInstruction } from "@/lib/ai/prompts/languageInstruction";
 import { prisma } from "@/lib/db";
@@ -36,15 +37,22 @@ export async function POST(request: Request) {
     return new Response("lessonId required", { status: 400 });
   }
 
-    // Convert UIMessage format (parts array) to CoreMessage format (content string)
+  // Convert UIMessage format (parts array) to CoreMessage format (content string)
   // that streamText expects. Also filter out empty assistant messages.
+  type ChatRole = "system" | "user" | "assistant";
   type RawMessage = {
     role: string;
     content?: string;
     parts?: Array<{ type?: string; text?: string }>;
   };
 
-  const messages = (rawMessages as RawMessage[]).reduce<Array<{ role: string; content: string }>>((acc, msg) => {
+  function isChatRole(role: string): role is ChatRole {
+    return role === "system" || role === "user" || role === "assistant";
+  }
+
+  const messages = (rawMessages as RawMessage[]).reduce<ModelMessage[]>((acc, msg) => {
+    if (!isChatRole(msg.role)) return acc;
+
     // Extract text content from UIMessage parts or use content directly
     let content: string;
     if (msg.parts) {
