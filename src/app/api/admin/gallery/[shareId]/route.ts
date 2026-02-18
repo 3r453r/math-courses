@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth-utils";
+import { requireAdminFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 
 /**
@@ -57,7 +57,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ shareId: string }> }
 ) {
-  const { role, error: authError } = await requireAdmin();
+  const { role, error: authError } = await requireAdminFromRequest(request);
   if (authError) return authError;
 
   try {

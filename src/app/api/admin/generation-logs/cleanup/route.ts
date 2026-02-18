@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { requireOwner } from "@/lib/auth-utils";
+import { requireOwnerFromRequest } from "@/lib/auth-utils";
 import { cleanupExpiredGenerationLogPayloads } from "@/lib/ai/generationLogRetention";
 
 /**
  * POST /api/admin/generation-logs/cleanup
  * Owner-only endpoint to redact expired sensitive AI payloads.
  */
-export async function POST() {
-  const { error } = await requireOwner();
+export async function POST(request: Request) {
+  const { error } = await requireOwnerFromRequest(request);
   if (error) return error;
 
   try {

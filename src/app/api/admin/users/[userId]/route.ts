@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireOwner } from "@/lib/auth-utils";
+import { requireOwnerFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 
 /**
@@ -9,7 +9,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ userId: string }> }
 ) {
-  const { error: authError } = await requireOwner();
+  const { error: authError } = await requireOwnerFromRequest(request);
   if (authError) return authError;
 
   try {

@@ -205,6 +205,12 @@ describe("admin gallery management", () => {
       accessStatus: "active",
       error: null,
     });
+    vi.mocked(authUtils.requireAdminFromRequest).mockResolvedValue({
+      userId: TEST_USER_ID,
+      role: "admin",
+      accessStatus: "active",
+      error: null,
+    });
   });
 
   it("GET /api/admin/gallery returns all courses (not just shares)", async () => {
@@ -291,6 +297,12 @@ describe("admin gallery management", () => {
 describe("admin gallery clone conflict detection", () => {
   beforeEach(() => {
     vi.mocked(authUtils.requireAdmin).mockResolvedValue({
+      userId: TEST_USER_ID,
+      role: "admin",
+      accessStatus: "active",
+      error: null,
+    });
+    vi.mocked(authUtils.requireAdminFromRequest).mockResolvedValue({
       userId: TEST_USER_ID,
       role: "admin",
       accessStatus: "active",

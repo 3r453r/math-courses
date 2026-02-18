@@ -248,7 +248,14 @@ describe("access code redemption", () => {
 describe("owner access code management", () => {
   beforeEach(() => {
     // Mock owner auth for these tests
+    // GET uses requireOwner, POST uses requireOwnerFromRequest, DELETE uses requireOwnerFromRequest
     vi.mocked(authUtils.requireOwner).mockResolvedValue({
+      userId: TEST_USER_ID,
+      role: "owner",
+      accessStatus: "active",
+      error: null,
+    });
+    vi.mocked(authUtils.requireOwnerFromRequest).mockResolvedValue({
       userId: TEST_USER_ID,
       role: "owner",
       accessStatus: "active",

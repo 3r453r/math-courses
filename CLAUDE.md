@@ -48,7 +48,7 @@ pnpm test:all         # All of the above
 - `src/components/scratchpad/` — Per-lesson scratchpad with LaTeX slash-commands
 - `src/components/lesson/` — Lesson content renderer, section renderers, MathMarkdown
 - `src/lib/auth.ts` — Auth.js v5 configuration (OAuth providers, JWT sessions, Credentials dev bypass)
-- `src/lib/auth-utils.ts` — auth helpers: `getAuthUser()`, `getAuthUserAnyStatus()`, CSRF-aware `getAuthUserFromRequest(request)` / `getAuthUserAnyStatusFromRequest(request)`, `requireAdmin()`, `requireOwner()`, `verifyCourseOwnership()`, `verifyLessonOwnership()`
+- `src/lib/auth-utils.ts` — auth helpers: `getAuthUser()`, `getAuthUserAnyStatus()`, CSRF-aware `getAuthUserFromRequest(request)` / `getAuthUserAnyStatusFromRequest(request)`, `requireAdmin()`, `requireOwner()`, CSRF-aware `requireAdminFromRequest(request)` / `requireOwnerFromRequest(request)`, `verifyCourseOwnership()`, `verifyLessonOwnership()`
 - `src/lib/csrf.ts` — reusable CSRF guard (`Origin` + `Referer` fallback) for cookie-authenticated mutation requests
 - `src/lib/stripe.ts` — Stripe client singleton for payment processing
 - `src/components/admin/` — Admin panel components (AccessCodeManager, UserManager, GalleryManager, GenerationLogManager)
@@ -136,7 +136,7 @@ Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Au
 - Most pages are client components (`"use client"`); API routes are server-side
 - Prisma client uses singleton pattern (`src/lib/db.ts`) to avoid multiple instances in dev
 - **Authentication**: Auth.js v5 with JWT sessions, OAuth providers (Google, GitHub, Discord), Credentials provider in dev/test
-- **Access gating**: Users have `accessStatus` ("pending" | "active" | "suspended") and `role` ("user" | "admin" | "owner"). `getAuthUser()` returns 403 for non-active users. `getAuthUserAnyStatus()` for routes accessible to pending users (redeem, payment). `requireAdmin()` for admin/owner routes. `requireOwner()` for owner-only routes
+- **Access gating**: Users have `accessStatus` ("pending" | "active" | "suspended") and `role` ("user" | "admin" | "owner"). `getAuthUser()` returns 403 for non-active users. `getAuthUserAnyStatus()` for routes accessible to pending users (redeem, payment). `requireAdmin()` / `requireOwner()` for admin/owner GET routes. `requireAdminFromRequest()` / `requireOwnerFromRequest()` for admin/owner mutation routes (CSRF-aware)
 - **Data isolation**: Every `Course` belongs to a `User` via `userId`. All API routes call `getAuthUser()` then verify ownership
 - **Dev bypass**: `AUTH_DEV_BYPASS=true` env var auto-creates/returns a dev user with active status, skipping real auth (used by E2E tests)
 - **No middleware file** — auth is enforced per-route via `getAuthUser()` in each API handler and client-side redirects on pages. `src/proxy.ts` checks session tokens and routes pending users to redeem/payment paths

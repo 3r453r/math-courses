@@ -155,6 +155,46 @@ export async function requireOwner(): Promise<AuthResult> {
 }
 
 /**
+ * Check that the current user is an admin (CSRF-aware).
+ * Validates Origin/Referer headers before checking auth — use for mutation handlers.
+ */
+export async function requireAdminFromRequest(request: Request): Promise<AuthResult> {
+  const result = await getAuthUserFromRequest(request);
+  if (result.error) return result;
+
+  if (!["admin", "owner"].includes(result.role)) {
+    return {
+      userId: null,
+      role: null,
+      accessStatus: null,
+      error: NextResponse.json({ error: "Admin access required" }, { status: 403 }),
+    };
+  }
+
+  return result;
+}
+
+/**
+ * Check that the current user is an owner (CSRF-aware).
+ * Validates Origin/Referer headers before checking auth — use for mutation handlers.
+ */
+export async function requireOwnerFromRequest(request: Request): Promise<AuthResult> {
+  const result = await getAuthUserFromRequest(request);
+  if (result.error) return result;
+
+  if (result.role !== "owner") {
+    return {
+      userId: null,
+      role: null,
+      accessStatus: null,
+      error: NextResponse.json({ error: "Owner access required" }, { status: 403 }),
+    };
+  }
+
+  return result;
+}
+
+/**
  * Verify that a course belongs to the given user.
  * Returns the course if owned, or a 404 NextResponse if not.
  */

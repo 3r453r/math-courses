@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth-utils";
+import { requireAdmin, requireAdminFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 
 /**
@@ -26,7 +26,7 @@ export async function GET() {
  * PATCH /api/admin/site-config — Upsert a config key/value (admin only)
  */
 export async function PATCH(request: Request) {
-  const { error: authError } = await requireAdmin();
+  const { error: authError } = await requireAdminFromRequest(request);
   if (authError) return authError;
 
   try {
