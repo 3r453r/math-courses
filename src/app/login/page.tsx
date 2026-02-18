@@ -204,7 +204,7 @@ function AutoScrollToSignIn() {
   useEffect(() => {
     if (scrolled.current) return;
     const callbackUrl = searchParams.get("callbackUrl");
-    if (callbackUrl) {
+    if (callbackUrl && callbackUrl !== "/") {
       scrolled.current = true;
       // Delay slightly so the DOM is fully painted
       setTimeout(() => {

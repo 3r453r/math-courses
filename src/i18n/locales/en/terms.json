@@ -22,6 +22,7 @@
       }
     },
     "fullTermsLabel": "Full Terms of Service",
+    "checkboxLabel": "I accept the Terms of Service",
     "acceptButton": "Join the Community",
     "accepting": "Joining...",
     "mustAccept": "Please review and accept the Terms of Service to continue."
