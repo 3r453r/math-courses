@@ -5,6 +5,18 @@ import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@
 import { buildVoiceInterpretationPrompt } from "@/lib/ai/prompts/voiceInterpretation";
 import { NextResponse } from "next/server";
 import { getAuthUserFromRequest } from "@/lib/auth-utils";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const voiceInterpretSchema = z.object({
+  transcript: z.string().min(1, "transcript required").max(5000),
+  context: z.object({
+    inMathMode: z.boolean().optional(),
+    surroundingText: z.string().max(2000).optional(),
+    language: z.string().max(10).optional(),
+  }).optional(),
+  model: z.string().max(100).optional(),
+});
 
 export async function POST(request: Request) {
   const { error } = await getAuthUserFromRequest(request);
@@ -15,12 +27,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "API key required" }, { status: 401 });
   }
 
-  const body = await request.json();
-  const { transcript, context, model } = body;
+  const { data: body, error: parseError } = await parseBody(request, voiceInterpretSchema);
+  if (parseError) return parseError;
 
-  if (!transcript || typeof transcript !== "string") {
-    return NextResponse.json({ error: "transcript required" }, { status: 400 });
-  }
+  const { transcript, context, model } = body;
 
   const interpreterContext = {
     inMathMode: context?.inMathMode ?? false,

@@ -148,8 +148,9 @@ export async function POST(
     const focusAreas = JSON.parse(course.focusAreas || "[]") as string[];
 
     // AI-generate narrative summary + recommendation
-    const body = await request.json().catch(() => ({}));
-    const model = body.model || MODELS.generation;
+    let rawBody: Record<string, unknown> = {};
+    try { rawBody = await request.json(); } catch { /* optional body */ }
+    const model = (typeof rawBody.model === "string" && rawBody.model.length <= 100) ? rawBody.model : MODELS.generation;
 
     let object;
     if (model === "mock") {

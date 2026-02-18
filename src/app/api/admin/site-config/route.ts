@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db";
 import { requireAdmin, requireAdminFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
 
 /**
  * GET /api/admin/site-config — Get all site config (admin only)
@@ -22,6 +24,11 @@ export async function GET() {
   }
 }
 
+// Only these keys are allowed for site config — prevents arbitrary key creation
+const ALLOWED_CONFIG_KEYS = new Set([
+  "showGalleryStatsOnPricing",
+]);
+
 /**
  * PATCH /api/admin/site-config — Upsert a config key/value (admin only)
  */
@@ -30,15 +37,17 @@ export async function PATCH(request: Request) {
   if (authError) return authError;
 
   try {
-    const body = await request.json();
-    const { key, value } = body as { key: string; value: string };
+    const siteConfigSchema = z.object({
+      key: z.string().min(1).refine((k) => ALLOWED_CONFIG_KEYS.has(k), {
+        message: "Unknown config key",
+      }),
+      value: z.string().max(2000),
+    });
 
-    if (!key || typeof key !== "string") {
-      return NextResponse.json({ error: "key is required" }, { status: 400 });
-    }
-    if (value === undefined || typeof value !== "string") {
-      return NextResponse.json({ error: "value must be a string" }, { status: 400 });
-    }
+    const { data: body, error: parseError } = await parseBody(request, siteConfigSchema);
+    if (parseError) return parseError;
+
+    const { key, value } = body;
 
     const config = await prisma.siteConfig.upsert({
       where: { key },

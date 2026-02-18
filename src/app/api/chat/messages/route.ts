@@ -1,6 +1,14 @@
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { getAuthUser, getAuthUserFromRequest, verifyLessonOwnership } from "@/lib/auth-utils";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const saveChatMessageSchema = z.object({
+  lessonId: z.string().min(1).max(50),
+  role: z.enum(["user", "assistant"]),
+  content: z.string().min(1).max(50000),
+});
 
 export async function GET(request: Request) {
   const { userId, error } = await getAuthUser();
@@ -34,17 +42,14 @@ export async function POST(request: Request) {
   if (authError) return authError;
 
   try {
-    const { lessonId, role, content } = await request.json();
+    const { data: body, error: parseError } = await parseBody(request, saveChatMessageSchema);
+    if (parseError) return parseError;
 
-    if (!lessonId || !role || !content) {
-      return NextResponse.json({ error: "lessonId, role, and content required" }, { status: 400 });
-    }
-
-    const { error: ownershipError } = await verifyLessonOwnership(lessonId, userId);
+    const { error: ownershipError } = await verifyLessonOwnership(body.lessonId, userId);
     if (ownershipError) return ownershipError;
 
     const message = await prisma.chatMessage.create({
-      data: { lessonId, role, content },
+      data: { lessonId: body.lessonId, role: body.role, content: body.content },
     });
 
     return NextResponse.json(message);

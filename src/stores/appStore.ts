@@ -112,6 +112,13 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "math-courses-app",
+      // Exclude API keys from localStorage — they should only live in memory
+      // (for the current session) or encrypted on the server. Persisting to
+      // localStorage exposes them to XSS-based credential theft.
+      partialize: (state) => {
+        const { apiKeys: _keys, ...rest } = state;
+        return rest;
+      },
     }
   )
 );

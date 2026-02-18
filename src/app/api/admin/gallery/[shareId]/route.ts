@@ -1,6 +1,18 @@
 import { prisma } from "@/lib/db";
 import { requireAdminFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const updateGallerySchema = z.object({
+  isGalleryListed: z.boolean().optional(),
+  featuredAt: z.string().datetime().nullable().optional(),
+  tags: z.string().max(500).nullable().optional(),
+  galleryTitle: z.string().max(200).nullable().optional(),
+  galleryDescription: z.string().max(2000).nullable().optional(),
+  previewLessonId: z.string().max(50).nullable().optional(),
+  cloneConflictAction: z.enum(["replace", "add"]).optional(),
+});
 
 /**
  * Walk the clone lineage chain upward (ancestors) and downward (descendants)
@@ -62,7 +74,8 @@ export async function PATCH(
 
   try {
     const { shareId } = await params;
-    const body = await request.json();
+    const { data: body, error: parseError } = await parseBody(request, updateGallerySchema);
+    if (parseError) return parseError;
 
     const updateData: Record<string, unknown> = {};
 

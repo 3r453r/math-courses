@@ -3,6 +3,12 @@ import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const verifyPaymentSchema = z.object({
+  sessionId: z.string().min(1, "Missing session_id").max(200),
+});
 
 /**
  * POST /api/payment/verify — Verify a Stripe checkout session and activate user.
@@ -18,10 +24,9 @@ export async function POST(request: Request) {
   const { userId, error: authError } = await getAuthUserAnyStatusFromRequest(request);
   if (authError) return authError;
 
-  const { sessionId } = await request.json();
-  if (!sessionId || typeof sessionId !== "string") {
-    return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
-  }
+  const { data: body, error: parseError } = await parseBody(request, verifyPaymentSchema);
+  if (parseError) return parseError;
+  const { sessionId } = body;
 
   // Check if this payment was already processed
   const existingPayment = await prisma.payment.findFirst({
