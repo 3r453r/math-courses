@@ -18,7 +18,9 @@ vi.mock("@/lib/db", () => ({
 // Mock auth to always return the test user
 vi.mock("@/lib/auth-utils", () => ({
   getAuthUser: vi.fn().mockResolvedValue({ userId: TEST_USER_ID, role: "user", accessStatus: "active", error: null }),
+  getAuthUserFromRequest: vi.fn().mockResolvedValue({ userId: TEST_USER_ID, role: "user", accessStatus: "active", error: null }),
   getAuthUserAnyStatus: vi.fn().mockResolvedValue({ userId: TEST_USER_ID, role: "user", accessStatus: "active", error: null }),
+  getAuthUserAnyStatusFromRequest: vi.fn().mockResolvedValue({ userId: TEST_USER_ID, role: "user", accessStatus: "active", error: null }),
   requireAdmin: vi.fn().mockImplementation(async () => {
     const { NextResponse } = await import("next/server");
     return { userId: null, role: null, accessStatus: null, error: NextResponse.json({ error: "Admin access required" }, { status: 403 }) };
