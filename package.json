@@ -15,7 +15,10 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:coverage": "vitest run --coverage",
-    "test:all": "vitest run && vitest run --config vitest.config.integration.ts && playwright test"
+    "test:all": "vitest run && vitest run --config vitest.config.integration.ts && playwright test",
+    "migrate:prod:status": "node scripts/migrate-prod.mjs status",
+    "migrate:prod:plan": "node scripts/migrate-prod.mjs plan",
+    "migrate:prod:apply": "node scripts/migrate-prod.mjs apply"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.43",
