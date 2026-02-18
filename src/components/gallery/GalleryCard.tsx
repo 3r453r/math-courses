@@ -10,9 +10,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { StarRating } from "./StarRating";
 import { LANGUAGE_NAMES } from "@/lib/ai/prompts/languageInstruction";
 import { parseSubjects } from "@/lib/subjects";
+import { ChevronDown } from "lucide-react";
 
 interface GalleryItem {
   shareToken: string;
@@ -37,11 +47,20 @@ interface GalleryItem {
 interface GalleryCardProps {
   item: GalleryItem;
   onClone: (shareToken: string) => void;
+  onTranslate?: (shareToken: string, targetLanguage: string) => void;
   cloning: boolean;
+  translating?: boolean;
   isAuthenticated: boolean;
 }
 
-export function GalleryCard({ item, onClone, cloning, isAuthenticated }: GalleryCardProps) {
+export function GalleryCard({
+  item,
+  onClone,
+  onTranslate,
+  cloning,
+  translating,
+  isAuthenticated,
+}: GalleryCardProps) {
   const { t } = useTranslation(["gallery"]);
   const tags: string[] = (() => {
     try {
@@ -53,6 +72,12 @@ export function GalleryCard({ item, onClone, cloning, isAuthenticated }: Gallery
 
   const languageName = LANGUAGE_NAMES[item.course.language] ?? item.course.language;
   const subjects = parseSubjects(item.course.subject);
+  const busy = cloning || !!translating;
+
+  // Languages available for translation (exclude the course's own language)
+  const translateLanguages = Object.entries(LANGUAGE_NAMES).filter(
+    ([code]) => code !== item.course.language,
+  );
 
   return (
     <Card className="flex flex-col h-full hover:shadow-md transition-shadow">
@@ -127,17 +152,62 @@ export function GalleryCard({ item, onClone, cloning, isAuthenticated }: Gallery
               {t("gallery:card.tryPreview")}
             </Button>
           )}
-          <Button
-            className="w-full"
-            onClick={() => onClone(item.shareToken)}
-            disabled={cloning || !isAuthenticated}
-          >
-            {cloning
-              ? t("gallery:card.cloning")
-              : isAuthenticated
-                ? t("gallery:card.clone")
-                : t("gallery:card.loginToClone")}
-          </Button>
+
+          {/* Clone + Translate dropdown */}
+          {isAuthenticated && onTranslate ? (
+            <div className="flex gap-1">
+              <Button
+                className="flex-1"
+                onClick={() => onClone(item.shareToken)}
+                disabled={busy}
+              >
+                {cloning
+                  ? t("gallery:card.cloning")
+                  : translating
+                    ? t("gallery:card.translating")
+                    : t("gallery:card.clone")}
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" disabled={busy}>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onClone(item.shareToken)}>
+                    {t("gallery:card.clone")}
+                  </DropdownMenuItem>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      {t("gallery:card.translateTo")}
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
+                      {translateLanguages.map(([code, name]) => (
+                        <DropdownMenuItem
+                          key={code}
+                          onClick={() => onTranslate(item.shareToken, code)}
+                        >
+                          {name}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          ) : (
+            <Button
+              className="w-full"
+              onClick={() => onClone(item.shareToken)}
+              disabled={busy || !isAuthenticated}
+            >
+              {cloning
+                ? t("gallery:card.cloning")
+                : isAuthenticated
+                  ? t("gallery:card.clone")
+                  : t("gallery:card.loginToClone")}
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
