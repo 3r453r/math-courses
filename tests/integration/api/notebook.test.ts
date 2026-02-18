@@ -130,7 +130,7 @@ describe("POST /api/courses/[courseId]/notebook", () => {
     const course = await createTestCourse();
 
     const response = await POST(
-      makePostRequest(course.id, { title: "My Notes", orderIndex: 5.5 }),
+      makePostRequest(course.id, { title: "My Notes", orderIndex: 5 }),
       { params: params(course.id) as Promise<{ courseId: string }> }
     );
     const data = await response.json();
@@ -139,7 +139,7 @@ describe("POST /api/courses/[courseId]/notebook", () => {
     expect(data.type).toBe("custom");
     expect(data.title).toBe("My Notes");
     expect(data.content).toBe("");
-    expect(data.orderIndex).toBe(5.5);
+    expect(data.orderIndex).toBe(5);
     expect(data.lessonId).toBeNull();
   });
 

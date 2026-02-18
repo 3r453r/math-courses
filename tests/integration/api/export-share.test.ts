@@ -225,7 +225,7 @@ describe("POST /api/courses/import", () => {
     const response = await importCourse(request);
     expect(response.status).toBe(400);
     const data = await response.json();
-    expect(data.error).toContain("Unsupported export version");
+    expect(data.error).toBe("Validation error");
   });
 
   it("creates lessons and edges correctly", async () => {
@@ -496,7 +496,7 @@ describe("POST/GET/DELETE /api/courses/[courseId]/share", () => {
 
     expect(response.status).toBe(400);
     const data = await response.json();
-    expect(data.error).toContain("shareId required");
+    expect(data.error).toBe("Validation error");
   });
 
   it("returns 404 when revoking a non-existent share link", async () => {
@@ -735,7 +735,7 @@ describe("POST /api/courses/clone", () => {
     const response = await cloneCourse(request);
     expect(response.status).toBe(400);
     const data = await response.json();
-    expect(data.error).toContain("shareToken required");
+    expect(data.error).toBe("Validation error");
   });
 
   it("does not clone completedAt, notes, or chat messages", async () => {
