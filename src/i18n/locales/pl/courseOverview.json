@@ -47,5 +47,16 @@
   "contextDocGuideP3": "Możesz edytować ten dokument, aby dopasować go do swoich preferencji — na przykład zmienić poziom formalności, poprosić o więcej przykładów wizualnych lub dostosować styl notacji. Twoje zmiany wpłyną na wszystkie przyszłe generacje lekcji.",
   "contextDocGuideCta": "Przewiń w dół do karty Dokumentu Kontekstowego, aby go przejrzeć i dostosować.",
   "contextDocGuideDismiss": "Nie pokazuj ponownie",
-  "contextDocGuideClose": "Rozumiem"
+  "contextDocGuideClose": "Rozumiem",
+  "galleryEligible": "Dostępny w galerii",
+  "galleryEligibleDescription": "Pozwól na wyświetlanie tego kursu w publicznej galerii. Administratorzy platformy mogą wyróżniać kwalifikujące się kursy.",
+  "galleryEligibleUpdated": "Dostępność w galerii zaktualizowana",
+  "galleryBanner": "Twój kurs jest wyróżniony w galerii!",
+  "galleryBannerView": "Zobacz w galerii",
+  "claimAttribution": "Przypisz autorstwo",
+  "removeAttribution": "Usuń autorstwo",
+  "attributionHelp": "Twoja nazwa wyświetlana będzie na karcie kursu w galerii.",
+  "attributionClaimed": "Autorstwo przypisane",
+  "attributionRemoved": "Autorstwo usunięte",
+  "attributionFailed": "Nie udało się zaktualizować autorstwa"
 }

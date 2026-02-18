@@ -3,6 +3,15 @@ import { prisma } from "@/lib/db";
 import { getAuthUser, getAuthUserFromRequest } from "@/lib/auth-utils";
 import { encryptApiKey, decryptApiKey } from "@/lib/crypto";
 import type { AIProvider } from "@/lib/ai/client";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const putApiKeysSchema = z.object({
+  apiKeys: z.record(
+    z.enum(["anthropic", "openai", "google"]),
+    z.string().max(500)
+  ),
+});
 
 interface StoredKeyEntry {
   encrypted: string;
@@ -110,10 +119,10 @@ export async function PUT(request: Request) {
   if (error) return error;
 
   try {
-    const { apiKeys } = await request.json() as { apiKeys: Partial<Record<AIProvider, string>> };
-    if (!apiKeys || typeof apiKeys !== "object") {
-      return NextResponse.json({ error: "apiKeys object is required" }, { status: 400 });
-    }
+    const { data: body, error: parseError } = await parseBody(request, putApiKeysSchema);
+    if (parseError) return parseError;
+
+    const { apiKeys } = body as { apiKeys: Partial<Record<AIProvider, string>> };
 
     // Load existing stored keys
     const user = await prisma.user.findUnique({

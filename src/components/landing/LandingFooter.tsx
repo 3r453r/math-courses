@@ -27,6 +27,10 @@ export function LandingFooter() {
             <a href="/pricing" className="hover:text-foreground transition-colors">
               {t("login:footer.pricing")}
             </a>
+            <span className="hidden sm:inline">·</span>
+            <a href="/terms" className="hover:text-foreground transition-colors">
+              {t("login:footer.terms")}
+            </a>
             {discordUrl && (
               <>
                 <span className="hidden sm:inline">·</span>

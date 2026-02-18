@@ -94,6 +94,13 @@ interface CompletionSummaryInfo {
   completedAt: string;
 }
 
+interface GalleryShareInfo {
+  id: string;
+  shareToken: string;
+  creatorClaimed: boolean;
+  creatorClaimedAt: string | null;
+}
+
 interface CourseDetail {
   id: string;
   title: string;
@@ -105,11 +112,13 @@ interface CourseDetail {
   passThreshold: number;
   noLessonCanFail: boolean;
   lessonFailureThreshold: number;
+  galleryEligible: boolean;
   status: string;
   lessons: Lesson[];
   edges: Edge[];
   diagnosticQuiz?: DiagnosticInfo | null;
   completionSummary?: CompletionSummaryInfo | null;
+  shares?: GalleryShareInfo[];
 }
 
 export default function CourseOverviewPage({
@@ -259,6 +268,49 @@ export default function CourseOverviewPage({
       toast.error(err instanceof Error ? err.message : t("courseOverview:failedToSave"));
     } finally {
       setSavingContextDoc(false);
+    }
+  }
+
+  async function handleToggleGalleryEligible(checked: boolean) {
+    try {
+      const res = await fetch(`/api/courses/${courseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ galleryEligible: checked }),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      setCourse((prev) => prev ? { ...prev, galleryEligible: checked } : prev);
+      toast.success(t("courseOverview:galleryEligibleUpdated"));
+    } catch {
+      toast.error(t("courseOverview:failedToSave"));
+    }
+  }
+
+  async function handleToggleAttribution(cId: string) {
+    try {
+      const res = await fetch(`/api/courses/${cId}/gallery-claim`, {
+        method: "PATCH",
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      const data = await res.json();
+      setCourse((prev) => {
+        if (!prev?.shares?.length) return prev;
+        return {
+          ...prev,
+          shares: prev.shares.map((s) => ({
+            ...s,
+            creatorClaimed: data.creatorClaimed,
+            creatorClaimedAt: data.creatorClaimedAt,
+          })),
+        };
+      });
+      toast.success(
+        data.creatorClaimed
+          ? t("courseOverview:attributionClaimed")
+          : t("courseOverview:attributionRemoved")
+      );
+    } catch {
+      toast.error(t("courseOverview:attributionFailed"));
     }
   }
 
@@ -460,6 +512,59 @@ export default function CourseOverviewPage({
                 </Badge>
               ))}
             </div>
+
+            {/* Gallery banner + attribution claim */}
+            {course.shares && course.shares.length > 0 && (
+              <Card className="mb-8 border-brand-from/30 bg-brand-from/5">
+                <CardContent className="py-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-medium">{t("courseOverview:galleryBanner")}</p>
+                      <a
+                        href={`/preview/${course.shares[0].shareToken}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline"
+                      >
+                        {t("courseOverview:galleryBannerView")}
+                      </a>
+                    </div>
+                    <Button
+                      variant={course.shares[0].creatorClaimed ? "outline" : "default"}
+                      size="sm"
+                      onClick={() => handleToggleAttribution(courseId)}
+                    >
+                      {course.shares[0].creatorClaimed
+                        ? t("courseOverview:removeAttribution")
+                        : t("courseOverview:claimAttribution")}
+                    </Button>
+                  </div>
+                  {!course.shares[0].creatorClaimed && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {t("courseOverview:attributionHelp")}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Gallery eligibility toggle */}
+            <Card className="mb-8">
+              <CardContent className="py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">{t("courseOverview:galleryEligible")}</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {t("courseOverview:galleryEligibleDescription")}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={course.galleryEligible}
+                    onCheckedChange={(checked) => handleToggleGalleryEligible(checked)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Context Document */}
             {course.contextDoc && (

@@ -47,5 +47,16 @@
   "contextDocGuideP3": "You can edit this document to match your preferences — for example, change the formality level, request more visual examples, or adjust the notation style. Your changes will influence all future lesson generations.",
   "contextDocGuideCta": "Scroll down to the Context Document card to review and customize it.",
   "contextDocGuideDismiss": "Don't show this again",
-  "contextDocGuideClose": "Got it"
+  "contextDocGuideClose": "Got it",
+  "galleryEligible": "Gallery Eligible",
+  "galleryEligibleDescription": "Allow this course to appear in the public gallery. Platform administrators may feature eligible courses.",
+  "galleryEligibleUpdated": "Gallery eligibility updated",
+  "galleryBanner": "Your course is featured in the gallery!",
+  "galleryBannerView": "View in Gallery",
+  "claimAttribution": "Claim Authorship",
+  "removeAttribution": "Remove Authorship",
+  "attributionHelp": "Your display name will be shown on the gallery card.",
+  "attributionClaimed": "Authorship claimed",
+  "attributionRemoved": "Authorship removed",
+  "attributionFailed": "Failed to update attribution"
 }

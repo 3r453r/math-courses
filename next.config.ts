@@ -53,7 +53,7 @@ const nextConfig: NextConfig = {
       },
       // Public pages — CDN-cacheable (no auth cookie)
       {
-        source: "/(login|gallery|pricing|shared/:path*|preview/:path*)",
+        source: "/(login|gallery|pricing|shared/:path*|preview/:path*|terms)",
         headers: [
           {
             key: "Cache-Control",

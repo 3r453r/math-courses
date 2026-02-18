@@ -2,6 +2,12 @@ import { prisma } from "@/lib/db";
 import { getAuthUserFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 import { enforceRateLimit } from "@/lib/rate-limit";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const cloneCourseSchema = z.object({
+  shareToken: z.string().min(1).max(100),
+});
 
 /**
  * Clone a shared course to the current user's account.
@@ -27,7 +33,9 @@ export async function POST(request: Request) {
   if (rateLimitResponse) return rateLimitResponse;
 
   try {
-    const { shareToken } = await request.json();
+    const { data: body, error: parseError } = await parseBody(request, cloneCourseSchema);
+    if (parseError) return parseError;
+    const { shareToken } = body;
     if (!shareToken) {
       return NextResponse.json({ error: "shareToken required" }, { status: 400 });
     }

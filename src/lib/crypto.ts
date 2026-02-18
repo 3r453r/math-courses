@@ -6,9 +6,11 @@ const IV_LENGTH = 16;
 const AUTH_TAG_LENGTH = 16;
 
 function deriveKey(): Buffer {
-  const secret = process.env.AUTH_SECRET;
-  if (!secret) throw new Error("AUTH_SECRET is required for API key encryption");
-  return scryptSync(secret, "api-key-salt", KEY_LENGTH);
+  // Prefer dedicated encryption key; fall back to AUTH_SECRET for backward compat.
+  // Using a separate key allows AUTH_SECRET rotation without breaking encrypted data.
+  const secret = process.env.API_KEY_ENCRYPTION_KEY ?? process.env.AUTH_SECRET;
+  if (!secret) throw new Error("API_KEY_ENCRYPTION_KEY or AUTH_SECRET is required for API key encryption");
+  return scryptSync(secret, "api-key-encryption-v1", KEY_LENGTH);
 }
 
 export function encryptApiKey(plaintext: string): { encrypted: string; iv: string } {

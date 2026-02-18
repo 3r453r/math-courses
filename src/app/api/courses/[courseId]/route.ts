@@ -1,6 +1,17 @@
 import { prisma } from "@/lib/db";
 import { getAuthUser, getAuthUserFromRequest, verifyCourseOwnership } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const updateCourseSchema = z.object({
+  contextDoc: z.string().max(50000).optional(),
+  passThreshold: z.number().min(0).max(1).optional(),
+  noLessonCanFail: z.boolean().optional(),
+  lessonFailureThreshold: z.number().min(0).max(1).optional(),
+  lessonWeights: z.record(z.string(), z.number().min(0.1).max(5.0)).optional(),
+  galleryEligible: z.boolean().optional(),
+});
 
 export async function GET(
   _request: Request,
@@ -43,6 +54,16 @@ export async function GET(
           },
         },
         completionSummary: true,
+        shares: {
+          where: { isGalleryListed: true, isActive: true },
+          select: {
+            id: true,
+            shareToken: true,
+            creatorClaimed: true,
+            creatorClaimedAt: true,
+          },
+          take: 1,
+        },
       },
     });
 
@@ -68,14 +89,17 @@ export async function PATCH(
     const { courseId } = await params;
     const { error: ownerError } = await verifyCourseOwnership(courseId, userId);
     if (ownerError) return ownerError;
-    const body = await request.json();
-    const { contextDoc, passThreshold, noLessonCanFail, lessonFailureThreshold, lessonWeights } = body;
+    const { data: body, error: parseError } = await parseBody(request, updateCourseSchema);
+    if (parseError) return parseError;
+
+    const { contextDoc, passThreshold, noLessonCanFail, lessonFailureThreshold, lessonWeights, galleryEligible } = body;
 
     const updateData: Record<string, unknown> = {};
-    if (typeof contextDoc === "string") updateData.contextDoc = contextDoc;
-    if (typeof passThreshold === "number") updateData.passThreshold = passThreshold;
-    if (typeof noLessonCanFail === "boolean") updateData.noLessonCanFail = noLessonCanFail;
-    if (typeof lessonFailureThreshold === "number") updateData.lessonFailureThreshold = lessonFailureThreshold;
+    if (contextDoc !== undefined) updateData.contextDoc = contextDoc;
+    if (passThreshold !== undefined) updateData.passThreshold = passThreshold;
+    if (noLessonCanFail !== undefined) updateData.noLessonCanFail = noLessonCanFail;
+    if (lessonFailureThreshold !== undefined) updateData.lessonFailureThreshold = lessonFailureThreshold;
+    if (galleryEligible !== undefined) updateData.galleryEligible = galleryEligible;
 
     if (Object.keys(updateData).length > 0) {
       await prisma.course.update({
@@ -84,14 +108,12 @@ export async function PATCH(
       });
     }
 
-    if (lessonWeights && typeof lessonWeights === "object") {
+    if (lessonWeights) {
       for (const [lessonId, weight] of Object.entries(lessonWeights)) {
-        if (typeof weight === "number" && weight >= 0.1 && weight <= 5.0) {
-          await prisma.lesson.update({
-            where: { id: lessonId },
-            data: { weight },
-          });
-        }
+        await prisma.lesson.update({
+          where: { id: lessonId },
+          data: { weight },
+        });
       }
     }
 

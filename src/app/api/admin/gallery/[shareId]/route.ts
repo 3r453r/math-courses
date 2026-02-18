@@ -1,6 +1,18 @@
 import { prisma } from "@/lib/db";
 import { requireAdminFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const updateGallerySchema = z.object({
+  isGalleryListed: z.boolean().optional(),
+  featuredAt: z.string().datetime().nullable().optional(),
+  tags: z.string().max(500).nullable().optional(),
+  galleryTitle: z.string().max(200).nullable().optional(),
+  galleryDescription: z.string().max(2000).nullable().optional(),
+  previewLessonId: z.string().max(50).nullable().optional(),
+  cloneConflictAction: z.enum(["replace", "add"]).optional(),
+});
 
 /**
  * Walk the clone lineage chain upward (ancestors) and downward (descendants)
@@ -62,7 +74,8 @@ export async function PATCH(
 
   try {
     const { shareId } = await params;
-    const body = await request.json();
+    const { data: body, error: parseError } = await parseBody(request, updateGallerySchema);
+    if (parseError) return parseError;
 
     const updateData: Record<string, unknown> = {};
 
@@ -174,7 +187,32 @@ export async function PATCH(
     const share = await prisma.courseShare.update({
       where: { id: shareId },
       data: updateData,
+      include: {
+        course: {
+          select: { id: true, title: true, userId: true },
+        },
+      },
     });
+
+    // Create notification when course is added to gallery
+    if (body.isGalleryListed === true) {
+      try {
+        await prisma.notification.create({
+          data: {
+            userId: share.course.userId,
+            type: "gallery_listed",
+            data: JSON.stringify({
+              courseId: share.course.id,
+              courseTitle: share.course.title,
+              shareToken: share.shareToken,
+            }),
+          },
+        });
+      } catch (notifError) {
+        // Don't fail the gallery listing if notification creation fails
+        console.error("Failed to create gallery notification:", notifError);
+      }
+    }
 
     return NextResponse.json(share);
   } catch (error) {

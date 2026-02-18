@@ -16,8 +16,8 @@
   "continueAnyway": "Try signing in anyway",
   "tagline": "AI-powered courses, personalized for you",
   "hero": {
-    "title": "Learn Any Subject with AI-Generated Courses",
-    "subtitle": "Choose a topic, and AI creates a structured course with lessons, quizzes, and an interactive tutor — personalized to your level.",
+    "title": "Learn Any Subject. Share What You Build.",
+    "subtitle": "AI generates structured courses from any STEM topic — then share them with a growing community of learners.",
     "getStarted": "Get Started",
     "browseGallery": "Browse Gallery"
   },
@@ -33,8 +33,8 @@
       "description": "AI builds a structured course with lessons organized as a prerequisite graph, not a flat list."
     },
     "learn": {
-      "title": "Learn at Your Own Pace",
-      "description": "Study lessons in parallel, take quizzes, chat with an AI tutor, and track your progress."
+      "title": "Learn & Share",
+      "description": "Study lessons, take quizzes, chat with an AI tutor — and share your course with the community."
     }
   },
   "features": {
@@ -56,21 +56,21 @@
       "description": "See how lessons connect. Study in parallel when prerequisites are met."
     },
     "export": {
-      "title": "Export & Share",
-      "description": "Export to Markdown, JSON, or print. Share courses with a link or clone from the gallery."
+      "title": "Share Your Knowledge",
+      "description": "Share courses with a link, export to Markdown or PDF, and contribute to the community gallery."
     },
     "gallery": {
-      "title": "Course Gallery",
-      "description": "Browse community courses, try free previews, and clone courses to customize."
+      "title": "Community Library",
+      "description": "Browse courses created by learners worldwide. Try free previews, clone and customize, or contribute your own."
     }
   },
   "featuredCourses": {
     "title": "Featured Courses",
-    "subtitle": "Try a free preview — no account needed.",
+    "subtitle": "Created by learners, for learners. Try a free preview — no account needed.",
     "viewAll": "View All Courses"
   },
   "signInSection": {
-    "title": "Ready to Start Learning?"
+    "title": "Ready to Learn and Share?"
   },
   "socialProof": {
     "courses": "Courses",
@@ -79,6 +79,7 @@
   },
   "footer": {
     "gallery": "Gallery",
-    "pricing": "Pricing"
+    "pricing": "Pricing",
+    "terms": "Terms"
   }
 }

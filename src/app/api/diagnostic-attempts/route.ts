@@ -3,6 +3,13 @@ import { NextResponse } from "next/server";
 import { scoreQuiz } from "@/lib/quiz/scoring";
 import type { QuizQuestion, QuizAnswers } from "@/types/quiz";
 import { getAuthUserFromRequest } from "@/lib/auth-utils";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const diagnosticAttemptSchema = z.object({
+  diagnosticQuizId: z.string().min(1).max(50),
+  answers: z.record(z.string(), z.array(z.string().max(200))),
+});
 
 interface DiagnosticQuestion {
   id: string;
@@ -17,18 +24,13 @@ export async function POST(request: Request) {
   if (error) return error;
 
   try {
-    const body = await request.json();
-    const { diagnosticQuizId, answers } = body as {
-      diagnosticQuizId?: string;
-      answers?: QuizAnswers;
-    };
+    const { data: body, error: parseError } = await parseBody(request, diagnosticAttemptSchema);
+    if (parseError) return parseError;
 
-    if (!diagnosticQuizId || !answers) {
-      return NextResponse.json(
-        { error: "diagnosticQuizId and answers required" },
-        { status: 400 }
-      );
-    }
+    const { diagnosticQuizId, answers } = body as {
+      diagnosticQuizId: string;
+      answers: QuizAnswers;
+    };
 
     const diagnosticWithOwner = await prisma.diagnosticQuiz.findUnique({
       where: { id: diagnosticQuizId },

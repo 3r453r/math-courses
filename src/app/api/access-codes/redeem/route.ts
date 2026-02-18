@@ -3,6 +3,12 @@ import { getAuthUserAnyStatusFromRequest } from "@/lib/auth-utils";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const redeemSchema = z.object({
+  code: z.string().min(1, "Access code is required").max(50),
+});
 
 const ACCESS_CODE_REDEEM_RATE_LIMIT = {
   namespace: "access-codes:redeem",
@@ -28,12 +34,10 @@ export async function POST(request: Request) {
   if (rateLimitResponse) return rateLimitResponse;
 
   try {
-    const { code } = await request.json();
-    if (!code || typeof code !== "string") {
-      return NextResponse.json({ error: "Access code is required" }, { status: 400 });
-    }
+    const { data: body, error: parseError } = await parseBody(request, redeemSchema);
+    if (parseError) return parseError;
 
-    const trimmedCode = code.trim().toUpperCase();
+    const trimmedCode = body.code.trim().toUpperCase();
 
     const accessCode = await prisma.accessCode.findUnique({
       where: { code: trimmedCode },

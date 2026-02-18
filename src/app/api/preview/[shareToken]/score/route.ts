@@ -2,6 +2,12 @@ import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { scoreQuiz } from "@/lib/quiz/scoring";
 import type { QuizQuestion, QuizAnswers } from "@/types/quiz";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const previewScoreSchema = z.object({
+  answers: z.record(z.string(), z.array(z.string().max(200))),
+});
 
 /**
  * POST /api/preview/[shareToken]/score — Stateless quiz scoring for preview
@@ -13,12 +19,9 @@ export async function POST(
 ) {
   try {
     const { shareToken } = await params;
-    const body = await request.json();
+    const { data: body, error: parseError } = await parseBody(request, previewScoreSchema);
+    if (parseError) return parseError;
     const { answers } = body as { answers: QuizAnswers };
-
-    if (!answers || typeof answers !== "object") {
-      return NextResponse.json({ error: "answers is required" }, { status: 400 });
-    }
 
     // Validate share token and get preview lesson's quiz
     const share = await prisma.courseShare.findUnique({

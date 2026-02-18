@@ -1,11 +1,25 @@
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/rate-limit";
+
+const PUBLIC_SHARED_RATE_LIMIT = {
+  namespace: "public:shared",
+  windowMs: 60_000,
+  maxRequests: 30,
+} as const;
 
 /** Public endpoint — no auth required. Returns read-only course data for a share token. */
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ shareToken: string }> }
 ) {
+  const rateLimitResponse = enforceRateLimit({
+    request,
+    route: "/api/shared",
+    config: PUBLIC_SHARED_RATE_LIMIT,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const { shareToken } = await params;
 

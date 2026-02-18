@@ -52,6 +52,7 @@ interface GalleryCourse {
   difficulty: string;
   status: string;
   language: string;
+  galleryEligible: boolean;
   clonedFromId: string | null;
   user: { name: string | null; email: string | null };
   shares: GalleryShareInfo[];
@@ -438,19 +439,26 @@ export function GalleryManager() {
                     {LANGUAGE_NAMES[course.language] ?? course.language ?? "\u2014"}
                   </td>
                   <td className="p-3">
-                    {course.eligibility.isEligible ? (
-                      <Badge variant="default">{t("admin:gallery.eligible")}</Badge>
-                    ) : (
-                      <div>
-                        <Badge variant="destructive">{t("admin:gallery.notEligible")}</Badge>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {t("admin:gallery.lessonsGenerated", {
-                            generated: course.eligibility.generatedLessons,
-                            total: course.eligibility.totalLessons,
-                          })}
-                        </p>
-                      </div>
-                    )}
+                    <div className="space-y-1">
+                      {course.eligibility.isEligible ? (
+                        <Badge variant="default">{t("admin:gallery.eligible")}</Badge>
+                      ) : (
+                        <div>
+                          <Badge variant="destructive">{t("admin:gallery.notEligible")}</Badge>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {t("admin:gallery.lessonsGenerated", {
+                              generated: course.eligibility.generatedLessons,
+                              total: course.eligibility.totalLessons,
+                            })}
+                          </p>
+                        </div>
+                      )}
+                      {!course.galleryEligible && (
+                        <Badge variant="outline" className="text-amber-600 border-amber-300">
+                          {t("admin:gallery.optedOut")}
+                        </Badge>
+                      )}
+                    </div>
                   </td>
                   <td className="p-3">
                     <div className="flex gap-1">

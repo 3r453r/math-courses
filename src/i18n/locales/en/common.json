@@ -29,5 +29,11 @@
   "installApp": "Install App",
   "installAppDescription": "Install this app for a better experience.",
   "install": "Install",
-  "installAppFallback": "Use your browser's \"Install\" or \"Add to Home Screen\" option to install this app."
+  "installAppFallback": "Use your browser's \"Install\" or \"Add to Home Screen\" option to install this app.",
+  "notifications": {
+    "galleryListed": "Your course \"{{title}}\" was added to the gallery!",
+    "viewInGallery": "View in Gallery",
+    "claimAuthorship": "Claim Authorship",
+    "dismiss": "Dismiss"
+  }
 }

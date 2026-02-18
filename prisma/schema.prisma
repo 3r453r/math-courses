@@ -20,6 +20,8 @@ model User {
   accessStatus    String    @default("pending")
   accessGrantedAt DateTime?
   accessSource    String?
+  tosAcceptedAt  DateTime?
+  tosVersion     String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -30,6 +32,7 @@ model User {
   courseRatings        CourseRating[]
   payments            Payment[]
   createdAccessCodes  AccessCode[]
+  notifications       Notification[]
 }
 
 model Account {
@@ -85,6 +88,7 @@ model Course {
   passThreshold          Float    @default(0.8)
   noLessonCanFail        Boolean  @default(true)
   lessonFailureThreshold Float    @default(0.5)
+  galleryEligible        Boolean  @default(true)
   status                 String   @default("draft")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -250,6 +254,8 @@ model CourseShare {
 
   // Gallery fields
   isGalleryListed    Boolean   @default(false)
+  creatorClaimed     Boolean   @default(false)
+  creatorClaimedAt   DateTime?
   galleryTitle       String?
   galleryDescription String?
   tags               String    @default("[]")
@@ -262,6 +268,22 @@ model CourseShare {
   ratings CourseRating[]
 
   @@index([courseId])
+}
+
+// ── Notification model ──────────────────────────────────────────
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  data      String   @default("{}")
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, read])
 }
 
 // ── Access & Payment models ──────────────────────────────────────

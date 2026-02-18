@@ -28,7 +28,7 @@ describe("POST /api/voice/interpret", () => {
     const response = await POST(request);
     expect(response.status).toBe(400);
     const data = await response.json();
-    expect(data.error).toBe("transcript required");
+    expect(data.error).toBe("Validation error");
   });
 
   it("returns 400 when transcript is not a string", async () => {
@@ -44,6 +44,6 @@ describe("POST /api/voice/interpret", () => {
     const response = await POST(request);
     expect(response.status).toBe(400);
     const data = await response.json();
-    expect(data.error).toBe("transcript required");
+    expect(data.error).toBe("Validation error");
   });
 });

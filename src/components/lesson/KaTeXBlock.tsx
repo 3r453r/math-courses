@@ -15,22 +15,38 @@ export function KaTeXBlock({
   displayMode = true,
   className,
 }: KaTeXBlockProps) {
-  const html = useMemo(() => {
+  const { html, error } = useMemo(() => {
     try {
-      return katex.renderToString(latex, {
-        displayMode,
-        throwOnError: false,
-        trust: false,
-      });
+      return {
+        html: katex.renderToString(latex, {
+          displayMode,
+          throwOnError: false,
+          trust: false,
+        }),
+        error: null,
+      };
     } catch {
-      return `<span class="text-destructive">Invalid LaTeX: ${latex}</span>`;
+      return { html: null, error: latex };
     }
   }, [latex, displayMode]);
 
+  // Error path uses React text rendering (safe) — never dangerouslySetInnerHTML
+  // with unsanitized user/AI content to prevent XSS.
+  if (error !== null) {
+    return (
+      <div className={cn("my-4 overflow-x-auto text-center", className)}>
+        <span className="text-destructive">
+          Invalid LaTeX: {error}
+        </span>
+      </div>
+    );
+  }
+
+  // KaTeX output with trust:false is safe — only KaTeX-generated markup
   return (
     <div
       className={cn("my-4 overflow-x-auto text-center", className)}
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={{ __html: html! }}
     />
   );
 }

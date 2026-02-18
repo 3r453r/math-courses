@@ -53,11 +53,17 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const importRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
+  const [notifications, setNotifications] = useState<Array<{
+    id: string;
+    type: string;
+    data: string;
+    createdAt: string;
+  }>>([]);
   const { t } = useTranslation(["dashboard", "common", "login", "export"]);
 
   useEffect(() => {
     if (!hydrated) return;
-    // Check access status before anything else
+    // Check access status and ToS acceptance before anything else
     fetch("/api/user/status")
       .then((res) => res.json())
       .then((data) => {
@@ -69,7 +75,12 @@ export default function DashboardPage() {
           router.push("/redeem");
           return;
         }
+        if (data.tosAccepted === false) {
+          router.push("/terms/accept?callbackUrl=/");
+          return;
+        }
         fetchCourses();
+        fetchNotifications();
       })
       .catch(() => {
         // If status check fails (e.g. not logged in), proceed normally
@@ -124,6 +135,31 @@ export default function DashboardPage() {
       setCourses((prev) => prev.filter((c) => c.id !== courseId));
     } catch (err) {
       console.error("Failed to delete course:", err);
+    }
+  }
+
+  async function fetchNotifications() {
+    try {
+      const res = await fetch("/api/user/notifications");
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data.notifications ?? []);
+      }
+    } catch {
+      // silently ignore
+    }
+  }
+
+  async function dismissNotification(id: string) {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    try {
+      await fetch("/api/user/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [id] }),
+      });
+    } catch {
+      // silently ignore
     }
   }
 
@@ -228,6 +264,51 @@ export default function DashboardPage() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {/* Notification banners */}
+        {notifications.map((notif) => {
+          const data = (() => { try { return JSON.parse(notif.data); } catch { return {}; } })();
+          if (notif.type === "gallery_listed") {
+            return (
+              <div
+                key={notif.id}
+                className="mb-4 rounded-lg border border-brand-from/30 bg-brand-from/5 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+              >
+                <p className="text-sm">
+                  {t("common:notifications.galleryListed", { title: data.courseTitle ?? "" })}
+                </p>
+                <div className="flex gap-2 shrink-0">
+                  {data.shareToken && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push(`/preview/${data.shareToken}`)}
+                    >
+                      {t("common:notifications.viewInGallery")}
+                    </Button>
+                  )}
+                  {data.courseId && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push(`/courses/${data.courseId}`)}
+                    >
+                      {t("common:notifications.claimAuthorship")}
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => dismissNotification(notif.id)}
+                  >
+                    {t("common:notifications.dismiss")}
+                  </Button>
+                </div>
+              </div>
+            );
+          }
+          return null;
+        })}
+
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <p className="text-muted-foreground">{t("dashboard:loadingCourses")}</p>

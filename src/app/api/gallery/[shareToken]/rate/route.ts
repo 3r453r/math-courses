@@ -1,6 +1,19 @@
 import { prisma } from "@/lib/db";
 import { getAuthUserFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/rate-limit";
+import { z } from "zod";
+import { parseBody } from "@/lib/api-validation";
+
+const ratingSchema = z.object({
+  rating: z.number().int().min(1).max(5),
+});
+
+const GALLERY_RATE_RATE_LIMIT = {
+  namespace: "gallery:rate",
+  windowMs: 60_000,
+  maxRequests: 20,
+} as const;
 
 /**
  * POST /api/gallery/[shareToken]/rate — Create or update a rating (1-5)
@@ -14,13 +27,20 @@ export async function POST(
   const { userId, error: authError } = await getAuthUserFromRequest(request);
   if (authError) return authError;
 
+  const rateLimitResponse = enforceRateLimit({
+    request,
+    userId,
+    route: "/api/gallery/rate",
+    config: GALLERY_RATE_RATE_LIMIT,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const { shareToken } = await params;
-    const { rating } = await request.json();
+    const { data: body, error: parseError } = await parseBody(request, ratingSchema);
+    if (parseError) return parseError;
 
-    if (!rating || typeof rating !== "number" || rating < 1 || rating > 5 || !Number.isInteger(rating)) {
-      return NextResponse.json({ error: "Rating must be an integer between 1 and 5" }, { status: 400 });
-    }
+    const { rating } = body;
 
     const share = await prisma.courseShare.findUnique({
       where: { shareToken },
