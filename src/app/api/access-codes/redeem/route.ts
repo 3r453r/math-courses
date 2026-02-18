@@ -1,7 +1,14 @@
 import { prisma } from "@/lib/db";
 import { getAuthUserAnyStatusFromRequest } from "@/lib/auth-utils";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
+
+const ACCESS_CODE_REDEEM_RATE_LIMIT = {
+  namespace: "access-codes:redeem",
+  windowMs: 60_000,
+  maxRequests: 5,
+} as const;
 
 /**
  * POST /api/access-codes/redeem
@@ -11,6 +18,14 @@ import { Prisma } from "@/generated/prisma/client";
 export async function POST(request: Request) {
   const { userId, error: authError } = await getAuthUserAnyStatusFromRequest(request);
   if (authError) return authError;
+
+  const rateLimitResponse = enforceRateLimit({
+    request,
+    userId,
+    route: "/api/access-codes/redeem",
+    config: ACCESS_CODE_REDEEM_RATE_LIMIT,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
 
   try {
     const { code } = await request.json();

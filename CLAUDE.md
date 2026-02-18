@@ -224,3 +224,15 @@ These items should be treated as active hardening work alongside feature develop
 - Setup page (`src/app/setup/page.tsx`) now treats server-side keys as metadata-only: existing keys are shown as masked suffixes and users must re-enter full values to rotate/replace a key.
 - Added route tests at `src/app/api/user/api-key/route.test.ts` to assert plaintext keys are never returned by `GET /api/user/api-key`, including legacy JSON-shape handling.
 
+## Operational notes: API rate limiting
+
+- Shared utility: `src/lib/rate-limit.ts` (fixed-window, user-id key with IP fallback).
+- On limiter hit, handlers return `429` with `Retry-After` and log a structured JSON event (`event: "rate_limit_exceeded"`).
+- Tune per-route thresholds via `*_RATE_LIMIT` constants near each handler.
+- Current protected routes include:
+  - access code redemption
+  - API key verification
+  - chat
+  - all `/api/generate/*` endpoints
+  - auth-adjacent mutations (course create/clone/import/share mutations)
+- Coarse edge guard in `src/proxy.ts` adds IP-based API throttling (`edge:api` and stricter `edge:sensitive` namespaces) to catch quick-win abuse before route handlers.

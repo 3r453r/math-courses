@@ -8,14 +8,29 @@ import { buildLanguageInstruction } from "@/lib/ai/prompts/languageInstruction";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { getAuthUserFromRequest, verifyCourseOwnership } from "@/lib/auth-utils";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { getCheapestModel, repackWithAI, tryCoerceAndValidate, unwrapParameter, type WrapperType } from "@/lib/ai/repairSchema";
 import { validateAndRepairVisualizations } from "@/lib/content/vizValidation";
 import { createGenerationLogger } from "@/lib/ai/generationLogger";
 import type { z } from "zod";
 
+const GENERATE_LESSON_RATE_LIMIT = {
+  namespace: "generate:lesson",
+  windowMs: 60_000,
+  maxRequests: 10,
+} as const;
+
 export async function POST(request: Request) {
   const { userId, error } = await getAuthUserFromRequest(request);
   if (error) return error;
+
+  const rateLimitResponse = enforceRateLimit({
+    request,
+    userId,
+    route: "/api/generate/lesson",
+    config: GENERATE_LESSON_RATE_LIMIT,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
 
   const apiKeys = getApiKeysFromRequest(request);
   if (!hasAnyApiKey(apiKeys)) {

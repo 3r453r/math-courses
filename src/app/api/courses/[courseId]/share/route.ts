@@ -2,6 +2,13 @@ import { prisma } from "@/lib/db";
 import { getAuthUser, getAuthUserFromRequest, verifyCourseOwnership } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import { enforceRateLimit } from "@/lib/rate-limit";
+
+const COURSE_SHARE_MUTATION_RATE_LIMIT = {
+  namespace: "courses:share:mutation",
+  windowMs: 60_000,
+  maxRequests: 20,
+} as const;
 
 /** Create a share link for a course */
 export async function POST(
@@ -10,6 +17,14 @@ export async function POST(
 ) {
   const { userId, error: authError } = await getAuthUserFromRequest(request);
   if (authError) return authError;
+
+  const rateLimitResponse = enforceRateLimit({
+    request,
+    userId,
+    route: "/api/courses/[courseId]/share",
+    config: COURSE_SHARE_MUTATION_RATE_LIMIT,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
 
   try {
     const { courseId } = await params;
@@ -80,6 +95,14 @@ export async function DELETE(
 ) {
   const { userId, error: authError } = await getAuthUserFromRequest(request);
   if (authError) return authError;
+
+  const rateLimitResponse = enforceRateLimit({
+    request,
+    userId,
+    route: "/api/courses/[courseId]/share",
+    config: COURSE_SHARE_MUTATION_RATE_LIMIT,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
 
   try {
     const { courseId } = await params;

@@ -1,12 +1,27 @@
 import { prisma } from "@/lib/db";
 import { getAuthUserFromRequest } from "@/lib/auth-utils";
 import { NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import type { CourseExportJson } from "@/lib/export/toJson";
 import { serializeSubjects } from "@/lib/subjects";
+
+const COURSE_IMPORT_RATE_LIMIT = {
+  namespace: "courses:import",
+  windowMs: 60_000,
+  maxRequests: 10,
+} as const;
 
 export async function POST(request: Request) {
   const { userId, error: authError } = await getAuthUserFromRequest(request);
   if (authError) return authError;
+
+  const rateLimitResponse = enforceRateLimit({
+    request,
+    userId,
+    route: "/api/courses/import",
+    config: COURSE_IMPORT_RATE_LIMIT,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
 
   try {
     const body = (await request.json()) as CourseExportJson;
