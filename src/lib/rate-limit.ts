@@ -53,6 +53,18 @@ export function checkRateLimit(params: {
   config: RateLimitConfig;
   userId?: string;
 }): RateLimitCheckResult {
+  // Skip rate limiting in E2E test mode — all tests share a single dev bypass user
+  if (process.env.NEXT_TEST_MODE === "1") {
+    return {
+      allowed: true,
+      key: "test-bypass",
+      limit: params.config.maxRequests,
+      remaining: params.config.maxRequests,
+      retryAfterSeconds: 0,
+      resetAtMs: Date.now() + params.config.windowMs,
+    };
+  }
+
   const now = Date.now();
   const clientKey = getClientKey(params.request, params.userId);
   const compositeKey = `${params.config.namespace}:${clientKey}`;

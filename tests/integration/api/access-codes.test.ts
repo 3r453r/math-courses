@@ -5,8 +5,12 @@ import { DELETE as deactivateCode } from "@/app/api/access-codes/[codeId]/route"
 import { getTestPrisma } from "../helpers/db";
 import { TEST_USER_ID } from "../helpers/fixtures";
 import * as authUtils from "@/lib/auth-utils";
+import { __resetRateLimitStore } from "@/lib/rate-limit";
 
 describe("access code redemption", () => {
+  beforeEach(() => {
+    __resetRateLimitStore();
+  });
   it("redeems a valid access code and activates user", async () => {
     const prisma = getTestPrisma();
 
@@ -22,7 +26,7 @@ describe("access code redemption", () => {
     });
 
     // Mock getAuthUserAnyStatus for pending user
-    vi.mocked(authUtils.getAuthUserAnyStatus).mockResolvedValueOnce({
+    vi.mocked(authUtils.getAuthUserAnyStatusFromRequest).mockResolvedValueOnce({
       userId: TEST_USER_ID,
       role: "user",
       accessStatus: "pending",
@@ -58,7 +62,7 @@ describe("access code redemption", () => {
   });
 
   it("rejects an invalid access code", async () => {
-    vi.mocked(authUtils.getAuthUserAnyStatus).mockResolvedValueOnce({
+    vi.mocked(authUtils.getAuthUserAnyStatusFromRequest).mockResolvedValueOnce({
       userId: TEST_USER_ID,
       role: "user",
       accessStatus: "pending",
@@ -95,7 +99,7 @@ describe("access code redemption", () => {
       data: { accessStatus: "pending" },
     });
 
-    vi.mocked(authUtils.getAuthUserAnyStatus).mockResolvedValueOnce({
+    vi.mocked(authUtils.getAuthUserAnyStatusFromRequest).mockResolvedValueOnce({
       userId: TEST_USER_ID,
       role: "user",
       accessStatus: "pending",
@@ -126,7 +130,7 @@ describe("access code redemption", () => {
       data: { accessStatus: "pending" },
     });
 
-    vi.mocked(authUtils.getAuthUserAnyStatus).mockResolvedValueOnce({
+    vi.mocked(authUtils.getAuthUserAnyStatusFromRequest).mockResolvedValueOnce({
       userId: TEST_USER_ID,
       role: "user",
       accessStatus: "pending",
@@ -163,7 +167,7 @@ describe("access code redemption", () => {
       data: { accessCodeId: code.id, userId: TEST_USER_ID },
     });
 
-    vi.mocked(authUtils.getAuthUserAnyStatus).mockResolvedValueOnce({
+    vi.mocked(authUtils.getAuthUserAnyStatusFromRequest).mockResolvedValueOnce({
       userId: TEST_USER_ID,
       role: "user",
       accessStatus: "pending",
@@ -208,7 +212,7 @@ describe("access code redemption", () => {
       data: { code: "RACE0001", type: "general", maxUses: 1, currentUses: 0 },
     });
 
-    vi.mocked(authUtils.getAuthUserAnyStatus)
+    vi.mocked(authUtils.getAuthUserAnyStatusFromRequest)
       .mockResolvedValueOnce({ userId: TEST_USER_ID, role: "user", accessStatus: "pending", error: null })
       .mockResolvedValueOnce({ userId: secondUserId, role: "user", accessStatus: "pending", error: null });
 

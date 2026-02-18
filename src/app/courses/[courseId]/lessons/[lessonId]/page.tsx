@@ -556,7 +556,7 @@ export default function LessonPage({
             <>
               <aside
                 className={`fixed inset-x-0 bottom-0 z-50 md:hidden ${mobilePanelHeightClass}`}
-                data-testid={scratchpadOpen ? "scratchpad-aside" : "chat-aside"}
+                data-testid={scratchpadOpen ? "scratchpad-aside-mobile" : "chat-aside-mobile"}
               >
                 <div className="h-full rounded-t-xl border border-b-0 bg-background shadow-2xl flex flex-col overflow-hidden">
                   <div className="shrink-0 border-b px-3 py-2 flex items-center justify-between gap-2">

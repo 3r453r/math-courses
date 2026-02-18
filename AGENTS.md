@@ -91,6 +91,7 @@ pnpm test:all         # All of the above
    - **`unwrapParameter()`** handles both wrapping formats: `{"parameter": {...}}` (object) and `{"parameter": "{\"title\":...}"}` (stringified JSON). Returns `wrapperType: "object" | "string" | "string-repaired" | null` for logging
    - **Critical**: Anthropic `jsonTool` mode sometimes returns array/object fields as **JSON-encoded strings** (e.g., `"sections":"[{...}]"` instead of `"sections":[{...}]`). `coerceToSchema` handles this by attempting `JSON.parse()` on string values when the schema expects an Array or Object. Without this, arrays silently default to `[]` and all generated content is lost.
    - **`AiGenerationLog`** table stores `wrapperType` column (`"object"` | `"string"` | `"string-repaired"` | null) for querying which wrapper format was encountered. Populated from both Layer 0 (`RepairTracker`) and Layer 1 (`recordLayer1`)
+10. **Mock AI model**: `model === "mock"` bypasses all AI calls and returns hardcoded data from `src/lib/ai/mockData.ts`. NOT in `MODEL_REGISTRY` — each `/api/generate/*` route checks for it explicitly. Includes course structure (3 lessons), lesson content, quizzes, diagnostics, trivia, and completion summary. Select via Setup page dropdown or pass `"model": "mock"` in request body.
 
 ### Content Rendering
 

@@ -43,6 +43,11 @@ export function validateCsrfRequest(request: Request): NextResponse | null {
     return null;
   }
 
+  // Skip CSRF in E2E test mode — Playwright page.request.* doesn't send Origin headers
+  if (process.env.NEXT_TEST_MODE === "1") {
+    return null;
+  }
+
   const allowedOrigins = getAllowedOrigins(request);
   const originHeader = normalizeOrigin(request.headers.get("origin"));
 

@@ -90,10 +90,7 @@ export async function POST(request: Request) {
 
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === "P2002" &&
-        Array.isArray(error.meta?.target) &&
-        error.meta.target.includes("accessCodeId") &&
-        error.meta.target.includes("userId")
+        error.code === "P2002"
       ) {
         return NextResponse.json({ error: "You have already redeemed this code" }, { status: 400 });
       }
