@@ -177,19 +177,6 @@ Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Au
 - **Stripe payment**: One-time payment via Stripe Checkout. Webhook auto-generates an access code, redeems it, and activates the user. `Payment` model for audit trail. BLIK + card support
 - **Admin panel**: `/admin` page with tabs for access codes, users, gallery management. Only `role === "admin"` users can access
 
-## Roadmap
-
-- Phase 1: Foundation — Next.js app, Prisma schema, AI course generation, setup page (DONE)
-- Phase 2: Lesson Content Rendering — KaTeX, visualizations, worked examples, practice exercises (DONE)
-- Phase 3: Assessment System — quizzes, diagnostics, scoring, adaptive recommendations (DONE)
-- Phase 4: Lesson Scratchpad — per-lesson notes editor with LaTeX slash-commands, autosave (DONE)
-- Phase 5: Context doc, co-generation, AI chat sidebar, topic-agnostic rebranding (DONE)
-- Phase 6: Progress Tracking & Dashboard — completion status, score history, course progress (DONE)
-- Phase 7: Multi-user auth (Auth.js v5), data isolation, middleware, server-side API key storage (DONE)
-- Phase 8: Export/Sharing — Markdown/JSON export, JSON import, share links, course cloning, print-to-PDF (DONE)
-- Phase 9: Access Gating, Payment & Course Gallery — access codes, roles, Stripe payment, admin panel, public course gallery (DONE)
-- Phase 10: Polish & UX — animations, responsive design, dark mode, keyboard navigation, i18n, voice input, notebook, color themes (DONE)
-
 ## Security Hardening
 
 Implemented security measures and ongoing hardening work:
