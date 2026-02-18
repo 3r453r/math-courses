@@ -1,8 +1,8 @@
-# CLAUDE.md
+# AGENTS.md
 
-> **Sync notice:** This file is mirrored in `AGENTS.md`. Any update to one MUST be copied to the other to keep them identical.
+> **Sync notice:** This file is mirrored in `CLAUDE.md`. Any update to one MUST be copied to the other to keep them identical.
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI coding agents when working with code in this repository.
 
 ## Project Overview
 
@@ -237,4 +237,3 @@ Implemented security measures and ongoing hardening work:
 - **Production Turso credentials**: Stored in `.env.turso-prod` (gitignored, NOT auto-loaded by Next.js). To apply schema changes to production: `source .env.turso-prod && npx prisma db push`
 - **NEVER** set `TURSO_DATABASE_URL` in `.env.local` — it causes `pnpm dev` to write to the production database
 - **Dev bypass production guard**: `isDevBypassEnabled()` in `src/lib/dev-bypass.ts` blocks `AUTH_DEV_BYPASS` in production (`NODE_ENV=production`) unless `NEXT_TEST_MODE=1` (E2E tests). Also logs a warning when bypass is active with a remote database (`TURSO_DATABASE_URL` set)
-
