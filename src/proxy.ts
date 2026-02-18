@@ -1,6 +1,38 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { isDevBypassEnabled } from "@/lib/dev-bypass";
+import { checkRateLimit, rateLimitExceededResponse } from "@/lib/rate-limit";
+
+
+function readPositiveIntEnv(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+const EDGE_API_RATE_LIMIT = {
+  namespace: "edge:api",
+  windowMs: readPositiveIntEnv("EDGE_RATE_LIMIT_WINDOW_MS", 60_000),
+  maxRequests: readPositiveIntEnv("EDGE_API_RATE_LIMIT_MAX", 120),
+} as const;
+
+const EDGE_SENSITIVE_RATE_LIMIT = {
+  namespace: "edge:sensitive",
+  windowMs: readPositiveIntEnv("EDGE_RATE_LIMIT_WINDOW_MS", 60_000),
+  maxRequests: readPositiveIntEnv("EDGE_SENSITIVE_RATE_LIMIT_MAX", 30),
+} as const;
+
+const SENSITIVE_PATH_PREFIXES = [
+  "/api/access-codes/redeem",
+  "/api/auth",
+  "/api/test-key",
+  "/api/payment/checkout",
+];
+
+function isSensitivePath(pathname: string): boolean {
+  return SENSITIVE_PATH_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
 
 // Public paths that don't require any authentication
 const PUBLIC_PATHS = [
@@ -37,6 +69,22 @@ function isPendingPath(pathname: string): boolean {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (pathname.startsWith("/api/")) {
+    const strictConfig = isSensitivePath(pathname) ? EDGE_SENSITIVE_RATE_LIMIT : EDGE_API_RATE_LIMIT;
+    const ddosGuard = checkRateLimit({ request, config: strictConfig });
+    if (!ddosGuard.allowed) {
+      console.warn(JSON.stringify({
+        event: "edge_rate_limit_exceeded",
+        route: pathname,
+        key: ddosGuard.key,
+        limit: ddosGuard.limit,
+        retryAfterSeconds: ddosGuard.retryAfterSeconds,
+        timestamp: new Date().toISOString(),
+      }));
+      return rateLimitExceededResponse(ddosGuard);
+    }
+  }
 
   // Dev bypass: auto-authenticate when AUTH_DEV_BYPASS=true
   if (isDevBypassEnabled()) {

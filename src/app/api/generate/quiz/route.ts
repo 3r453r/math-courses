@@ -5,6 +5,7 @@ import { getApiKeysFromRequest, getModelInstance, getProviderOptions, hasAnyApiK
 import { mockQuiz } from "@/lib/ai/mockData";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { quizSchema, type QuizOutput } from "@/lib/ai/schemas/quizSchema";
 import { buildQuizPrompt } from "@/lib/ai/prompts/quizGeneration";
 import { getAuthUserFromRequest, verifyCourseOwnership } from "@/lib/auth-utils";
@@ -12,9 +13,23 @@ import { getCheapestModel, repackWithAI, tryCoerceAndValidate, unwrapParameter, 
 import { createGenerationLogger } from "@/lib/ai/generationLogger";
 import type { z } from "zod";
 
+const GENERATE_QUIZ_RATE_LIMIT = {
+  namespace: "generate:quiz",
+  windowMs: 60_000,
+  maxRequests: 10,
+} as const;
+
 export async function POST(request: Request) {
   const { userId, error } = await getAuthUserFromRequest(request);
   if (error) return error;
+
+  const rateLimitResponse = enforceRateLimit({
+    request,
+    userId,
+    route: "/api/generate/quiz",
+    config: GENERATE_QUIZ_RATE_LIMIT,
+  });
+  if (rateLimitResponse) return rateLimitResponse;
 
   const apiKeys = getApiKeysFromRequest(request);
   if (!hasAnyApiKey(apiKeys)) {
