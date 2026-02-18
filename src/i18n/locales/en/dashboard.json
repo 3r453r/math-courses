@@ -11,5 +11,18 @@
   "lessonsCompleted": "{{completed}}/{{total}} lessons",
   "avgScore": "Avg: {{score}}%",
   "joinDiscord": "Discord",
-  "gallery": "Gallery"
+  "gallery": "Gallery",
+  "discovery": {
+    "title": "Discover your next course",
+    "description": "AI can analyze your course library and suggest creative cross-disciplinary courses that blend your interests.",
+    "generate": "Find connections",
+    "loading": "Analyzing your library...",
+    "resultsTitle": "Suggested for you",
+    "regenerate": "Regenerate",
+    "dismiss": "Dismiss",
+    "whyThisCourse": "Why this course?",
+    "lessons": "lessons",
+    "createCourse": "Create this course",
+    "retry": "Try again"
+  }
 }

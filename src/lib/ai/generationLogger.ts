@@ -14,7 +14,8 @@ export type GenerationType =
   | "quiz"
   | "diagnostic"
   | "trivia"
-  | "completion_summary";
+  | "completion_summary"
+  | "suggestion";
 
 export type GenerationOutcome =
   | "success"

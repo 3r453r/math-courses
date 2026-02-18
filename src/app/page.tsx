@@ -22,6 +22,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { InstallButton } from "@/components/InstallButton";
 import { UserMenu } from "@/components/UserMenu";
 import { MobileMenu } from "@/components/MobileMenu";
+import { CourseDiscovery } from "@/components/dashboard/CourseDiscovery";
 
 interface CourseProgress {
   completedLessons: number;
@@ -363,6 +364,11 @@ export default function DashboardPage() {
                   </CardContent>
                 </Card>
               </div>
+            )}
+
+            {/* Course discovery */}
+            {courses.filter((c) => c.status === "ready").length >= 2 && (
+              <CourseDiscovery />
             )}
 
             {/* Course grid */}
