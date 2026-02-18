@@ -35,6 +35,7 @@
   "defaultDescription": "A course on {{topic}}",
   "defaultDetailedDescription": "A comprehensive course on {{topic}}",
   "prefilledFromRecommendation": "Pre-filled from a course completion recommendation. Adjust any fields before generating.",
+  "prefilledFromDiscovery": "Suggested by AI based on your course library. Edit freely before generating.",
   "advancedSettings": "Advanced Completion Settings",
   "passThresholdLabel": "Course Pass Threshold",
   "passThresholdNote": "Minimum weighted score to pass the course. AI will assign per-lesson weights based on importance.",

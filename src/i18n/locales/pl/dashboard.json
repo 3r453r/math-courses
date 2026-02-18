@@ -2,14 +2,27 @@
   "title": "Kursy",
   "subtitle": "Platforma edukacyjna wspierana przez AI",
   "newCourse": "Nowy kurs",
-  "loadingCourses": "Ładowanie kursów...",
+  "loadingCourses": "\u0141adowanie kurs\u00f3w...",
   "welcomeTitle": "Witaj w StemForge",
-  "welcomeDescription": "Utwórz swój pierwszy kurs, aby rozpocząć. AI pomoże zaprojektować ustrukturyzowaną ścieżkę nauki z lekcjami, quizami i interaktywnymi wizualizacjami.",
+  "welcomeDescription": "Utw\u00f3rz sw\u00f3j pierwszy kurs, aby rozpocz\u0105\u0107. AI pomo\u017ce zaprojektowa\u0107 ustrukturowan\u0105 \u015bcie\u017ck\u0119 nauki z lekcjami, quizami i interaktywnymi wizualizacjami.",
   "createFirstCourse": "Utw\u00f3rz pierwszy kurs",
   "viewProgress": "Post\u0119py",
   "completedBadge": "Uko\u0144czony",
   "lessonsCompleted": "{{completed}}/{{total}} lekcji",
   "avgScore": "\u015ar.: {{score}}%",
   "joinDiscord": "Discord",
-  "gallery": "Galeria"
+  "gallery": "Galeria",
+  "discovery": {
+    "title": "Odkryj sw\u00f3j kolejny kurs",
+    "description": "AI przeanalizuje Twoj\u0105 bibliotek\u0119 kurs\u00f3w i zaproponuje kreatywne mi\u0119dzydyscyplinarne kursy \u0142\u0105cz\u0105ce Twoje zainteresowania.",
+    "generate": "Znajd\u017a powi\u0105zania",
+    "loading": "Analizowanie Twojej biblioteki...",
+    "resultsTitle": "Propozycje dla Ciebie",
+    "regenerate": "Wygeneruj ponownie",
+    "dismiss": "Zamknij",
+    "whyThisCourse": "Dlaczego ten kurs?",
+    "lessons": "lekcji",
+    "createCourse": "Utw\u00f3rz ten kurs",
+    "retry": "Spr\u00f3buj ponownie"
+  }
 }

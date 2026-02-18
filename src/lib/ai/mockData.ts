@@ -256,6 +256,71 @@ export function mockTrivia() {
   };
 }
 
+export function mockCourseSuggestions() {
+  return {
+    suggestions: [
+      {
+        title: "The Geometry of Machine Learning: From Vectors to Neural Manifolds",
+        description:
+          "Explore how geometric intuition from linear algebra illuminates the hidden structure of neural networks. " +
+          "You'll learn to visualize high-dimensional optimization landscapes and understand why deep learning works through the lens of differential geometry.",
+        topic: "Geometric Deep Learning",
+        rationale:
+          "Your background in Linear Algebra and Machine Learning gives you the perfect foundation to explore this cutting-edge intersection. " +
+          "Understanding vector spaces and transformations will help you see neural networks as geometric objects rather than black boxes.",
+        connectedCourses: ["Mock Test Course"],
+        focusAreas: [
+          "Manifold learning",
+          "Optimization geometry",
+          "Representation theory",
+          "Graph neural networks",
+        ],
+        difficulty: "advanced" as const,
+        estimatedLessons: 12,
+      },
+      {
+        title: "Numbers That Changed History: Mathematics as a Force of Civilization",
+        description:
+          "Trace how mathematical discoveries — from zero to calculus to cryptography — reshaped economies, won wars, and enabled technologies we take for granted. " +
+          "Each lesson connects a mathematical idea to its world-changing consequences.",
+        topic: "History of Mathematics and Its Impact",
+        rationale:
+          "Your existing courses show strong technical foundations. This course offers a broader perspective, " +
+          "connecting the abstract concepts you've studied to their real-world historical impact and helping you see the bigger picture.",
+        connectedCourses: ["Mock Test Course"],
+        focusAreas: [
+          "Ancient number systems",
+          "The calculus priority dispute",
+          "Cryptography in wartime",
+          "The birth of computing",
+          "Modern mathematical frontiers",
+        ],
+        difficulty: "beginner" as const,
+        estimatedLessons: 10,
+      },
+      {
+        title: "Problem Solving Toolkit: Strategies That Work Across Disciplines",
+        description:
+          "Master a versatile set of problem-solving strategies — from proof techniques and estimation to modeling and dimensional analysis. " +
+          "Each strategy is practiced across multiple domains so you build transferable thinking skills.",
+        topic: "Cross-Disciplinary Problem Solving",
+        rationale:
+          "Across your courses, you've encountered problems from different angles. This course unifies those approaches " +
+          "into a coherent toolkit, making you a more versatile and creative problem solver.",
+        connectedCourses: ["Mock Test Course"],
+        focusAreas: [
+          "Proof strategies",
+          "Fermi estimation",
+          "Mathematical modeling",
+          "Dimensional analysis",
+        ],
+        difficulty: "intermediate" as const,
+        estimatedLessons: 8,
+      },
+    ],
+  };
+}
+
 export function mockDiagnostic() {
   return {
     prerequisites: [

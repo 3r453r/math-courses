@@ -14,6 +14,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { BookOpen, Shield, User, Heart } from "lucide-react";
 
 interface AcceptTermsContentProps {
@@ -27,6 +28,7 @@ function AcceptTermsInner({ terms }: AcceptTermsContentProps) {
   const language = useAppStore((s) => s.language);
   const content = terms[language] ?? terms.en;
   const [accepting, setAccepting] = useState(false);
+  const [accepted, setAccepted] = useState(false);
   const [showFull, setShowFull] = useState(false);
 
   const callbackUrl = searchParams.get("callbackUrl") ?? "/";
@@ -115,12 +117,26 @@ function AcceptTermsInner({ terms }: AcceptTermsContentProps) {
           )}
         </div>
 
+        <div className="flex items-center gap-3">
+          <Checkbox
+            id="accept-tos"
+            checked={accepted}
+            onCheckedChange={(v) => setAccepted(v === true)}
+          />
+          <label
+            htmlFor="accept-tos"
+            className="text-sm cursor-pointer select-none"
+          >
+            {t("terms:acceptPage.checkboxLabel")}
+          </label>
+        </div>
+
         <Button
           size="lg"
           className="w-full text-base text-white border-0 hover:opacity-90 transition-opacity"
           style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
           onClick={handleAccept}
-          disabled={accepting}
+          disabled={accepting || !accepted}
         >
           {accepting ? t("terms:acceptPage.accepting") : t("terms:acceptPage.acceptButton")}
         </Button>
