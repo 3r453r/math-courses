@@ -95,6 +95,8 @@ function normalizeSection(s: unknown): LessonSection | null {
     }
 
     if (validVizTypes.includes(vt) && spec) {
+      // Only create a new object if spec was actually transformed (parsed from string)
+      if (spec === sec.spec) return s as LessonSection;
       return { ...sec, spec } as LessonSection;
     }
 
