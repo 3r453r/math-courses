@@ -27,6 +27,8 @@
   "english": "English",
   "polish": "Polski",
   "syncApiKey": "Save API keys to your account (syncs across devices)",
+  "syncFailed": "Failed to save API key to server",
+  "syncSuccess": "API key saved to server",
   "signedInAs": "Signed in as",
   "appearance": {
     "title": "Appearance",
