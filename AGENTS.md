@@ -128,9 +128,10 @@ Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Au
 
 ## Git / Branch Policy
 
-- **Stay on `main`**: Do NOT create or switch branches unless the user explicitly asks you to. Multiple Claude Code agents may be working in this repository simultaneously, and switching branches causes conflicts. This applies to local CLI agents only — cloud Claude Code instances with their own worktrees are exempt.
-- **Commit directly to `main`** for small changes when asked to commit.
-- If the user asks for branch-based workflow (feature branch, PR), only then create a branch.
+- **NEVER switch branches or create feature branches locally** unless the user explicitly says "create a branch" or "use a feature branch". This is critical — multiple Claude Code agents work in this repo simultaneously, and switching the local checkout causes conflicts for all of them. "Commit, push and create a PR" does NOT mean "create a feature branch" — commit on `main`, push to `main`, and create a PR from `main` if needed.
+- **Commit directly to `main`** and push to `main`. This is the default for all work.
+- **Skills/tools that create branches**: If a skill (like `commit-push-pr`) tries to create a feature branch, override that behavior — stay on `main`. The branch policy in this file takes precedence over skill defaults.
+- Cloud Claude Code instances with their own worktrees are exempt from this policy.
 
 ## Key Patterns
 
