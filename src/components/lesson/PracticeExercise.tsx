@@ -167,12 +167,16 @@ export function PracticeExercise({ exercise, index, onChatAbout }: Props) {
             </Button>
           )}
           {exercise.answerType === "free_response" && (
-            <TooltipProvider>
+            <TooltipProvider delayDuration={0}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-muted text-muted-foreground text-[10px] font-medium cursor-help select-none">
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-muted text-muted-foreground text-[10px] font-medium cursor-help select-none"
+                    aria-label={t("freeResponseAiHint")}
+                  >
                     ?
-                  </span>
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs">
                   {t("freeResponseAiHint")}
