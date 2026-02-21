@@ -1,5 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
+import { NextRequest } from "next/server";
 import { GET } from "@/app/api/courses/route";
+
+function makeGetRequest() {
+  return new NextRequest(new URL("http://localhost/api/courses"));
+}
 import {
   GET as GET_BY_ID,
 } from "@/app/api/courses/[courseId]/route";
@@ -19,11 +24,11 @@ describe("multi-user data isolation", () => {
     await createTestCourse({ title: "User B Course", userId: USER_B_ID });
 
     // Default auth mock returns TEST_USER_ID (User A)
-    const response = await GET();
+    const response = await GET(makeGetRequest());
     const data = await response.json();
 
-    expect(data).toHaveLength(1);
-    expect(data[0].title).toBe("User A Course");
+    expect(data.courses).toHaveLength(1);
+    expect(data.courses[0].title).toBe("User A Course");
   });
 
   it("GET /api/courses/[courseId] returns 404 for another user's course", async () => {
@@ -52,10 +57,10 @@ describe("multi-user data isolation", () => {
     expect(totalCourses).toBe(3);
 
     // But GET /api/courses should return only 2 for User A
-    const response = await GET();
+    const response = await GET(makeGetRequest());
     const data = await response.json();
-    expect(data).toHaveLength(2);
-    expect(data.map((c: { title: string }) => c.title).sort()).toEqual(["A1", "A2"]);
+    expect(data.courses).toHaveLength(2);
+    expect(data.courses.map((c: { title: string }) => c.title).sort()).toEqual(["A1", "A2"]);
   });
 
   it("switching authenticated user changes which courses are visible", async () => {
@@ -65,10 +70,10 @@ describe("multi-user data isolation", () => {
     await createTestCourse({ title: "User B Course", userId: USER_B_ID });
 
     // As User A — should see only User A's course
-    const responseA = await GET();
+    const responseA = await GET(makeGetRequest());
     const dataA = await responseA.json();
-    expect(dataA).toHaveLength(1);
-    expect(dataA[0].title).toBe("User A Course");
+    expect(dataA.courses).toHaveLength(1);
+    expect(dataA.courses[0].title).toBe("User A Course");
 
     // Switch to User B
     vi.mocked(authUtils.getAuthUser).mockResolvedValueOnce({ userId: USER_B_ID, role: "user", accessStatus: "active", error: null });
@@ -85,9 +90,9 @@ describe("multi-user data isolation", () => {
       return { course, error: null };
     });
 
-    const responseB = await GET();
+    const responseB = await GET(makeGetRequest());
     const dataB = await responseB.json();
-    expect(dataB).toHaveLength(1);
-    expect(dataB[0].title).toBe("User B Course");
+    expect(dataB.courses).toHaveLength(1);
+    expect(dataB.courses[0].title).toBe("User B Course");
   });
 });

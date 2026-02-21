@@ -5,6 +5,8 @@ import { NextResponse } from "next/server";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 import { parseBody } from "@/lib/api-validation";
+import { parseSubjects } from "@/lib/subjects";
+import type { NextRequest } from "next/server";
 
 const createCourseSchema = z.object({
   title: z.string().max(200).optional(),
@@ -19,14 +21,42 @@ const createCourseSchema = z.object({
   lessonFailureThreshold: z.number().min(0).max(1).optional(),
 });
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const { userId, error } = await getAuthUser();
   if (error) return error;
 
   try {
+    const { searchParams } = request.nextUrl;
+    const search = searchParams.get("search") ?? undefined;
+    const status = searchParams.get("status") ?? undefined;
+    const difficulty = searchParams.get("difficulty") ?? undefined;
+    const subject = searchParams.get("subject") ?? undefined;
+    const sort = searchParams.get("sort") ?? "newest";
+
+    // Build where clause
+    const where: Record<string, unknown> = { userId };
+    if (status) where.status = status;
+    if (difficulty) where.difficulty = difficulty;
+    if (subject) where.subject = { contains: `"${subject}"` };
+    if (search) {
+      where.OR = [
+        { title: { contains: search } },
+        { topic: { contains: search } },
+      ];
+    }
+
+    // Sort clause
+    let sortClause: Record<string, string>;
+    if (sort === "oldest") sortClause = { createdAt: "asc" };
+    else if (sort === "updated") sortClause = { updatedAt: "desc" };
+    else if (sort === "alpha") sortClause = { title: "asc" };
+    else sortClause = { createdAt: "desc" };
+
+    const orderBy = [{ isBookmarked: "desc" }, sortClause];
+
     const courses = await prisma.course.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
+      where,
+      orderBy,
       include: {
         _count: { select: { lessons: true } },
         lessons: {
@@ -82,6 +112,8 @@ export async function GET() {
         difficulty: course.difficulty,
         language: course.language,
         status: course.status,
+        subject: course.subject,
+        isBookmarked: course.isBookmarked,
         createdAt: course.createdAt,
         _count: course._count,
         progress: {
@@ -96,7 +128,18 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json(coursesWithProgress);
+    // Collect available filter options from all user courses (unfiltered)
+    const allCourses = search || status || difficulty || subject
+      ? await prisma.course.findMany({
+          where: { userId },
+          select: { subject: true, language: true },
+        })
+      : courses.map((c) => ({ subject: c.subject, language: c.language }));
+
+    const subjects = [...new Set(allCourses.flatMap((c) => parseSubjects(c.subject)))].sort();
+    const languages = [...new Set(allCourses.map((c) => c.language).filter(Boolean))].sort();
+
+    return NextResponse.json({ courses: coursesWithProgress, filters: { subjects, languages } });
   } catch (error) {
     console.error("Failed to fetch courses:", error);
     return NextResponse.json({ error: "Failed to fetch courses" }, { status: 500 });

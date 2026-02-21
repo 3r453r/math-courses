@@ -1,13 +1,22 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { Bookmark, BookmarkCheck, Search, X } from "lucide-react";
 import { useAppStore } from "@/stores/appStore";
 import { useHydrated } from "@/stores/useHydrated";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -18,6 +27,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { InstallButton } from "@/components/InstallButton";
 import { UserMenu } from "@/components/UserMenu";
@@ -38,7 +48,10 @@ interface CourseWithProgress {
   description: string;
   topic: string;
   difficulty: string;
+  language: string;
   status: string;
+  subject: string;
+  isBookmarked: boolean;
   createdAt: string;
   _count: { lessons: number };
   progress: CourseProgress;
@@ -51,6 +64,7 @@ export default function DashboardPage() {
   const language = useAppStore((s) => s.language);
   const setLanguage = useAppStore((s) => s.setLanguage);
   const [courses, setCourses] = useState<CourseWithProgress[]>([]);
+  const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const importRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
@@ -61,6 +75,46 @@ export default function DashboardPage() {
     createdAt: string;
   }>>([]);
   const { t } = useTranslation(["dashboard", "common", "login", "export"]);
+
+  // Filter state
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterDifficulty, setFilterDifficulty] = useState("all");
+  const [filterSubject, setFilterSubject] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Ref so filter re-fetch effect can skip the initial run
+  const didInitialFetch = useRef(false);
+
+  const fetchCourses = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ sort: sortBy });
+      if (debouncedSearch) params.set("search", debouncedSearch);
+      if (filterStatus !== "all") params.set("status", filterStatus);
+      if (filterDifficulty !== "all") params.set("difficulty", filterDifficulty);
+      if (filterSubject !== "all") params.set("subject", filterSubject);
+
+      const res = await fetch(`/api/courses?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCourses(data.courses ?? data);
+        if (data.filters) {
+          setAvailableSubjects(data.filters.subjects ?? []);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch courses:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [debouncedSearch, filterStatus, filterDifficulty, filterSubject, sortBy]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -80,28 +134,22 @@ export default function DashboardPage() {
           router.push("/terms/accept?callbackUrl=/");
           return;
         }
+        didInitialFetch.current = true;
         fetchCourses();
         fetchNotifications();
       })
       .catch(() => {
         // If status check fails (e.g. not logged in), proceed normally
+        didInitialFetch.current = true;
         fetchCourses();
       });
   }, [hydrated, router]);
 
-  async function fetchCourses() {
-    try {
-      const res = await fetch("/api/courses");
-      if (res.ok) {
-        const data = await res.json();
-        setCourses(data);
-      }
-    } catch (err) {
-      console.error("Failed to fetch courses:", err);
-    } finally {
-      setLoading(false);
-    }
-  }
+  // Re-fetch when filters change, but only after the initial fetch has run
+  useEffect(() => {
+    if (!didInitialFetch.current) return;
+    fetchCourses();
+  }, [fetchCourses]);
 
   async function handleImport(file: File) {
     setImporting(true);
@@ -137,6 +185,41 @@ export default function DashboardPage() {
     } catch (err) {
       console.error("Failed to delete course:", err);
     }
+  }
+
+  async function handleToggleBookmark(e: React.MouseEvent, courseId: string, current: boolean) {
+    e.stopPropagation();
+    // Optimistic update
+    setCourses((prev) =>
+      prev.map((c) => (c.id === courseId ? { ...c, isBookmarked: !current } : c))
+    );
+    try {
+      const res = await fetch(`/api/courses/${courseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isBookmarked: !current }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      // Re-fetch to get server-side sorted order
+      fetchCourses();
+    } catch {
+      // Revert on error
+      setCourses((prev) =>
+        prev.map((c) => (c.id === courseId ? { ...c, isBookmarked: current } : c))
+      );
+    }
+  }
+
+  const hasActiveFilters =
+    search !== "" || filterStatus !== "all" || filterDifficulty !== "all" || filterSubject !== "all";
+
+  function clearFilters() {
+    setSearch("");
+    setDebouncedSearch("");
+    setFilterStatus("all");
+    setFilterDifficulty("all");
+    setFilterSubject("all");
+    setSortBy("newest");
   }
 
   async function fetchNotifications() {
@@ -371,7 +454,87 @@ export default function DashboardPage() {
               <CourseDiscovery />
             )}
 
+            {/* Filter bar */}
+            <div className="mb-4 flex flex-wrap gap-2 items-center">
+              <div className="relative flex-1 min-w-[180px] max-w-xs">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  className="pl-8 h-9"
+                  placeholder={t("dashboard:searchPlaceholder")}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="h-9 w-[140px]">
+                  <SelectValue placeholder={t("dashboard:allStatuses")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("dashboard:allStatuses")}</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="ready">Ready</SelectItem>
+                  <SelectItem value="generating">Generating</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={filterDifficulty} onValueChange={setFilterDifficulty}>
+                <SelectTrigger className="h-9 w-[160px]">
+                  <SelectValue placeholder={t("dashboard:allDifficulties")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("dashboard:allDifficulties")}</SelectItem>
+                  <SelectItem value="beginner">Beginner</SelectItem>
+                  <SelectItem value="intermediate">Intermediate</SelectItem>
+                  <SelectItem value="advanced">Advanced</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {availableSubjects.length > 0 && (
+                <Select value={filterSubject} onValueChange={setFilterSubject}>
+                  <SelectTrigger className="h-9 w-[160px]">
+                    <SelectValue placeholder={t("dashboard:allSubjects")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("dashboard:allSubjects")}</SelectItem>
+                    {availableSubjects.map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="h-9 w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">{t("dashboard:sortNewest")}</SelectItem>
+                  <SelectItem value="oldest">{t("dashboard:sortOldest")}</SelectItem>
+                  <SelectItem value="updated">{t("dashboard:sortUpdated")}</SelectItem>
+                  <SelectItem value="alpha">{t("dashboard:sortAlpha")}</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9 gap-1.5 text-muted-foreground">
+                  <X className="h-3.5 w-3.5" />
+                  {t("dashboard:clearFilters")}
+                </Button>
+              )}
+            </div>
+
             {/* Course grid */}
+            {courses.length === 0 && !loading ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <p className="text-muted-foreground">{t("dashboard:noCoursesFound")}</p>
+                {hasActiveFilters && (
+                  <Button variant="outline" size="sm" onClick={clearFilters}>
+                    {t("dashboard:clearFilters")}
+                  </Button>
+                )}
+              </div>
+            ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {courses.map((course) => (
                 <Card
@@ -382,7 +545,12 @@ export default function DashboardPage() {
                   <CardHeader>
                     <div className="flex items-start justify-between gap-2">
                       <CardTitle className="text-lg leading-tight">{course.title}</CardTitle>
-                      <div className="flex gap-1.5 shrink-0">
+                      <div className="flex gap-1.5 shrink-0 items-center">
+                        {course.isBookmarked && (
+                          <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                            {t("dashboard:pinnedBadge")}
+                          </Badge>
+                        )}
                         {course.progress.isCompleted && (
                           <Badge variant="default" className="bg-emerald-600 text-white">
                             {t("dashboard:completedBadge")}
@@ -424,6 +592,26 @@ export default function DashboardPage() {
                     )}
 
                     <div className="mt-3 flex gap-2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 shrink-0"
+                              onClick={(e) => handleToggleBookmark(e, course.id, course.isBookmarked)}
+                            >
+                              {course.isBookmarked
+                                ? <BookmarkCheck className="h-4 w-4 text-primary" />
+                                : <Bookmark className="h-4 w-4" />
+                              }
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {course.isBookmarked ? t("dashboard:unbookmarkTooltip") : t("dashboard:bookmarkTooltip")}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                       <Button
                         variant="outline"
                         size="sm"
@@ -439,6 +627,7 @@ export default function DashboardPage() {
                 </Card>
               ))}
             </div>
+            )}
           </>
         )}
       </main>

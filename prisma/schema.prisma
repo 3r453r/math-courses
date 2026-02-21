@@ -89,6 +89,7 @@ model Course {
   noLessonCanFail        Boolean  @default(true)
   lessonFailureThreshold Float    @default(0.5)
   galleryEligible        Boolean  @default(true)
+  isBookmarked           Boolean  @default(false)
   status                 String   @default("draft")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
