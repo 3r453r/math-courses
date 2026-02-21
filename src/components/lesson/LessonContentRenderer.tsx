@@ -20,6 +20,7 @@ interface Props {
   content: LessonContent;
   onRegenerateViz?: (sectionIndex: number) => void;
   regeneratingVizIndex?: number | null;
+  onChatAbout?: (context: string) => void;
 }
 
 function SectionRenderer({
@@ -27,21 +28,23 @@ function SectionRenderer({
   index,
   onRegenerateViz,
   regeneratingVizIndex,
+  onChatAbout,
 }: {
   section: LessonSection;
   index: number;
   onRegenerateViz?: (sectionIndex: number) => void;
   regeneratingVizIndex?: number | null;
+  onChatAbout?: (context: string) => void;
 }) {
   switch (section.type) {
     case "text":
       return <TextSectionRenderer section={section} />;
     case "math":
-      return <MathSectionRenderer section={section} />;
+      return <MathSectionRenderer section={section} onChatAbout={onChatAbout} />;
     case "definition":
-      return <DefinitionSectionRenderer section={section} />;
+      return <DefinitionSectionRenderer section={section} onChatAbout={onChatAbout} />;
     case "theorem":
-      return <TheoremSectionRenderer section={section} />;
+      return <TheoremSectionRenderer section={section} onChatAbout={onChatAbout} />;
     case "visualization":
       return (
         <VisualizationSectionRenderer
@@ -58,7 +61,7 @@ function SectionRenderer({
   }
 }
 
-export function LessonContentRenderer({ content, onRegenerateViz, regeneratingVizIndex }: Props) {
+export function LessonContentRenderer({ content, onRegenerateViz, regeneratingVizIndex, onChatAbout }: Props) {
   const { t } = useTranslation("lessonContent");
 
   return (
@@ -87,6 +90,7 @@ export function LessonContentRenderer({ content, onRegenerateViz, regeneratingVi
           index={i}
           onRegenerateViz={onRegenerateViz}
           regeneratingVizIndex={regeneratingVizIndex}
+          onChatAbout={onChatAbout}
         />
       ))}
 
@@ -96,7 +100,7 @@ export function LessonContentRenderer({ content, onRegenerateViz, regeneratingVi
           <Separator className="my-8" />
           <h2 className="text-xl font-bold mb-4">{t("workedExamples")}</h2>
           {content.workedExamples.map((example, i) => (
-            <WorkedExample key={i} example={example} index={i} />
+            <WorkedExample key={i} example={example} index={i} onChatAbout={onChatAbout} />
           ))}
         </>
       )}
@@ -107,7 +111,7 @@ export function LessonContentRenderer({ content, onRegenerateViz, regeneratingVi
           <Separator className="my-8" />
           <h2 className="text-xl font-bold mb-4">{t("practiceExercises")}</h2>
           {content.practiceExercises.map((exercise, i) => (
-            <PracticeExercise key={i} exercise={exercise} index={i} />
+            <PracticeExercise key={i} exercise={exercise} index={i} onChatAbout={onChatAbout} />
           ))}
         </>
       )}

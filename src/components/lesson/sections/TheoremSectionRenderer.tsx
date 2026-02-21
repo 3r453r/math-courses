@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Card,
   CardContent,
@@ -10,13 +11,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MathMarkdown } from "@/components/lesson/MathMarkdown";
+import { MessageCircleQuestion } from "lucide-react";
 import type { TheoremSection } from "@/types/lesson";
 
 interface Props {
   section: TheoremSection;
+  onChatAbout?: (context: string) => void;
 }
 
-export function TheoremSectionRenderer({ section }: Props) {
+export function TheoremSectionRenderer({ section, onChatAbout }: Props) {
+  const { t } = useTranslation("lessonContent");
   const [showProof, setShowProof] = useState(false);
 
   return (
@@ -25,6 +29,22 @@ export function TheoremSectionRenderer({ section }: Props) {
         <div className="flex items-center gap-2">
           <Badge variant="secondary">Theorem</Badge>
           <CardTitle className="text-lg">{section.name}</CardTitle>
+          {onChatAbout && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto h-7 text-xs text-muted-foreground gap-1"
+              onClick={() =>
+                onChatAbout(
+                  `I have a question about this theorem:\n\n**${section.name}**: ${section.statement}`
+                )
+              }
+              data-testid="ask-ai-button"
+            >
+              <MessageCircleQuestion className="size-3.5" />
+              {t("askAi")}
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-3">

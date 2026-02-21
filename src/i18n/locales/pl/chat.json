@@ -7,5 +7,6 @@
   "placeholder": "Zadaj pytanie...",
   "send": "Wyślij",
   "dictateTooltip": "Dyktuj wiadomość",
-  "stopDictation": "Zatrzymaj dyktowanie"
+  "stopDictation": "Zatrzymaj dyktowanie",
+  "scrollToLatest": "Przewiń do najnowszych"
 }

@@ -14,6 +14,7 @@ interface ChatPanelProps {
   lessonId: string;
   courseId: string;
   onClose: () => void;
+  initialInput?: string;
 }
 
 function getTextFromMessage(message: UIMessage): string {
@@ -23,14 +24,18 @@ function getTextFromMessage(message: UIMessage): string {
     .join("");
 }
 
-export function ChatPanel({ lessonId, courseId, onClose }: ChatPanelProps) {
+export function ChatPanel({ lessonId, courseId, onClose, initialInput }: ChatPanelProps) {
   const { t } = useTranslation(["chat", "common"]);
   const hasAnyApiKey = useHasAnyApiKey();
   const apiKeys = useAppStore((s) => s.apiKeys);
   const chatModel = useAppStore((s) => s.chatModel);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const historyLoadedRef = useRef(false);
-  const [input, setInput] = useState("");
+  const userIsNearBottom = useRef(true);
+  const programmaticScrollRef = useRef(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [input, setInput] = useState(initialInput || "");
 
   const transport = useMemo(
     () =>
@@ -105,10 +110,60 @@ export function ChatPanel({ lessonId, courseId, onClose }: ChatPanelProps) {
     loadHistory();
   }, [lessonId, setMessages]);
 
-  // Auto-scroll to bottom on new messages
+  // Track scroll position to determine if user is near bottom
   useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    function handleScroll() {
+      if (!container || programmaticScrollRef.current) return;
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+      const nearBottom = distanceFromBottom < 80;
+      userIsNearBottom.current = nearBottom;
+      setShowScrollButton(!nearBottom);
+    }
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Auto-scroll to bottom on new messages — only when user is near bottom
+  // During streaming, use instant scroll to avoid competing smooth animations (flicker).
+  // Use smooth scroll only for discrete events (new message count, not mid-stream text updates).
+  const prevMessageCountRef = useRef(0);
+  useEffect(() => {
+    if (!userIsNearBottom.current) return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const isStreaming = status === "streaming";
+    const messageCountChanged = messages.length !== prevMessageCountRef.current;
+    prevMessageCountRef.current = messages.length;
+
+    if (isStreaming) {
+      // During streaming: instant scroll (no animation) to avoid flicker
+      container.scrollTop = container.scrollHeight;
+    } else if (messageCountChanged) {
+      // New message added (not streaming): smooth scroll
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, status]);
+
+  // Handle initialInput from "Ask AI" buttons
+  useEffect(() => {
+    if (initialInput) {
+      setInput(initialInput);
+    }
+  }, [initialInput]);
+
+  function scrollToBottom() {
+    programmaticScrollRef.current = true;
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    userIsNearBottom.current = true;
+    setShowScrollButton(false);
+    setTimeout(() => { programmaticScrollRef.current = false; }, 1000);
+  }
 
   // Persist user messages and submit
   const handleChatSubmit = useCallback(
@@ -118,6 +173,15 @@ export function ChatPanel({ lessonId, courseId, onClose }: ChatPanelProps) {
 
       const userText = input;
       setInput("");
+
+      // Always scroll to bottom when user sends a message
+      programmaticScrollRef.current = true;
+      userIsNearBottom.current = true;
+      setShowScrollButton(false);
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        setTimeout(() => { programmaticScrollRef.current = false; }, 1000);
+      }, 50);
 
       // Save user message to DB
       await fetch("/api/chat/messages", {
@@ -190,7 +254,11 @@ export function ChatPanel({ lessonId, courseId, onClose }: ChatPanelProps) {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0 relative"
+        data-testid="chat-messages-container"
+      >
         {messages.length === 0 && (
           <div className="text-center text-sm text-muted-foreground py-8">
             <p className="font-medium">{t("emptyPrompt")}</p>
@@ -209,8 +277,36 @@ export function ChatPanel({ lessonId, courseId, onClose }: ChatPanelProps) {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Scroll to bottom button */}
+      {showScrollButton && (
+        <div className="relative shrink-0">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="absolute -top-10 left-1/2 -translate-x-1/2 rounded-full shadow-md h-8 w-8 p-0 z-10"
+            onClick={scrollToBottom}
+            title={t("scrollToLatest")}
+            data-testid="scroll-to-bottom"
+          >
+            <svg
+              className="size-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19 14l-7 7m0 0l-7-7m7 7V3"
+              />
+            </svg>
+          </Button>
+        </div>
+      )}
+
       {/* Input */}
-      {!hasAnyApiKey ? (
+      {!hasAnyApiKey && chatModel !== "mock" ? (
         <div className="border-t px-3 py-3">
           <p className="text-xs text-muted-foreground text-center">
             {t("common:apiKeyRequiredHint")}

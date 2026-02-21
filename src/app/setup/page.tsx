@@ -392,6 +392,10 @@ export default function SetupPage() {
                     ))}
                   </SelectGroup>
                 ))}
+                <SelectGroup>
+                  <SelectLabel>{t("setup:other")}</SelectLabel>
+                  <SelectItem value="mock">{t("setup:mock")}</SelectItem>
+                </SelectGroup>
               </SelectContent>
             </Select>
           </div>

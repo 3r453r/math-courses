@@ -19,6 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { MessageCircleQuestion } from "lucide-react";
 import { MathMarkdown } from "./MathMarkdown";
 import type { PracticeExercise as PracticeExerciseType } from "@/types/lesson";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ import { useApiHeaders } from "@/hooks/useApiHeaders";
 interface Props {
   exercise: PracticeExerciseType;
   index: number;
+  onChatAbout?: (context: string) => void;
 }
 
 interface CheckResult {
@@ -36,7 +38,7 @@ interface CheckResult {
   keyPointsMet: string[];
 }
 
-export function PracticeExercise({ exercise, index }: Props) {
+export function PracticeExercise({ exercise, index, onChatAbout }: Props) {
   const { t } = useTranslation("lessonContent");
   const [hintsRevealed, setHintsRevealed] = useState(0);
   const [showSolution, setShowSolution] = useState(false);
@@ -148,6 +150,22 @@ export function PracticeExercise({ exercise, index }: Props) {
           <Badge variant="secondary" className="text-xs capitalize">
             {exercise.answerType.replace("_", " ")}
           </Badge>
+          {onChatAbout && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto h-7 text-xs text-muted-foreground gap-1"
+              onClick={() =>
+                onChatAbout(
+                  `I'm stuck on this exercise:\n\n${exercise.problemStatement}`
+                )
+              }
+              data-testid="ask-ai-button"
+            >
+              <MessageCircleQuestion className="size-3.5" />
+              {t("askAi")}
+            </Button>
+          )}
           {exercise.answerType === "free_response" && (
             <TooltipProvider>
               <Tooltip>

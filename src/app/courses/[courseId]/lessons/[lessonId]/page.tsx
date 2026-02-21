@@ -101,23 +101,35 @@ export default function LessonPage({
     caption: string;
   } | null>(null);
   const [regeneratingVizIndex, setRegeneratingVizIndex] = useState<number | null>(null);
+  const [chatInitialInput, setChatInitialInput] = useState<string>("");
 
-  // Parse lesson content once; track whether any sections were normalised/dropped
-  const [lessonContentHasSchemaIssues, setLessonContentHasSchemaIssues] = useState(false);
+  const handleChatAbout = useCallback((context: string) => {
+    // Set input BEFORE opening the panel so ChatPanel mounts with the value
+    setChatInitialInput(context);
+    setScratchpadOpen(false);
+    setChatSidebarOpen(true);
+  }, [setScratchpadOpen, setChatSidebarOpen]);
+
+  // Parse lesson content once; capture schema issues via ref (not state) to avoid
+  // setState-in-useMemo anti-pattern and prevent duplicate toasts on re-fetches.
+  const schemaIssuesRef = useRef(false);
+  const schemaWarningShownForRef = useRef<string | null>(null);
+
   const parsedLessonContent = useMemo(() => {
     if (!lesson?.contentJson) return null;
-    let hadIssues = false;
-    const content = parseLessonContent(lesson.contentJson, () => { hadIssues = true; });
-    if (hadIssues) setLessonContentHasSchemaIssues(true);
+    schemaIssuesRef.current = false;
+    const content = parseLessonContent(lesson.contentJson, () => { schemaIssuesRef.current = true; });
     return content;
   }, [lesson?.contentJson]);
 
   useEffect(() => {
-    if (lessonContentHasSchemaIssues) {
+    if (!lesson?.contentJson) return;
+    if (schemaWarningShownForRef.current === lesson.contentJson) return;
+    schemaWarningShownForRef.current = lesson.contentJson;
+    if (schemaIssuesRef.current) {
       toast.warning(t("lesson:contentSchemaWarning"), { duration: 10000 });
-      setLessonContentHasSchemaIssues(false);
     }
-  }, [lessonContentHasSchemaIssues, t]);
+  }, [lesson?.contentJson, t]);
 
   // Tracks whether generation was initiated locally (this mount) to avoid duplicate toasts from polling
   const localGenerationRef = useRef(false);
@@ -529,7 +541,7 @@ export default function LessonPage({
                 </CardContent>
               </Card>
             ) : (
-              <div>
+              <div className="flex flex-col min-h-full">
                 <div className="flex items-center justify-between flex-wrap gap-2 mb-6">
                   <div className="min-w-0">
                     <h2 className="text-2xl font-bold">{lesson.title}</h2>
@@ -550,10 +562,11 @@ export default function LessonPage({
                   content={parsedLessonContent ?? parseLessonContent(lesson.contentJson!)}
                   onRegenerateViz={handleRegenerateViz}
                   regeneratingVizIndex={regeneratingVizIndex}
+                  onChatAbout={handleChatAbout}
                 />
 
                 {/* Quiz section */}
-                <Card className="mt-8">
+                <Card className="mt-auto pt-8">
                   <CardContent className="pt-6">
                     {generatingQuiz ? (
                       <div className="flex items-center gap-3">
@@ -681,6 +694,7 @@ export default function LessonPage({
                         lessonId={lessonId}
                         courseId={courseId}
                         onClose={() => setChatSidebarOpen(false)}
+                        initialInput={chatInitialInput}
                       />
                     )}
                   </div>
@@ -701,6 +715,7 @@ export default function LessonPage({
                     lessonId={lessonId}
                     courseId={courseId}
                     onClose={() => setChatSidebarOpen(false)}
+                    initialInput={chatInitialInput}
                   />
                 )}
               </aside>

@@ -3,6 +3,7 @@ export const maxDuration = 300;
 import { streamText } from "ai";
 import type { ModelMessage } from "ai";
 import { getApiKeysFromRequest, getModelInstance, hasAnyApiKey, MODELS } from "@/lib/ai/client";
+import { mockChatResponse } from "@/lib/ai/mockData";
 import { buildLanguageInstruction } from "@/lib/ai/prompts/languageInstruction";
 import { prisma } from "@/lib/db";
 import { getAuthUserFromRequest, verifyLessonOwnership } from "@/lib/auth-utils";
@@ -42,14 +43,52 @@ export async function POST(request: Request) {
   if (rateLimitResponse) return rateLimitResponse;
 
   const apiKeys = getApiKeysFromRequest(request);
-  if (!hasAnyApiKey(apiKeys)) {
-    return new Response("API key required", { status: 401 });
-  }
 
   const { data: chatBody, error: parseError } = await parseBody(request, chatSchema);
   if (parseError) return parseError;
 
   const { messages: rawMessages, lessonId, model } = chatBody;
+
+  const chatModelId = model || MODELS.chat;
+
+  // Mock mode — return hardcoded response without API key or DB lookups
+  if (chatModelId === "mock") {
+    // Extract last user message text
+    type RawMsg = { role: string; content?: string; parts?: Array<{ type?: string; text?: string }> };
+    const lastUser = [...(rawMessages as RawMsg[])].reverse().find((m) => m.role === "user");
+    let lastText = "";
+    if (lastUser?.parts) {
+      lastText = lastUser.parts.filter((p) => p.type === "text").map((p) => p.text ?? "").join("");
+    } else {
+      lastText = lastUser?.content ?? "";
+    }
+    const mockText = mockChatResponse(lastText);
+
+    // TextStreamChatTransport expects plain text — just the raw content
+    const encoder = new TextEncoder();
+    const chunkSize = 20;
+    const stream = new ReadableStream({
+      async start(controller) {
+        for (let i = 0; i < mockText.length; i += chunkSize) {
+          const chunk = mockText.slice(i, i + chunkSize);
+          controller.enqueue(encoder.encode(chunk));
+          // Small delay to simulate streaming
+          await new Promise((r) => setTimeout(r, 5));
+        }
+        controller.close();
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+      },
+    });
+  }
+
+  if (!hasAnyApiKey(apiKeys)) {
+    return new Response("API key required", { status: 401 });
+  }
 
   // Convert UIMessage format (parts array) to CoreMessage format (content string)
   // that streamText expects. Also filter out empty assistant messages.
@@ -109,7 +148,6 @@ export async function POST(request: Request) {
     language: lesson.course.language,
   });
 
-  const chatModelId = model || MODELS.chat;
   const modelInstance = getModelInstance(chatModelId, apiKeys);
 
   const result = streamText({
