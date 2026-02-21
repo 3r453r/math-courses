@@ -35,6 +35,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { ColorThemeSelector } from "@/components/ColorThemeSelector";
 import { Sun, Moon, Monitor } from "lucide-react";
 import { useTheme } from "next-themes";
+import { toast } from "sonner";
 
 interface ProviderConfig {
   id: AIProvider;
@@ -88,6 +89,8 @@ export default function SetupPage() {
     setLanguage,
     freeResponseCheckMode,
     setFreeResponseCheckMode,
+    syncApiKeysToServer,
+    setSyncApiKeysToServer,
   } = useAppStore();
   const { t } = useTranslation(["setup", "common", "login"]);
   const { theme, setTheme } = useTheme();
@@ -109,10 +112,9 @@ export default function SetupPage() {
     openai: !apiKeys.anthropic,
     google: !apiKeys.anthropic && !apiKeys.openai,
   });
-  const [syncToServer, setSyncToServer] = useState(false);
   const [serverKeyMetadata, setServerKeyMetadata] = useState<Partial<Record<AIProvider, ProviderKeyMetadata>>>({});
 
-  // On mount, fetch server-side key metadata.
+  // On mount, fetch server-side key metadata and auto-detect sync preference.
   useEffect(() => {
     fetch("/api/user/api-key")
       .then((res) => res.ok ? res.json() : null)
@@ -120,6 +122,11 @@ export default function SetupPage() {
         if (data?.apiKeys) {
           const metadata = data.apiKeys as Partial<Record<AIProvider, ProviderKeyMetadata>>;
           setServerKeyMetadata(metadata);
+          // Auto-enable sync if user previously had server-stored keys
+          const hasServerKeys = Object.values(metadata).some((e) => e?.present);
+          if (hasServerKeys && !syncApiKeysToServer) {
+            setSyncApiKeysToServer(true);
+          }
           for (const [provider, entry] of Object.entries(metadata)) {
             if (entry?.present) {
               setTestStatus((prev) => ({ ...prev, [provider]: "valid" }));
@@ -128,6 +135,7 @@ export default function SetupPage() {
         }
       })
       .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Available models: only from providers that have a key configured
@@ -216,7 +224,7 @@ export default function SetupPage() {
     }
 
     // Optionally sync to server
-    if (syncToServer) {
+    if (syncApiKeysToServer) {
       const keysToSync: Record<string, string> = {};
       for (const provider of PROVIDERS) {
         const key = draftKeys[provider.id]?.trim();
@@ -224,13 +232,18 @@ export default function SetupPage() {
       }
       if (Object.keys(keysToSync).length > 0) {
         try {
-          await fetch("/api/user/api-key", {
+          const res = await fetch("/api/user/api-key", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ apiKeys: keysToSync }),
           });
+          if (!res.ok) {
+            toast.error(t("setup:syncFailed"));
+          } else {
+            toast.success(t("setup:syncSuccess"));
+          }
         } catch {
-          // Non-blocking
+          toast.error(t("setup:syncFailed"));
         }
       }
     }
@@ -480,8 +493,8 @@ export default function SetupPage() {
             <input
               id="sync-key"
               type="checkbox"
-              checked={syncToServer}
-              onChange={(e) => setSyncToServer(e.target.checked)}
+              checked={syncApiKeysToServer}
+              onChange={(e) => setSyncApiKeysToServer(e.target.checked)}
               className="h-4 w-4 rounded border-border"
             />
             <Label htmlFor="sync-key" className="text-sm font-normal">

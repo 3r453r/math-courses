@@ -20,9 +20,11 @@ interface AppState {
   voiceAiMode: boolean;
   voiceTriggerEnabled: boolean;
   voiceTriggerWord: string;
+  syncApiKeysToServer: boolean;
   contextDocGuideDismissed: boolean;
   installPromptDismissed: boolean;
   freeResponseCheckMode: "ai" | "solution";
+  setSyncApiKeysToServer: (value: boolean) => void;
   setFreeResponseCheckMode: (mode: "ai" | "solution") => void;
   setProviderApiKey: (provider: AIProvider, key: string | null) => void;
   setSidebarOpen: (open: boolean) => void;
@@ -64,9 +66,11 @@ export const useAppStore = create<AppState>()(
       voiceAiMode: false,
       voiceTriggerEnabled: false,
       voiceTriggerWord: "",
+      syncApiKeysToServer: false,
       contextDocGuideDismissed: false,
       installPromptDismissed: false,
       freeResponseCheckMode: "solution",
+      setSyncApiKeysToServer: (value) => set({ syncApiKeysToServer: value }),
       setFreeResponseCheckMode: (mode) => set({ freeResponseCheckMode: mode }),
       setProviderApiKey: (provider, key) =>
         set((state) => ({
