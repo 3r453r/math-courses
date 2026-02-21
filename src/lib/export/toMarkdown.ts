@@ -1,5 +1,6 @@
 import type { FullCourseData } from "./courseData";
 import type { LessonContent, LessonSection } from "@/types/lesson";
+import { parseLessonContent } from "@/lib/content/parseLessonContent";
 
 /**
  * Convert full course data to a single Markdown string.
@@ -69,7 +70,7 @@ export function toMarkdown(data: FullCourseData): string {
     // Parse lesson content
     if (lesson.contentJson) {
       try {
-        const content = JSON.parse(lesson.contentJson) as LessonContent;
+        const content = parseLessonContent(lesson.contentJson);
         renderLessonContent(lines, content);
       } catch {
         lines.push("*Content could not be parsed.*");

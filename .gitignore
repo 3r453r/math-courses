@@ -40,7 +40,14 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env
 .env.local
-.env.turso-prod
+.env.secret
+
+# gallery seeding state & logs
+scripts/.seed-state.json
+scripts/logs/
+
+# course library (generated content, not source)
+/course-library/
 
 # database
 *.db

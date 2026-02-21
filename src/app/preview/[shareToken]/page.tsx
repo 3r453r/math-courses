@@ -19,6 +19,7 @@ import {
 } from "@/components/preview";
 import { parseSubjects } from "@/lib/subjects";
 import type { LessonContent } from "@/types/lesson";
+import { parseLessonContent } from "@/lib/content/parseLessonContent";
 import type { QuizQuestion } from "@/types/quiz";
 
 interface PreviewLesson {
@@ -120,7 +121,7 @@ export default function PreviewPage({
 
   let lessonContent: LessonContent | null = null;
   if (data.previewContent?.contentJson) {
-    try { lessonContent = JSON.parse(data.previewContent.contentJson); }
+    try { lessonContent = parseLessonContent(data.previewContent.contentJson); }
     catch { /* ignore */ }
   }
 

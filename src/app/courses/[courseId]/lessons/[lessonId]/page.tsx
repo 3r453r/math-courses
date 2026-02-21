@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback, use } from "react";
+import { useEffect, useState, useRef, useCallback, use, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore, useHasAnyApiKey } from "@/stores/appStore";
+import { parseLessonContent } from "@/lib/content/parseLessonContent";
 import { useHydrated } from "@/stores/useHydrated";
 import { useApiHeaders } from "@/hooks/useApiHeaders";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LessonContentRenderer } from "@/components/lesson/LessonContentRenderer";
 import { LessonBreadcrumbs } from "@/components/lesson/LessonBreadcrumbs";
+import { RegenerateVizModal } from "@/components/lesson/RegenerateVizModal";
 import { ScratchpadPanel } from "@/components/scratchpad";
 import { ChatPanel } from "@/components/chat";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -94,6 +96,29 @@ export default function LessonPage({
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [generatingQuiz, setGeneratingQuiz] = useState(false);
+  const [regenerateVizModal, setRegenerateVizModal] = useState<{
+    sectionIndex: number;
+    caption: string;
+  } | null>(null);
+  const [regeneratingVizIndex, setRegeneratingVizIndex] = useState<number | null>(null);
+
+  // Parse lesson content once; track whether any sections were normalised/dropped
+  const [lessonContentHasSchemaIssues, setLessonContentHasSchemaIssues] = useState(false);
+  const parsedLessonContent = useMemo(() => {
+    if (!lesson?.contentJson) return null;
+    let hadIssues = false;
+    const content = parseLessonContent(lesson.contentJson, () => { hadIssues = true; });
+    if (hadIssues) setLessonContentHasSchemaIssues(true);
+    return content;
+  }, [lesson?.contentJson]);
+
+  useEffect(() => {
+    if (lessonContentHasSchemaIssues) {
+      toast.warning(t("lesson:contentSchemaWarning"), { duration: 10000 });
+      setLessonContentHasSchemaIssues(false);
+    }
+  }, [lessonContentHasSchemaIssues, t]);
+
   // Tracks whether generation was initiated locally (this mount) to avoid duplicate toasts from polling
   const localGenerationRef = useRef(false);
 
@@ -210,6 +235,52 @@ export default function LessonPage({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [courseNav, lessonId, courseId, router]);
+
+  function handleRegenerateViz(sectionIndex: number) {
+    if (!parsedLessonContent) return;
+    const section = parsedLessonContent.sections[sectionIndex];
+    if (!section || section.type !== "visualization") return;
+    const caption = (section as { caption?: string }).caption ?? "";
+    setRegenerateVizModal({ sectionIndex, caption });
+  }
+
+  async function submitVizRegenerate(
+    feedback: string,
+    screenshot: string | null,
+    mimeType: string | null
+  ) {
+    if (!regenerateVizModal) return;
+    const { sectionIndex } = regenerateVizModal;
+    setRegenerateVizModal(null);
+    setRegeneratingVizIndex(sectionIndex);
+    try {
+      const res = await fetch("/api/generate/visualization", {
+        method: "POST",
+        headers: { ...apiHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lessonId,
+          courseId,
+          sectionIndex,
+          userFeedback: feedback || undefined,
+          screenshotBase64: screenshot || undefined,
+          screenshotMimeType: mimeType || undefined,
+          model: generationModel,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? t("lesson:vizRegenerateFailed"));
+      }
+      toast.success(t("lesson:vizRegeneratedSuccess"));
+      await fetchLesson();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : t("lesson:vizRegenerateFailed")
+      );
+    } finally {
+      setRegeneratingVizIndex(null);
+    }
+  }
 
   async function handleGenerate() {
     if (!hasAnyApiKey || !lesson || generating) return;
@@ -476,7 +547,9 @@ export default function LessonPage({
                   </Button>
                 </div>
                 <LessonContentRenderer
-                  content={JSON.parse(lesson.contentJson!) as LessonContent}
+                  content={parsedLessonContent ?? parseLessonContent(lesson.contentJson!)}
+                  onRegenerateViz={handleRegenerateViz}
+                  regeneratingVizIndex={regeneratingVizIndex}
                 />
 
                 {/* Quiz section */}
@@ -634,6 +707,13 @@ export default function LessonPage({
             </>
           )}
       </div>
+
+      <RegenerateVizModal
+        open={!!regenerateVizModal}
+        caption={regenerateVizModal?.caption ?? ""}
+        onClose={() => setRegenerateVizModal(null)}
+        onSubmit={submitVizRegenerate}
+      />
     </div>
   );
 }

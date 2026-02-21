@@ -8,6 +8,7 @@ import { MathMarkdown } from "@/components/lesson/MathMarkdown";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import type { LessonContent } from "@/types/lesson";
+import { parseLessonContent } from "@/lib/content/parseLessonContent";
 
 interface Lesson {
   id: string;
@@ -150,7 +151,7 @@ export default function PrintCoursePage({
           let content: LessonContent | null = null;
           if (lesson.contentJson) {
             try {
-              content = JSON.parse(lesson.contentJson) as LessonContent;
+              content = parseLessonContent(lesson.contentJson);
             } catch {
               // skip
             }

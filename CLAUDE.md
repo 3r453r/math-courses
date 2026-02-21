@@ -91,7 +91,7 @@ pnpm test:all         # All of the above
    - **`unwrapParameter()`** handles both wrapping formats: `{"parameter": {...}}` (object) and `{"parameter": "{\"title\":...}"}` (stringified JSON). Returns `wrapperType: "object" | "string" | "string-repaired" | null` for logging
    - **Critical**: Anthropic `jsonTool` mode sometimes returns array/object fields as **JSON-encoded strings** (e.g., `"sections":"[{...}]"` instead of `"sections":[{...}]`). `coerceToSchema` handles this by attempting `JSON.parse()` on string values when the schema expects an Array or Object. Without this, arrays silently default to `[]` and all generated content is lost.
    - **`AiGenerationLog`** table stores `wrapperType` column (`"object"` | `"string"` | `"string-repaired"` | null) for querying which wrapper format was encountered. Populated from both Layer 0 (`RepairTracker`) and Layer 1 (`recordLayer1`)
-10. **Mock AI model**: `model === "mock"` bypasses all AI calls and returns hardcoded data from `src/lib/ai/mockData.ts`. NOT in `MODEL_REGISTRY` — each `/api/generate/*` route checks for it explicitly. Includes course structure (3 lessons), lesson content, quizzes, diagnostics, trivia, and completion summary. Select via Setup page dropdown or pass `"model": "mock"` in request body. Use the `/mock-testing` skill for detailed testing workflow.
+10. **Mock AI model**: `model === "mock"` bypasses all AI calls and returns hardcoded data from `src/lib/ai/mockData.ts`. NOT in `MODEL_REGISTRY` — each `/api/generate/*` route checks for it explicitly. Includes course structure (3 lessons), lesson content, quizzes, diagnostics, trivia, and completion summary. Select via Setup page dropdown or pass `"model": "mock"` in request body. Use the `/mock-testing` skill for detailed testing workflow. New AI-dependent endpoints should also check `if (body.model === "mock")` early and return mock data from `mockData.ts`.
 
 ### Content Rendering
 
@@ -151,6 +151,8 @@ Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Au
 - **Notebook**: Per-course multi-page notebook with autosave. `useNotebook` hook manages CRUD via `/api/courses/[courseId]/notebook` routes. `NotebookPanel` renders in lesson sidebar (mutually exclusive with chat/scratchpad)
 - **Color themes**: 4 themes (neutral, ocean, sage, amber) defined in `src/lib/themes.ts`. `colorTheme` stored in Zustand. Dark mode via `next-themes` `ThemeProvider`
 - **Language toggle**: `LanguageToggle` component (`src/components/LanguageToggle.tsx`) cycles through available languages. Uses Zustand `setLanguage`. Available on landing page alongside `ThemeToggle`
+- **Tooltips**: Use shadcn `<Tooltip>` + `<TooltipProvider>` from `@/components/ui/tooltip` for help hints — native `title` attribute renders as a white box in dark mode and ignores the theme. Wrap inline usage with its own `<TooltipProvider>` (no app-level provider exists).
+- **MathMarkdown**: Render any content string that may contain LaTeX via `<MathMarkdown content={str} />` — plain `<span>` won't process `$...$`/`$$...$$` markup. Applies to exercise statements, hints, key points, and choice labels.
 
 ## Conventions
 
@@ -176,6 +178,7 @@ Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Au
 - **Gallery**: Gallery listings are `CourseShare` records with `isGalleryListed = true`. Admin-only curation — regular users create share links, admins promote to gallery. `CourseRating` model for star ratings, `starCount`/`cloneCount` denormalized on `CourseShare`
 - **Stripe payment**: One-time payment via Stripe Checkout. Webhook auto-generates an access code, redeems it, and activates the user. `Payment` model for audit trail. BLIK + card support
 - **Admin panel**: `/admin` page with tabs for access codes, users, gallery management. Only `role === "admin"` users can access
+- **Cheapest model utility**: `getCheapestModel(apiKeys)` + `getProviderOptions(model)` in `src/lib/ai/repairSchema.ts` — use for lightweight AI ops (grading, evaluation) instead of hardcoding model names.
 
 ## Security Hardening
 

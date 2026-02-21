@@ -28,8 +28,21 @@
   "quizPrompt": "Rozwiąż quiz, aby sprawdzić opanowanie materiału z tej lekcji.",
   "takeQuiz": "Rozwiąż quiz",
   "vizMalformedWarning": "Niektóre wizualizacje zostały usunięte z powodu błędów. Możesz chcieć ponownie wygenerować tę lekcję.",
+  "contentSchemaWarning": "Niektóre sekcje zostały usunięte lub przekonwertowane, ponieważ format treści nie pasował do oczekiwanego schematu. Możesz chcieć ponownie wygenerować tę lekcję.",
   "home": "Panel główny",
   "layer": "Warstwa {{number}}",
   "prevLesson": "Poprzednia lekcja",
-  "nextLesson": "Następna lekcja"
+  "nextLesson": "Następna lekcja",
+  "regenerateViz": "Wygeneruj wizualizację ponownie",
+  "vizRegenerating": "Regenerowanie...",
+  "vizRegeneratedSuccess": "Wizualizacja wygenerowana ponownie",
+  "vizRegenerateFailed": "Nie udało się wygenerować wizualizacji ponownie",
+  "regenerateVizModal": {
+    "title": "Wygeneruj wizualizację ponownie",
+    "description": "Opisz, co jest nie tak, i opcjonalnie dołącz zrzut ekranu, aby pomóc AI wygenerować lepszą wersję.",
+    "feedbackLabel": "Co jest nie tak? (opcjonalnie)",
+    "feedbackPlaceholder": "np. etykiety nachodzą na siebie, oś Y jest nieczytelna, wykres jest płaski",
+    "screenshotLabel": "Zrzut ekranu (opcjonalnie)",
+    "screenshotClear": "Usuń"
+  }
 }

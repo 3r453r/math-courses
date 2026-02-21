@@ -1,8 +1,8 @@
-# AGENTS.md
+# CLAUDE.md
 
-> **Sync notice:** This file is mirrored in `CLAUDE.md`. Any update to one MUST be copied to the other to keep them identical.
+> **Sync notice:** This file is mirrored in `AGENTS.md`. Any update to one MUST be copied to the other to keep them identical.
 
-This file provides guidance to AI coding agents when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
@@ -91,7 +91,7 @@ pnpm test:all         # All of the above
    - **`unwrapParameter()`** handles both wrapping formats: `{"parameter": {...}}` (object) and `{"parameter": "{\"title\":...}"}` (stringified JSON). Returns `wrapperType: "object" | "string" | "string-repaired" | null` for logging
    - **Critical**: Anthropic `jsonTool` mode sometimes returns array/object fields as **JSON-encoded strings** (e.g., `"sections":"[{...}]"` instead of `"sections":[{...}]`). `coerceToSchema` handles this by attempting `JSON.parse()` on string values when the schema expects an Array or Object. Without this, arrays silently default to `[]` and all generated content is lost.
    - **`AiGenerationLog`** table stores `wrapperType` column (`"object"` | `"string"` | `"string-repaired"` | null) for querying which wrapper format was encountered. Populated from both Layer 0 (`RepairTracker`) and Layer 1 (`recordLayer1`)
-10. **Mock AI model**: `model === "mock"` bypasses all AI calls and returns hardcoded data from `src/lib/ai/mockData.ts`. NOT in `MODEL_REGISTRY` — each `/api/generate/*` route checks for it explicitly. Includes course structure (3 lessons), lesson content, quizzes, diagnostics, trivia, and completion summary. Select via Setup page dropdown or pass `"model": "mock"` in request body.
+10. **Mock AI model**: `model === "mock"` bypasses all AI calls and returns hardcoded data from `src/lib/ai/mockData.ts`. NOT in `MODEL_REGISTRY` — each `/api/generate/*` route checks for it explicitly. Includes course structure (3 lessons), lesson content, quizzes, diagnostics, trivia, and completion summary. Select via Setup page dropdown or pass `"model": "mock"` in request body. Use the `/mock-testing` skill for detailed testing workflow. New AI-dependent endpoints should also check `if (body.model === "mock")` early and return mock data from `mockData.ts`.
 
 ### Content Rendering
 
@@ -151,6 +151,8 @@ Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Au
 - **Notebook**: Per-course multi-page notebook with autosave. `useNotebook` hook manages CRUD via `/api/courses/[courseId]/notebook` routes. `NotebookPanel` renders in lesson sidebar (mutually exclusive with chat/scratchpad)
 - **Color themes**: 4 themes (neutral, ocean, sage, amber) defined in `src/lib/themes.ts`. `colorTheme` stored in Zustand. Dark mode via `next-themes` `ThemeProvider`
 - **Language toggle**: `LanguageToggle` component (`src/components/LanguageToggle.tsx`) cycles through available languages. Uses Zustand `setLanguage`. Available on landing page alongside `ThemeToggle`
+- **Tooltips**: Use shadcn `<Tooltip>` + `<TooltipProvider>` from `@/components/ui/tooltip` for help hints — native `title` attribute renders as a white box in dark mode and ignores the theme. Wrap inline usage with its own `<TooltipProvider>` (no app-level provider exists).
+- **MathMarkdown**: Render any content string that may contain LaTeX via `<MathMarkdown content={str} />` — plain `<span>` won't process `$...$`/`$$...$$` markup. Applies to exercise statements, hints, key points, and choice labels.
 
 ## Conventions
 
@@ -176,6 +178,7 @@ Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Au
 - **Gallery**: Gallery listings are `CourseShare` records with `isGalleryListed = true`. Admin-only curation — regular users create share links, admins promote to gallery. `CourseRating` model for star ratings, `starCount`/`cloneCount` denormalized on `CourseShare`
 - **Stripe payment**: One-time payment via Stripe Checkout. Webhook auto-generates an access code, redeems it, and activates the user. `Payment` model for audit trail. BLIK + card support
 - **Admin panel**: `/admin` page with tabs for access codes, users, gallery management. Only `role === "admin"` users can access
+- **Cheapest model utility**: `getCheapestModel(apiKeys)` + `getProviderOptions(model)` in `src/lib/ai/repairSchema.ts` — use for lightweight AI ops (grading, evaluation) instead of hardcoding model names.
 
 ## Security Hardening
 
@@ -227,3 +230,4 @@ Implemented security measures and ongoing hardening work:
 - **CRITICAL — Production database is user-controlled**: NEVER apply, execute, or modify the production database without explicit verbal confirmation from the user. This includes running `migrate-prod.mjs apply`, `backfill`, `drift --fix`, or any direct SQL against Turso. Read-only commands (`status`, `plan`, `drift`, `tables`, `inspect`) are safe to run. Always show the user what will change (`plan` output) and wait for their explicit approval before any write operation. No exceptions — even if a PR description says "run migrations after merge", the user must confirm first.
 - **NEVER** set `TURSO_DATABASE_URL` in `.env.local` — it causes `pnpm dev` to write to the production database
 - **Dev bypass production guard**: `isDevBypassEnabled()` in `src/lib/dev-bypass.ts` blocks `AUTH_DEV_BYPASS` in production (`NODE_ENV=production`) unless `NEXT_TEST_MODE=1` (E2E tests). Also logs a warning when bypass is active with a remote database (`TURSO_DATABASE_URL` set)
+

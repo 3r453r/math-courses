@@ -373,6 +373,7 @@ const REPACK_MODEL_PREFERENCE = [
   "claude-haiku-4-5-20251001",
   "gpt-5-mini",
   "gemini-2.5-flash",
+  "claude-sonnet-4-6",
   "claude-sonnet-4-5-20250929",
   "o3-mini",
   "gemini-2.5-pro",

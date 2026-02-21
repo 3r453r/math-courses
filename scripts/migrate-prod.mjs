@@ -31,7 +31,7 @@ import { execFileSync } from "node:child_process";
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const ROOT = resolve(import.meta.dirname, "..");
-const ENV_FILE = join(ROOT, ".env.turso-prod");
+const ENV_FILE = join(ROOT, ".env.secret");
 const MIGRATIONS_DIR = join(ROOT, "prisma", "migrations");
 
 const TRACKER_DDL = `CREATE TABLE IF NOT EXISTS "_migration_tracker" (
@@ -63,7 +63,7 @@ function readEnvFile() {
     env[key] = val;
   }
   if (!env.TURSO_DATABASE_URL || !env.TURSO_AUTH_TOKEN) {
-    console.error("ERROR: .env.turso-prod must define TURSO_DATABASE_URL and TURSO_AUTH_TOKEN.");
+    console.error("ERROR: .env.secret must define TURSO_DATABASE_URL and TURSO_AUTH_TOKEN.");
     process.exit(1);
   }
   return env;

@@ -25,6 +25,7 @@ import { computeDagLayers } from "@/lib/course/dagLayers";
 import { useApiHeaders } from "@/hooks/useApiHeaders";
 import { LANGUAGE_NAMES } from "@/lib/ai/prompts/languageInstruction";
 import { Languages } from "lucide-react";
+import { parseLessonContent } from "@/lib/content/parseLessonContent";
 
 interface SharedLesson {
   id: string;
@@ -326,7 +327,7 @@ export default function SharedCoursePage({
           if (!lesson?.contentJson) return null;
           let content;
           try {
-            content = JSON.parse(lesson.contentJson);
+            content = parseLessonContent(lesson.contentJson);
           } catch {
             return null;
           }

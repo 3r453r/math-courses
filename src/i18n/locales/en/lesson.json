@@ -28,8 +28,21 @@
   "quizPrompt": "Take a quiz to check your grasp of this lesson's material.",
   "takeQuiz": "Take Quiz",
   "vizMalformedWarning": "Some visualizations were removed because they contained errors. You may want to regenerate this lesson.",
+  "contentSchemaWarning": "Some sections were removed or converted because their content format didn't match the expected schema. You may want to regenerate this lesson.",
   "home": "Dashboard",
   "layer": "Layer {{number}}",
   "prevLesson": "Previous lesson",
-  "nextLesson": "Next lesson"
+  "nextLesson": "Next lesson",
+  "regenerateViz": "Regenerate visualization",
+  "vizRegenerating": "Regenerating...",
+  "vizRegeneratedSuccess": "Visualization regenerated",
+  "vizRegenerateFailed": "Failed to regenerate visualization",
+  "regenerateVizModal": {
+    "title": "Regenerate Visualization",
+    "description": "Describe what's wrong and optionally attach a screenshot to help the AI generate a better version.",
+    "feedbackLabel": "What's wrong? (optional)",
+    "feedbackPlaceholder": "e.g. labels overlap, y-axis is unreadable, curve is flat",
+    "screenshotLabel": "Screenshot (optional)",
+    "screenshotClear": "Clear"
+  }
 }
