@@ -345,6 +345,95 @@ export function mockPracticeCheck(keyPoints: string[]) {
   };
 }
 
+export function mockChatResponse(lastUserMessage: string): string {
+  const isLong = /give me a long response/i.test(lastUserMessage);
+
+  if (isLong) {
+    return `Great question! Let me give you a thorough explanation.
+
+## Understanding the Core Concept
+
+When we talk about mathematical functions, we're describing a **relationship** between inputs and outputs. More formally, a function $f: A \\to B$ maps each element $a \\in A$ to exactly one element $b \\in B$.
+
+### Why Functions Matter
+
+Functions are the backbone of almost every branch of mathematics. In calculus, we study how functions change (derivatives) and accumulate (integrals). In algebra, we study the structure of functions. In topology, we study the shape of the spaces functions live on.
+
+### Key Properties to Remember
+
+1. **Domain**: The set of all valid inputs. For $f(x) = \\sqrt{x}$, the domain is $[0, \\infty)$ because we can't take the square root of a negative number (in the reals).
+
+2. **Range**: The set of all possible outputs. For $f(x) = x^2$, the range is $[0, \\infty)$ even though the domain is all of $\\mathbb{R}$.
+
+3. **Injectivity** (one-to-one): $f(a) = f(b) \\Rightarrow a = b$. The function $f(x) = x^3$ is injective, but $f(x) = x^2$ is not (since $f(2) = f(-2) = 4$).
+
+4. **Surjectivity** (onto): Every element in the codomain is hit. Whether a function is surjective depends on how we define the codomain.
+
+### A Worked Example
+
+Consider $f(x) = 2x + 3$. Let's verify it's a bijection from $\\mathbb{R}$ to $\\mathbb{R}$:
+
+**Injective:** Suppose $f(a) = f(b)$. Then $2a + 3 = 2b + 3$, so $2a = 2b$, thus $a = b$. \\checkmark
+
+**Surjective:** For any $y \\in \\mathbb{R}$, we need $x$ such that $2x + 3 = y$. Solving: $x = \\frac{y - 3}{2}$. Since this always gives a real number, the function is surjective. \\checkmark
+
+### The Composition of Functions
+
+When we compose two functions, we apply one after the other:
+
+$$(f \\circ g)(x) = f(g(x))$$
+
+For example, if $f(x) = x^2$ and $g(x) = x + 1$, then:
+
+$$(f \\circ g)(x) = f(x + 1) = (x + 1)^2 = x^2 + 2x + 1$$
+
+Note that composition is generally **not commutative**: $f \\circ g \\neq g \\circ f$ in most cases.
+
+### Inverse Functions
+
+A function $f$ has an inverse $f^{-1}$ if and only if $f$ is bijective. The inverse "undoes" the function:
+
+$$f^{-1}(f(x)) = x \\quad \\text{and} \\quad f(f^{-1}(y)) = y$$
+
+For our linear function $f(x) = 2x + 3$, the inverse is $f^{-1}(x) = \\frac{x - 3}{2}$.
+
+### Practice Suggestion
+
+Try finding the inverse of $f(x) = \\frac{3x - 1}{x + 2}$ (for $x \\neq -2$). Set $y = \\frac{3x - 1}{x + 2}$, then solve for $x$ in terms of $y$. You should get $f^{-1}(x) = \\frac{2x + 1}{3 - x}$.
+
+Keep exploring these ideas! Understanding functions deeply will help you in every area of mathematics you study. Feel free to ask if any part needs more clarification!`;
+  }
+
+  return `Great question! Let me help you understand this.
+
+## Key Idea
+
+The concept you're asking about relates to one of the fundamental ideas in mathematics. Let's break it down step by step.
+
+### The Mathematical Foundation
+
+Consider a function $f(x) = x^2 + 1$. This is a simple polynomial that maps every real number to a value greater than or equal to 1. We can see this because:
+
+$$f(x) = x^2 + 1 \\geq 0 + 1 = 1 \\quad \\text{for all } x \\in \\mathbb{R}$$
+
+The minimum occurs at $x = 0$, where $f(0) = 1$.
+
+### Why This Matters
+
+Understanding how functions behave helps us:
+1. **Predict outcomes** — if we know the input, we can calculate the output
+2. **Find extrema** — using derivatives, $f'(x) = 2x = 0$ gives us $x = 0$
+3. **Integrate** — the area under the curve from $a$ to $b$ is:
+
+$$\\int_a^b (x^2 + 1)\\,dx = \\left[\\frac{x^3}{3} + x\\right]_a^b$$
+
+### Quick Practice
+
+Try computing $\\int_0^2 (x^2 + 1)\\,dx$. You should get $\\frac{8}{3} + 2 = \\frac{14}{3}$.
+
+Feel free to ask follow-up questions if any part is unclear!`;
+}
+
 export function mockDiagnostic() {
   return {
     prerequisites: [

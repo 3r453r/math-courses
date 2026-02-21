@@ -25,5 +25,7 @@
   "aiScore": "Score: {{percent}}%",
   "keyPointsMet": "Concepts addressed:",
   "keyPointsNotMet": "Concepts to review:",
-  "freeResponseAiHint": "AI feedback available — enable in Setup → Learning Preferences"
+  "freeResponseAiHint": "AI feedback available — enable in Setup → Learning Preferences",
+  "askAi": "Ask AI Tutor",
+  "copiedLatex": "LaTeX copied to clipboard"
 }

@@ -25,5 +25,7 @@
   "aiScore": "Wynik: {{percent}}%",
   "keyPointsMet": "Omówione zagadnienia:",
   "keyPointsNotMet": "Zagadnienia do przejrzenia:",
-  "freeResponseAiHint": "Dostępna informacja zwrotna od AI — włącz w Ustawienia → Preferencje nauki"
+  "freeResponseAiHint": "Dostępna informacja zwrotna od AI — włącz w Ustawienia → Preferencje nauki",
+  "askAi": "Zapytaj AI",
+  "copiedLatex": "LaTeX skopiowany do schowka"
 }

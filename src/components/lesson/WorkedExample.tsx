@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { MessageCircleQuestion } from "lucide-react";
 import { MathMarkdown } from "./MathMarkdown";
 import { KaTeXBlock } from "./KaTeXBlock";
 import type { WorkedExample as WorkedExampleType } from "@/types/lesson";
@@ -18,9 +19,10 @@ import type { WorkedExample as WorkedExampleType } from "@/types/lesson";
 interface Props {
   example: WorkedExampleType;
   index: number;
+  onChatAbout?: (context: string) => void;
 }
 
-export function WorkedExample({ example, index }: Props) {
+export function WorkedExample({ example, index, onChatAbout }: Props) {
   const { t } = useTranslation("lessonContent");
   const [expandedSteps, setExpandedSteps] = useState(0);
   const allExpanded = expandedSteps >= example.steps.length;
@@ -36,6 +38,22 @@ export function WorkedExample({ example, index }: Props) {
             {t("example", { number: index + 1 })}
           </Badge>
           <CardTitle className="text-lg">{example.title}</CardTitle>
+          {onChatAbout && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto h-7 text-xs text-muted-foreground gap-1"
+              onClick={() =>
+                onChatAbout(
+                  `I need help with this worked example:\n\n${example.problemStatement}`
+                )
+              }
+              data-testid="ask-ai-button"
+            >
+              <MessageCircleQuestion className="size-3.5" />
+              {t("askAi")}
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

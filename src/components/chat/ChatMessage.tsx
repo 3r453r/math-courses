@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { MathMarkdown } from "@/components/lesson/MathMarkdown";
 
 interface ChatMessageProps {
@@ -7,7 +8,7 @@ interface ChatMessageProps {
   content: string;
 }
 
-export function ChatMessage({ role, content }: ChatMessageProps) {
+function ChatMessageInner({ role, content }: ChatMessageProps) {
   const isUser = role === "user";
 
   return (
@@ -26,3 +27,5 @@ export function ChatMessage({ role, content }: ChatMessageProps) {
     </div>
   );
 }
+
+export const ChatMessage = memo(ChatMessageInner);
