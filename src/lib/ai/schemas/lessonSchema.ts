@@ -73,6 +73,7 @@ export const lessonContentSchema = z.object({
           })
         )
         .optional(),
+      keyPoints: z.array(z.string()).optional().describe("(free_response only) 3-5 short phrases naming concepts or steps the student must address"),
     })
   ),
   keyTakeaways: z.array(z.string()),

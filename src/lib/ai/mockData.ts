@@ -111,6 +111,21 @@ export function mockLessonContent() {
         answerType: "numeric" as const,
         expectedAnswer: "9",
       },
+      {
+        id: "mock-ex-2",
+        problemStatement: "In your own words, explain why $e^{i\\pi} + 1 = 0$. What does each constant represent and how do they connect?",
+        hints: [
+          "Think about what $e^{ix}$ traces on the complex plane.",
+          "$e^{i\\pi}$ means rotating by $\\pi$ radians (180°) on the unit circle.",
+        ],
+        solution: "Euler's formula states $e^{ix} = \\cos x + i\\sin x$. When $x = \\pi$, we get $e^{i\\pi} = \\cos\\pi + i\\sin\\pi = -1 + 0 = -1$. Adding 1 gives 0. The identity unites $e$ (growth), $i$ (rotation), $\\pi$ (geometry), 1 (identity), and 0 (zero) in a single equation.",
+        answerType: "free_response" as const,
+        keyPoints: [
+          "Cite Euler's formula $e^{ix} = \\cos x + i\\sin x$",
+          "Substitute $x = \\pi$ to get $e^{i\\pi} = -1$",
+          "Explain the complex-plane / rotation interpretation",
+        ],
+      },
     ],
     keyTakeaways: [
       "The mock mode works correctly!",
@@ -318,6 +333,15 @@ export function mockCourseSuggestions() {
         estimatedLessons: 8,
       },
     ],
+  };
+}
+
+export function mockPracticeCheck(keyPoints: string[]) {
+  const metCount = Math.max(1, Math.floor(keyPoints.length * 0.67));
+  return {
+    score: 0.75,
+    feedback: "Good attempt! You've captured the core idea. Try to be more precise about the substitution step and the geometric interpretation.",
+    keyPointsMet: keyPoints.slice(0, metCount),
   };
 }
 

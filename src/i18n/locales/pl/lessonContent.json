@@ -19,5 +19,11 @@
   "correctBadge": "Poprawnie!",
   "incorrectBadge": "Niepoprawnie",
   "numericPlaceholder": "Podaj odpowiedź liczbową...",
-  "freeResponsePlaceholder": "Napisz swoją odpowiedź tutaj..."
+  "freeResponsePlaceholder": "Napisz swoją odpowiedź tutaj...",
+  "checkingAnswer": "Sprawdzam odpowiedź...",
+  "addApiKeyForFeedback": "Dodaj klucz API w ustawieniach, aby uzyskać informację zwrotną od AI.",
+  "aiScore": "Wynik: {{percent}}%",
+  "keyPointsMet": "Omówione zagadnienia:",
+  "keyPointsNotMet": "Zagadnienia do przejrzenia:",
+  "freeResponseAiHint": "Dostępna informacja zwrotna od AI — włącz w Ustawienia → Preferencje nauki"
 }

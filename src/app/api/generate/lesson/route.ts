@@ -128,7 +128,8 @@ LESSON CONTENT GUIDELINES:
 6. For practice exercises: mirror the worked example pattern but change the specific values.
 7. Aim for 8-15 sections of varied types (text, math, definition, theorem, visualization).
 8. Make the content thorough but accessible - explain the "why" not just the "what".
-9. For tabular data (payoff matrices, truth tables, comparisons), use Markdown pipe-table syntax. Use only inline math $...$ inside table cells — never display math $$...$$.`;
+9. For tabular data (payoff matrices, truth tables, comparisons), use Markdown pipe-table syntax. Use only inline math $...$ inside table cells — never display math $$...$$.
+10. For practice exercises with answerType "free_response", include a "keyPoints" array of 3–5 short noun phrases (e.g. ["Apply chain rule", "Evaluate at x=2", "State units"]) naming the required concepts or steps. These are used as a grading rubric for AI feedback.`;
 
       if (body.weakTopics && body.weakTopics.length > 0) {
         prompt += `\n\nIMPORTANT - WEAK AREAS FEEDBACK:

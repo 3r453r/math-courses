@@ -19,5 +19,11 @@
   "correctBadge": "Correct!",
   "incorrectBadge": "Incorrect",
   "numericPlaceholder": "Enter your numeric answer...",
-  "freeResponsePlaceholder": "Write your answer here..."
+  "freeResponsePlaceholder": "Write your answer here...",
+  "checkingAnswer": "Checking your answer...",
+  "addApiKeyForFeedback": "Add an API key in Setup to get AI feedback.",
+  "aiScore": "Score: {{percent}}%",
+  "keyPointsMet": "Concepts addressed:",
+  "keyPointsNotMet": "Concepts to review:",
+  "freeResponseAiHint": "AI feedback available — enable in Setup → Learning Preferences"
 }
