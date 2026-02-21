@@ -78,7 +78,7 @@ function isJsonValueStart(ch: string): boolean {
  * Checks that what follows forms valid JSON continuation, not just the immediate char.
  */
 function isStructuralClose(str: string, i: number): boolean {
-  let j = skipWs(str, i + 1);
+  const j = skipWs(str, i + 1);
   if (j >= str.length) return true; // EOF — structural
 
   const next = str[j];

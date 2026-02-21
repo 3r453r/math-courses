@@ -36,17 +36,17 @@ pnpm test:all         # All of the above
 - `src/app/api/` — Server-side API routes (course CRUD, AI generation, chat streaming)
 - `src/lib/ai/` — AI client config, prompt templates, Zod schemas for structured AI output
 - `src/lib/ai/schemas/` — Zod schemas: `courseSchema`, `lessonSchema`, `lessonWithQuizSchema`, `quizSchema`, `diagnosticSchema`, `completionSummarySchema`, `triviaSchema`
-- `src/lib/ai/prompts/` — Prompt builders: `courseStructure`, `quizGeneration`, `completionSummary`, `triviaGeneration`, `voiceInterpretation`, `languageInstruction`
+- `src/lib/ai/prompts/` — Prompt builders: `courseStructure`, `quizGeneration`, `completionSummary`, `triviaGeneration`, `voiceInterpretation`, `languageInstruction`, `vizRegeneration`
 - `src/lib/ai/generationLogger.ts` — AI generation audit logging to `AiGenerationLog` table (outcome, duration, repair layers, wrapper type)
 - `src/lib/ai/generationLogRetention.ts` — Retention policy and sensitive data expiration for generation logs
 - `src/lib/ai/logSanitizer.ts` — Redact sensitive data from AI prompts/outputs before storage
-- `src/lib/content/` — Content utilities including `safeEval.ts` (mathjs-based, no `eval()`)
+- `src/lib/content/` — Content utilities: `safeEval.ts` (mathjs-based expression evaluator), `parseLessonContent.ts` (parse/normalize lesson content JSON; handles schema-drift in older AI-generated courses, malformed sections, missing fields), `vizValidation.ts` (validate and auto-repair visualization specs)
 - `src/lib/quiz/` — Quiz scoring algorithm (≥80% advance, ≥50% supplement, <50% regenerate)
 - `src/stores/appStore.ts` — Zustand store persisted to localStorage (API key, model selection, UI state)
 - `src/components/ui/` — shadcn/ui components (New York style, Radix UI primitives)
 - `src/components/chat/` — AI tutor chat sidebar (ChatPanel, ChatMessage, ChatInput)
 - `src/components/scratchpad/` — Per-lesson scratchpad with LaTeX slash-commands
-- `src/components/lesson/` — Lesson content renderer, section renderers, MathMarkdown
+- `src/components/lesson/` — Lesson content renderer, section renderers, MathMarkdown, `RegenerateVizModal` (user feedback + optional screenshot upload for AI-powered viz regeneration)
 - `src/lib/auth.ts` — Auth.js v5 configuration (OAuth providers, JWT sessions, Credentials dev bypass)
 - `src/lib/auth-utils.ts` — auth helpers: `getAuthUser()`, `getAuthUserAnyStatus()`, CSRF-aware `getAuthUserFromRequest(request)` / `getAuthUserAnyStatusFromRequest(request)`, `requireAdmin()`, `requireOwner()`, CSRF-aware `requireAdminFromRequest(request)` / `requireOwnerFromRequest(request)`, `verifyCourseOwnership()`, `verifyLessonOwnership()`
 - `src/lib/csrf.ts` — reusable CSRF guard (`Origin` + `Referer` fallback) for cookie-authenticated mutation requests
@@ -81,17 +81,18 @@ pnpm test:all         # All of the above
 3. `POST /api/generate/quiz` — Standalone quiz generation (fallback/regenerate-only). Also receives `lessonContent` and `contextDoc` when available.
 4. `POST /api/generate/diagnostic` — Generates pre-course diagnostic quiz. Idempotent (returns existing if ready).
 5. `POST /api/generate/trivia` — Generates trivia facts for a course (shown during generation spinner). Layer 0 & 1 repair only.
-6. `POST /api/chat` — Streaming AI tutor chat using `streamText` + `toTextStreamResponse()`. Client uses `TextStreamChatTransport` from AI SDK v6.
-7. `POST /api/voice/interpret` — Voice transcript to LaTeX/math interpretation via `generateText` (non-streaming).
-8. **Multi-provider AI**: `MODEL_REGISTRY` in `src/lib/ai/client.ts` supports 3 providers (Anthropic, OpenAI, Google) with 9 models. Users store per-provider API keys. `getProviderForModel()` selects the right SDK client. Two model tiers: primary (generation) and chat — user-configurable
-9. **Schema repair pipeline** (`src/lib/ai/repairSchema.ts`, `src/lib/ai/client.ts`): Three-layer recovery for malformed AI output:
-   - Layer 0: `experimental_repairText` in `generateObject` — unwraps Anthropic `{"parameter":...}` wrapping via `unwrapParameter()`, runs `coerceToSchema` (type coercion, enum fuzzy-match, unknown field stripping)
-   - Layer 1: Direct `tryCoerceAndValidate` on raw `NoObjectGeneratedError.text` — also uses `unwrapParameter()` for consistent unwrapping
-   - Layer 2: AI repack — cheapest available model re-serializes the content to match the schema
-   - **`unwrapParameter()`** handles both wrapping formats: `{"parameter": {...}}` (object) and `{"parameter": "{\"title\":...}"}` (stringified JSON). Returns `wrapperType: "object" | "string" | "string-repaired" | null` for logging
-   - **Critical**: Anthropic `jsonTool` mode sometimes returns array/object fields as **JSON-encoded strings** (e.g., `"sections":"[{...}]"` instead of `"sections":[{...}]`). `coerceToSchema` handles this by attempting `JSON.parse()` on string values when the schema expects an Array or Object. Without this, arrays silently default to `[]` and all generated content is lost.
-   - **`AiGenerationLog`** table stores `wrapperType` column (`"object"` | `"string"` | `"string-repaired"` | null) for querying which wrapper format was encountered. Populated from both Layer 0 (`RepairTracker`) and Layer 1 (`recordLayer1`)
-10. **Mock AI model**: `model === "mock"` bypasses all AI calls and returns hardcoded data from `src/lib/ai/mockData.ts`. NOT in `MODEL_REGISTRY` — each `/api/generate/*` route checks for it explicitly. Includes course structure (3 lessons), lesson content, quizzes, diagnostics, trivia, and completion summary. Select via Setup page dropdown or pass `"model": "mock"` in request body. Use the `/mock-testing` skill for detailed testing workflow. New AI-dependent endpoints should also check `if (body.model === "mock")` early and return mock data from `mockData.ts`.
+6. `POST /api/generate/visualization` — Regenerates a single visualization section in-place. Accepts `lessonId`, `courseId`, `sectionIndex`, optional `userFeedback` (text) and `screenshotBase64` (multimodal). Injects surrounding lesson sections + course `contextDoc` for context. Validates output with `validateAndRepairVisualizations`, patches `contentJson` in DB. Rate-limited to 20 req/60s per user. Mock mode supported.
+7. `POST /api/chat` — Streaming AI tutor chat using `streamText` + `toTextStreamResponse()`. Client uses `TextStreamChatTransport` from AI SDK v6.
+8. `POST /api/voice/interpret` — Voice transcript to LaTeX/math interpretation via `generateText` (non-streaming).
+9. **Multi-provider AI**: `MODEL_REGISTRY` in `src/lib/ai/client.ts` supports 3 providers (Anthropic, OpenAI, Google) with 9 models. Users store per-provider API keys. `getProviderForModel()` selects the right SDK client. Two model tiers: primary (generation) and chat — user-configurable
+10. **Schema repair pipeline** (`src/lib/ai/repairSchema.ts`, `src/lib/ai/client.ts`): Three-layer recovery for malformed AI output:
+    - Layer 0: `experimental_repairText` in `generateObject` — unwraps Anthropic `{"parameter":...}` wrapping via `unwrapParameter()`, runs `coerceToSchema` (type coercion, enum fuzzy-match, unknown field stripping)
+    - Layer 1: Direct `tryCoerceAndValidate` on raw `NoObjectGeneratedError.text` — also uses `unwrapParameter()` for consistent unwrapping
+    - Layer 2: AI repack — cheapest available model re-serializes the content to match the schema
+    - **`unwrapParameter()`** handles both wrapping formats: `{"parameter": {...}}` (object) and `{"parameter": "{\"title\":...}"}` (stringified JSON). Returns `wrapperType: "object" | "string" | "string-repaired" | null` for logging
+    - **Critical**: Anthropic `jsonTool` mode sometimes returns array/object fields as **JSON-encoded strings** (e.g., `"sections":"[{...}]"` instead of `"sections":[{...}]`). `coerceToSchema` handles this by attempting `JSON.parse()` on string values when the schema expects an Array or Object. Without this, arrays silently default to `[]` and all generated content is lost.
+    - **`AiGenerationLog`** table stores `wrapperType` column (`"object"` | `"string"` | `"string-repaired"` | null) for querying which wrapper format was encountered. Populated from both Layer 0 (`RepairTracker`) and Layer 1 (`recordLayer1`)
+11. **Mock AI model**: `model === "mock"` bypasses all AI calls and returns hardcoded data from `src/lib/ai/mockData.ts`. NOT in `MODEL_REGISTRY` — each `/api/generate/*` route checks for it explicitly. Includes course structure (3 lessons), lesson content, quizzes, diagnostics, trivia, and completion summary. Select via Setup page dropdown or pass `"model": "mock"` in request body. Use the `/mock-testing` skill for detailed testing workflow. New AI-dependent endpoints should also check `if (body.model === "mock")` early and return mock data from `mockData.ts`.
 
 ### Content Rendering
 

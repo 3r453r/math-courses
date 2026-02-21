@@ -6,7 +6,7 @@ import { parseBody } from "@/lib/api-validation";
 
 const createNotebookPageSchema = z.object({
   title: z.string().max(200).optional(),
-  orderIndex: z.number().int().min(0).max(1000).optional(),
+  orderIndex: z.number().min(0).max(1000).optional(),
 });
 
 interface NotebookPage {

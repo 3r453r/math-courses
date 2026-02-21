@@ -11,7 +11,7 @@ test.describe("Dashboard", () => {
   }) => {
     // Delete any courses created by parallel tests (shared DB)
     const res = await page.request.get("/api/courses");
-    const courses = await res.json();
+    const { courses } = await res.json();
     for (const course of courses) {
       await page.request.delete(`/api/courses/${course.id}`);
     }

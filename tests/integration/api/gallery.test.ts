@@ -94,7 +94,7 @@ describe("gallery API", () => {
     );
 
     const response = await getGallery(
-      new NextRequest("http://localhost/api/gallery?subject=Physics")
+      new NextRequest("http://localhost/api/gallery?subjects=Physics")
     );
 
     expect(response.status).toBe(200);

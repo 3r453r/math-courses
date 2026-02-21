@@ -362,7 +362,7 @@ export default function SharedCoursePage({
                   </div>
                 )}
                 {content.sections?.map(
-                  (section: Record<string, unknown>, i: number) => (
+                  (section, i: number) => (
                     <div key={i}>
                       {section.type === "text" && (
                         <MathMarkdown
