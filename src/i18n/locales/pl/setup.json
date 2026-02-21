@@ -27,6 +27,8 @@
   "english": "English",
   "polish": "Polski",
   "syncApiKey": "Zapisz klucze API na koncie (synchronizacja między urządzeniami)",
+  "syncFailed": "Nie udało się zapisać klucza API na serwerze",
+  "syncSuccess": "Klucz API zapisany na serwerze",
   "signedInAs": "Zalogowany jako",
   "appearance": {
     "title": "Wygląd",
