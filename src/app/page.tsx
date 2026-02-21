@@ -32,6 +32,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { InstallButton } from "@/components/InstallButton";
 import { UserMenu } from "@/components/UserMenu";
 import { MobileMenu } from "@/components/MobileMenu";
+import { BrandMark } from "@/components/BrandMark";
 import { CourseDiscovery } from "@/components/dashboard/CourseDiscovery";
 
 interface CourseProgress {
@@ -273,9 +274,12 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{t("dashboard:title")}</h1>
-            <p className="text-sm text-muted-foreground">{t("dashboard:subtitle")}</p>
+          <div className="flex items-center gap-3">
+            <BrandMark size={40} className="rounded-lg shrink-0 -m-1" />
+            <div>
+              <h1 className="text-2xl font-bold">{t("dashboard:title")}</h1>
+              <p className="text-sm text-muted-foreground">{t("dashboard:subtitle")}</p>
+            </div>
           </div>
           <div className="flex gap-2 items-center">
             <ThemeToggle />

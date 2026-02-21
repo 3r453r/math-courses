@@ -231,10 +231,18 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="fixed top-4 right-4 z-50 flex items-center gap-1">
-        <LanguageToggle />
-        <ThemeToggle />
-      </div>
+      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-2">
+          <BrandMark size={24} className="rounded-lg" />
+          <span className="text-sm font-semibold bg-gradient-to-r from-brand-from to-brand-to bg-clip-text text-transparent">
+            StemForge
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          <LanguageToggle />
+          <ThemeToggle />
+        </div>
+      </header>
 
       <Suspense>
         <AutoScrollToSignIn />
