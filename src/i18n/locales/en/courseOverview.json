@@ -58,5 +58,8 @@
   "attributionHelp": "Your display name will be shown on the gallery card.",
   "attributionClaimed": "Authorship claimed",
   "attributionRemoved": "Authorship removed",
-  "attributionFailed": "Failed to update attribution"
+  "attributionFailed": "Failed to update attribution",
+  "translateTo": "Translate to...",
+  "translating": "Translating...",
+  "courseTranslated": "Course translated to {{language}}!"
 }

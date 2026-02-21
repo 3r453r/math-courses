@@ -120,4 +120,5 @@ export interface PracticeExercise {
   answerType: "free_response" | "multiple_choice" | "numeric";
   expectedAnswer?: string;
   choices?: Array<{ label: string; correct: boolean }>;
+  keyPoints?: string[];
 }

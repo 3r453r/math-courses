@@ -1,13 +1,16 @@
 "use client";
 
 import { Suspense, lazy } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { VizErrorBoundary } from "@/components/math/VizErrorBoundary";
 import { FunctionPlot } from "@/components/math/FunctionPlot";
 import { ParametricPlot } from "@/components/math/ParametricPlot";
 import { VectorFieldPlot } from "@/components/math/VectorFieldPlot";
 import { GeometryPlot } from "@/components/math/GeometryPlot";
+import { RotateCcw } from "lucide-react";
 import type { VisualizationSection } from "@/types/lesson";
 
 // Lazy-load heavy 3D components
@@ -32,6 +35,9 @@ const CoordinateTransform3D = lazy(() =>
 
 interface Props {
   section: VisualizationSection;
+  sectionIndex?: number;
+  onRegenerate?: (sectionIndex: number) => void;
+  isRegenerating?: boolean;
 }
 
 function VizLoading() {
@@ -44,7 +50,13 @@ function VizLoading() {
   );
 }
 
-export function VisualizationSectionRenderer({ section }: Props) {
+export function VisualizationSectionRenderer({
+  section,
+  sectionIndex,
+  onRegenerate,
+  isRegenerating,
+}: Props) {
+  const { t } = useTranslation("lesson");
   const { vizType, spec, caption, interactionHint } = section;
 
   function renderViz() {
@@ -94,7 +106,14 @@ export function VisualizationSectionRenderer({ section }: Props) {
   }
 
   return (
-    <Card className="my-6">
+    <Card className="my-6 relative">
+      {isRegenerating && (
+        <div className="absolute inset-0 bg-background/70 flex items-center justify-center rounded-lg z-10">
+          <p className="text-sm text-muted-foreground animate-pulse">
+            {t("vizRegenerating")}
+          </p>
+        </div>
+      )}
       <CardContent className="pt-6">
         <VizErrorBoundary>{renderViz()}</VizErrorBoundary>
         <p className="text-sm text-center mt-3 text-muted-foreground">
@@ -104,6 +123,20 @@ export function VisualizationSectionRenderer({ section }: Props) {
           <p className="text-xs text-center mt-1 text-muted-foreground/70 italic">
             {interactionHint}
           </p>
+        )}
+        {onRegenerate && sectionIndex !== undefined && (
+          <div className="flex justify-center mt-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onRegenerate(sectionIndex)}
+              disabled={isRegenerating}
+              className="text-xs text-muted-foreground gap-1"
+            >
+              <RotateCcw className="h-3 w-3" />
+              {t("regenerateViz")}
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>

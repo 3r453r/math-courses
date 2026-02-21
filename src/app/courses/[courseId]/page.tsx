@@ -35,13 +35,17 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserMenu } from "@/components/UserMenu";
 import { evaluateCourseCompletion, DEFAULT_THRESHOLDS } from "@/lib/quiz/courseCompletion";
 import { computeDagLayers } from "@/lib/course/dagLayers";
-import { MoreVertical } from "lucide-react";
+import { MoreVertical, Languages } from "lucide-react";
+import { LANGUAGE_NAMES } from "@/lib/ai/prompts/languageInstruction";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -144,6 +148,7 @@ export default function CourseOverviewPage({
   const [contextDocDraft, setContextDocDraft] = useState("");
   const [savingContextDoc, setSavingContextDoc] = useState(false);
   const [generatingSummary, setGeneratingSummary] = useState(false);
+  const [translatingLanguage, setTranslatingLanguage] = useState(false);
   const [editingThresholds, setEditingThresholds] = useState(false);
   const [savingThresholds, setSavingThresholds] = useState(false);
   const [draftPassThreshold, setDraftPassThreshold] = useState(80);
@@ -390,6 +395,29 @@ export default function CourseOverviewPage({
     }
   }
 
+  async function handleTranslateLanguage(targetLanguage: string) {
+    setTranslatingLanguage(true);
+    try {
+      const res = await fetch(`/api/courses/${courseId}/regenerate-language`, {
+        method: "POST",
+        headers: apiHeaders,
+        body: JSON.stringify({ targetLanguage }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to translate course");
+      }
+      const result = await res.json();
+      const langName = LANGUAGE_NAMES[targetLanguage] ?? targetLanguage;
+      toast.success(t("courseOverview:courseTranslated", { language: langName }));
+      router.push(`/courses/${result.id}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to translate");
+    } finally {
+      setTranslatingLanguage(false);
+    }
+  }
+
   const focusAreas = JSON.parse(course.focusAreas || "[]") as string[];
 
   // Compute progress stats
@@ -466,6 +494,30 @@ export default function CourseOverviewPage({
             </svg>
             <span className="hidden md:inline">{t("notebook:notebook")}</span>
           </Button>
+          {/* Desktop translate dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                title={t("courseOverview:translateTo")}
+                className="hidden md:inline-flex"
+                disabled={translatingLanguage}
+              >
+                <Languages className="size-4 md:mr-1.5" />
+                <span className="hidden md:inline">
+                  {translatingLanguage ? t("courseOverview:translating") : t("courseOverview:translateTo")}
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="max-h-64 overflow-y-auto">
+              {Object.entries(LANGUAGE_NAMES).map(([code, name]) => (
+                <DropdownMenuItem key={code} onClick={() => handleTranslateLanguage(code)}>
+                  {name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <div className="hidden md:inline-flex"><ThemeToggle /></div>
           <UserMenu />
           <Badge variant="outline" className="capitalize hidden sm:inline-flex">
@@ -488,6 +540,18 @@ export default function CourseOverviewPage({
               <DropdownMenuItem onClick={() => setNotebookOpen(!notebookOpen)}>
                 {t("notebook:notebook")}
               </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  {translatingLanguage ? t("courseOverview:translating") : t("courseOverview:translateTo")}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
+                  {Object.entries(LANGUAGE_NAMES).map(([code, name]) => (
+                    <DropdownMenuItem key={code} onClick={() => handleTranslateLanguage(code)}>
+                      {name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

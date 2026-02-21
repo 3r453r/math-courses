@@ -22,6 +22,7 @@ export interface ProviderModelInfo {
 export const MODEL_REGISTRY: ProviderModelInfo[] = [
   // Anthropic
   { id: "claude-opus-4-6", label: "Claude Opus 4.6", provider: "anthropic", tier: "premium" },
+  { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6", provider: "anthropic", tier: "balanced" },
   { id: "claude-sonnet-4-5-20250929", label: "Claude Sonnet 4.5", provider: "anthropic", tier: "balanced" },
   { id: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5", provider: "anthropic", tier: "fast" },
   // OpenAI
@@ -232,6 +233,6 @@ export function createRepairFunction(schema: z.ZodType, tracker?: RepairTracker)
 
 // Default model IDs
 export const MODELS = {
-  generation: "claude-opus-4-6",
-  chat: "claude-sonnet-4-5-20250929",
+  generation: "claude-sonnet-4-6",
+  chat: "claude-sonnet-4-6",
 } as const;

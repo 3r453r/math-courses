@@ -36,17 +36,17 @@ pnpm test:all         # All of the above
 - `src/app/api/` — Server-side API routes (course CRUD, AI generation, chat streaming)
 - `src/lib/ai/` — AI client config, prompt templates, Zod schemas for structured AI output
 - `src/lib/ai/schemas/` — Zod schemas: `courseSchema`, `lessonSchema`, `lessonWithQuizSchema`, `quizSchema`, `diagnosticSchema`, `completionSummarySchema`, `triviaSchema`
-- `src/lib/ai/prompts/` — Prompt builders: `courseStructure`, `quizGeneration`, `completionSummary`, `triviaGeneration`, `voiceInterpretation`, `languageInstruction`
+- `src/lib/ai/prompts/` — Prompt builders: `courseStructure`, `quizGeneration`, `completionSummary`, `triviaGeneration`, `voiceInterpretation`, `languageInstruction`, `vizRegeneration`
 - `src/lib/ai/generationLogger.ts` — AI generation audit logging to `AiGenerationLog` table (outcome, duration, repair layers, wrapper type)
 - `src/lib/ai/generationLogRetention.ts` — Retention policy and sensitive data expiration for generation logs
 - `src/lib/ai/logSanitizer.ts` — Redact sensitive data from AI prompts/outputs before storage
-- `src/lib/content/` — Content utilities including `safeEval.ts` (mathjs-based, no `eval()`)
+- `src/lib/content/` — Content utilities: `safeEval.ts` (mathjs-based expression evaluator), `parseLessonContent.ts` (parse/normalize lesson content JSON; handles schema-drift in older AI-generated courses, malformed sections, missing fields), `vizValidation.ts` (validate and auto-repair visualization specs)
 - `src/lib/quiz/` — Quiz scoring algorithm (≥80% advance, ≥50% supplement, <50% regenerate)
 - `src/stores/appStore.ts` — Zustand store persisted to localStorage (API key, model selection, UI state)
 - `src/components/ui/` — shadcn/ui components (New York style, Radix UI primitives)
 - `src/components/chat/` — AI tutor chat sidebar (ChatPanel, ChatMessage, ChatInput)
 - `src/components/scratchpad/` — Per-lesson scratchpad with LaTeX slash-commands
-- `src/components/lesson/` — Lesson content renderer, section renderers, MathMarkdown
+- `src/components/lesson/` — Lesson content renderer, section renderers, MathMarkdown, `RegenerateVizModal` (user feedback + optional screenshot upload for AI-powered viz regeneration)
 - `src/lib/auth.ts` — Auth.js v5 configuration (OAuth providers, JWT sessions, Credentials dev bypass)
 - `src/lib/auth-utils.ts` — auth helpers: `getAuthUser()`, `getAuthUserAnyStatus()`, CSRF-aware `getAuthUserFromRequest(request)` / `getAuthUserAnyStatusFromRequest(request)`, `requireAdmin()`, `requireOwner()`, CSRF-aware `requireAdminFromRequest(request)` / `requireOwnerFromRequest(request)`, `verifyCourseOwnership()`, `verifyLessonOwnership()`
 - `src/lib/csrf.ts` — reusable CSRF guard (`Origin` + `Referer` fallback) for cookie-authenticated mutation requests
@@ -81,17 +81,18 @@ pnpm test:all         # All of the above
 3. `POST /api/generate/quiz` — Standalone quiz generation (fallback/regenerate-only). Also receives `lessonContent` and `contextDoc` when available.
 4. `POST /api/generate/diagnostic` — Generates pre-course diagnostic quiz. Idempotent (returns existing if ready).
 5. `POST /api/generate/trivia` — Generates trivia facts for a course (shown during generation spinner). Layer 0 & 1 repair only.
-6. `POST /api/chat` — Streaming AI tutor chat using `streamText` + `toTextStreamResponse()`. Client uses `TextStreamChatTransport` from AI SDK v6.
-7. `POST /api/voice/interpret` — Voice transcript to LaTeX/math interpretation via `generateText` (non-streaming).
-8. **Multi-provider AI**: `MODEL_REGISTRY` in `src/lib/ai/client.ts` supports 3 providers (Anthropic, OpenAI, Google) with 9 models. Users store per-provider API keys. `getProviderForModel()` selects the right SDK client. Two model tiers: primary (generation) and chat — user-configurable
-9. **Schema repair pipeline** (`src/lib/ai/repairSchema.ts`, `src/lib/ai/client.ts`): Three-layer recovery for malformed AI output:
-   - Layer 0: `experimental_repairText` in `generateObject` — unwraps Anthropic `{"parameter":...}` wrapping via `unwrapParameter()`, runs `coerceToSchema` (type coercion, enum fuzzy-match, unknown field stripping)
-   - Layer 1: Direct `tryCoerceAndValidate` on raw `NoObjectGeneratedError.text` — also uses `unwrapParameter()` for consistent unwrapping
-   - Layer 2: AI repack — cheapest available model re-serializes the content to match the schema
-   - **`unwrapParameter()`** handles both wrapping formats: `{"parameter": {...}}` (object) and `{"parameter": "{\"title\":...}"}` (stringified JSON). Returns `wrapperType: "object" | "string" | "string-repaired" | null` for logging
-   - **Critical**: Anthropic `jsonTool` mode sometimes returns array/object fields as **JSON-encoded strings** (e.g., `"sections":"[{...}]"` instead of `"sections":[{...}]`). `coerceToSchema` handles this by attempting `JSON.parse()` on string values when the schema expects an Array or Object. Without this, arrays silently default to `[]` and all generated content is lost.
-   - **`AiGenerationLog`** table stores `wrapperType` column (`"object"` | `"string"` | `"string-repaired"` | null) for querying which wrapper format was encountered. Populated from both Layer 0 (`RepairTracker`) and Layer 1 (`recordLayer1`)
-10. **Mock AI model**: `model === "mock"` bypasses all AI calls and returns hardcoded data from `src/lib/ai/mockData.ts`. NOT in `MODEL_REGISTRY` — each `/api/generate/*` route checks for it explicitly. Includes course structure (3 lessons), lesson content, quizzes, diagnostics, trivia, and completion summary. Select via Setup page dropdown or pass `"model": "mock"` in request body. Use the `/mock-testing` skill for detailed testing workflow.
+6. `POST /api/generate/visualization` — Regenerates a single visualization section in-place. Accepts `lessonId`, `courseId`, `sectionIndex`, optional `userFeedback` (text) and `screenshotBase64` (multimodal). Injects surrounding lesson sections + course `contextDoc` for context. Validates output with `validateAndRepairVisualizations`, patches `contentJson` in DB. Rate-limited to 20 req/60s per user. Mock mode supported.
+7. `POST /api/chat` — Streaming AI tutor chat using `streamText` + `toTextStreamResponse()`. Client uses `TextStreamChatTransport` from AI SDK v6.
+8. `POST /api/voice/interpret` — Voice transcript to LaTeX/math interpretation via `generateText` (non-streaming).
+9. **Multi-provider AI**: `MODEL_REGISTRY` in `src/lib/ai/client.ts` supports 3 providers (Anthropic, OpenAI, Google) with 9 models. Users store per-provider API keys. `getProviderForModel()` selects the right SDK client. Two model tiers: primary (generation) and chat — user-configurable
+10. **Schema repair pipeline** (`src/lib/ai/repairSchema.ts`, `src/lib/ai/client.ts`): Three-layer recovery for malformed AI output:
+    - Layer 0: `experimental_repairText` in `generateObject` — unwraps Anthropic `{"parameter":...}` wrapping via `unwrapParameter()`, runs `coerceToSchema` (type coercion, enum fuzzy-match, unknown field stripping)
+    - Layer 1: Direct `tryCoerceAndValidate` on raw `NoObjectGeneratedError.text` — also uses `unwrapParameter()` for consistent unwrapping
+    - Layer 2: AI repack — cheapest available model re-serializes the content to match the schema
+    - **`unwrapParameter()`** handles both wrapping formats: `{"parameter": {...}}` (object) and `{"parameter": "{\"title\":...}"}` (stringified JSON). Returns `wrapperType: "object" | "string" | "string-repaired" | null` for logging
+    - **Critical**: Anthropic `jsonTool` mode sometimes returns array/object fields as **JSON-encoded strings** (e.g., `"sections":"[{...}]"` instead of `"sections":[{...}]`). `coerceToSchema` handles this by attempting `JSON.parse()` on string values when the schema expects an Array or Object. Without this, arrays silently default to `[]` and all generated content is lost.
+    - **`AiGenerationLog`** table stores `wrapperType` column (`"object"` | `"string"` | `"string-repaired"` | null) for querying which wrapper format was encountered. Populated from both Layer 0 (`RepairTracker`) and Layer 1 (`recordLayer1`)
+11. **Mock AI model**: `model === "mock"` bypasses all AI calls and returns hardcoded data from `src/lib/ai/mockData.ts`. NOT in `MODEL_REGISTRY` — each `/api/generate/*` route checks for it explicitly. Includes course structure (3 lessons), lesson content, quizzes, diagnostics, trivia, and completion summary. Select via Setup page dropdown or pass `"model": "mock"` in request body. Use the `/mock-testing` skill for detailed testing workflow. New AI-dependent endpoints should also check `if (body.model === "mock")` early and return mock data from `mockData.ts`.
 
 ### Content Rendering
 
@@ -151,6 +152,8 @@ Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Au
 - **Notebook**: Per-course multi-page notebook with autosave. `useNotebook` hook manages CRUD via `/api/courses/[courseId]/notebook` routes. `NotebookPanel` renders in lesson sidebar (mutually exclusive with chat/scratchpad)
 - **Color themes**: 4 themes (neutral, ocean, sage, amber) defined in `src/lib/themes.ts`. `colorTheme` stored in Zustand. Dark mode via `next-themes` `ThemeProvider`
 - **Language toggle**: `LanguageToggle` component (`src/components/LanguageToggle.tsx`) cycles through available languages. Uses Zustand `setLanguage`. Available on landing page alongside `ThemeToggle`
+- **Tooltips**: Use shadcn `<Tooltip>` + `<TooltipProvider>` from `@/components/ui/tooltip` for help hints — native `title` attribute renders as a white box in dark mode and ignores the theme. Wrap inline usage with its own `<TooltipProvider>` (no app-level provider exists).
+- **MathMarkdown**: Render any content string that may contain LaTeX via `<MathMarkdown content={str} />` — plain `<span>` won't process `$...$`/`$$...$$` markup. Applies to exercise statements, hints, key points, and choice labels.
 
 ## Conventions
 
@@ -176,6 +179,7 @@ Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Prisma 7 (SQLite/libsql), Au
 - **Gallery**: Gallery listings are `CourseShare` records with `isGalleryListed = true`. Admin-only curation — regular users create share links, admins promote to gallery. `CourseRating` model for star ratings, `starCount`/`cloneCount` denormalized on `CourseShare`
 - **Stripe payment**: One-time payment via Stripe Checkout. Webhook auto-generates an access code, redeems it, and activates the user. `Payment` model for audit trail. BLIK + card support
 - **Admin panel**: `/admin` page with tabs for access codes, users, gallery management. Only `role === "admin"` users can access
+- **Cheapest model utility**: `getCheapestModel(apiKeys)` + `getProviderOptions(model)` in `src/lib/ai/repairSchema.ts` — use for lightweight AI ops (grading, evaluation) instead of hardcoding model names.
 
 ## Security Hardening
 
@@ -222,8 +226,9 @@ Implemented security measures and ongoing hardening work:
 - **Build command**: `pnpm build` (runs `next build`)
 - **Required env vars**: `AUTH_SECRET`, `NEXTAUTH_URL`, `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`
 - **Optional env vars**: `GOOGLE_CLIENT_ID`/`SECRET`, `GITHUB_ID`/`SECRET`, `DISCORD_CLIENT_ID`/`SECRET` (OAuth providers), `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID` (payments), `API_KEY_ENCRYPTION_KEY` (server-side key storage)
-- **Production Turso credentials**: Stored in `.env.turso-prod` (gitignored, NOT auto-loaded by Next.js). Contains `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`
+- **Production secrets**: Stored in `.env.secret` (gitignored, NOT auto-loaded by Next.js). Contains `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `GH_TOKEN`, and AI provider keys for gallery seeding
 - **Applying schema changes to production**: Prisma CLI (v7) cannot connect to `libsql://` URLs directly — the `migrate.adapter` config was removed in v7. Instead, apply migration SQL via the Turso HTTP API. Use the `/migrate-prod` skill to automate this
+- **CRITICAL — Production database is user-controlled**: NEVER apply, execute, or modify the production database without explicit verbal confirmation from the user. This includes running `migrate-prod.mjs apply`, `backfill`, `drift --fix`, or any direct SQL against Turso. Read-only commands (`status`, `plan`, `drift`, `tables`, `inspect`) are safe to run. Always show the user what will change (`plan` output) and wait for their explicit approval before any write operation. No exceptions — even if a PR description says "run migrations after merge", the user must confirm first.
 - **NEVER** set `TURSO_DATABASE_URL` in `.env.local` — it causes `pnpm dev` to write to the production database
 - **Dev bypass production guard**: `isDevBypassEnabled()` in `src/lib/dev-bypass.ts` blocks `AUTH_DEV_BYPASS` in production (`NODE_ENV=production`) unless `NEXT_TEST_MODE=1` (E2E tests). Also logs a warning when bypass is active with a remote database (`TURSO_DATABASE_URL` set)
 

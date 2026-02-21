@@ -22,6 +22,8 @@ interface AppState {
   voiceTriggerWord: string;
   contextDocGuideDismissed: boolean;
   installPromptDismissed: boolean;
+  freeResponseCheckMode: "ai" | "solution";
+  setFreeResponseCheckMode: (mode: "ai" | "solution") => void;
   setProviderApiKey: (provider: AIProvider, key: string | null) => void;
   setSidebarOpen: (open: boolean) => void;
   setChatSidebarOpen: (open: boolean) => void;
@@ -52,8 +54,8 @@ export const useAppStore = create<AppState>()(
       chatSidebarOpen: false,
       scratchpadOpen: false,
       notebookOpen: false,
-      generationModel: "claude-opus-4-6",
-      chatModel: "claude-sonnet-4-5-20250929",
+      generationModel: "claude-sonnet-4-6",
+      chatModel: "claude-sonnet-4-6",
       language: "en",
       colorTheme: "neutral",
       customVoiceKeywords: [],
@@ -64,6 +66,8 @@ export const useAppStore = create<AppState>()(
       voiceTriggerWord: "",
       contextDocGuideDismissed: false,
       installPromptDismissed: false,
+      freeResponseCheckMode: "solution",
+      setFreeResponseCheckMode: (mode) => set({ freeResponseCheckMode: mode }),
       setProviderApiKey: (provider, key) =>
         set((state) => ({
           apiKeys: {

@@ -10,12 +10,22 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { MathMarkdown } from "@/components/lesson/MathMarkdown";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { computeDagLayers } from "@/lib/course/dagLayers";
+import { useApiHeaders } from "@/hooks/useApiHeaders";
+import { LANGUAGE_NAMES } from "@/lib/ai/prompts/languageInstruction";
+import { Languages } from "lucide-react";
+import { parseLessonContent } from "@/lib/content/parseLessonContent";
 
 interface SharedLesson {
   id: string;
@@ -77,6 +87,8 @@ export default function SharedCoursePage({
   const [error, setError] = useState<string | null>(null);
   const [expandedLesson, setExpandedLesson] = useState<string | null>(null);
   const [cloning, setCloning] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const apiHeaders = useApiHeaders();
 
   useEffect(() => {
     fetch(`/api/shared/${shareToken}`)
@@ -119,6 +131,33 @@ export default function SharedCoursePage({
     }
   }
 
+  async function handleTranslate(targetLanguage: string) {
+    setTranslating(true);
+    try {
+      const res = await fetch(`/api/courses/_/regenerate-language`, {
+        method: "POST",
+        headers: apiHeaders,
+        body: JSON.stringify({ targetLanguage, shareToken }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to translate course");
+      }
+      const result = await res.json();
+      const langName = LANGUAGE_NAMES[targetLanguage] ?? targetLanguage;
+      toast.success(t("export:courseTranslated", { language: langName }));
+      window.location.href = `/courses/${result.id}`;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to translate");
+    } finally {
+      setTranslating(false);
+    }
+  }
+
+  const translateLanguages = data
+    ? Object.entries(LANGUAGE_NAMES).filter(([code]) => code !== data.course.language)
+    : [];
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -160,9 +199,23 @@ export default function SharedCoursePage({
             )}
           </div>
           <ThemeToggle />
-          <Button onClick={handleClone} disabled={cloning}>
-            {cloning ? t("export:cloning") : t("export:cloneToMyCourses")}
+          <Button onClick={handleClone} disabled={cloning || translating}>
+            {cloning ? t("export:cloning") : translating ? t("export:translating") : t("export:cloneToMyCourses")}
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" disabled={cloning || translating}>
+                <Languages className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="max-h-64 overflow-y-auto">
+              {translateLanguages.map(([code, name]) => (
+                <DropdownMenuItem key={code} onClick={() => handleTranslate(code)}>
+                  {name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Badge variant="outline" className="capitalize">
             {course.difficulty}
           </Badge>
@@ -274,7 +327,7 @@ export default function SharedCoursePage({
           if (!lesson?.contentJson) return null;
           let content;
           try {
-            content = JSON.parse(lesson.contentJson);
+            content = parseLessonContent(lesson.contentJson);
           } catch {
             return null;
           }
@@ -309,7 +362,7 @@ export default function SharedCoursePage({
                   </div>
                 )}
                 {content.sections?.map(
-                  (section: Record<string, unknown>, i: number) => (
+                  (section, i: number) => (
                     <div key={i}>
                       {section.type === "text" && (
                         <MathMarkdown

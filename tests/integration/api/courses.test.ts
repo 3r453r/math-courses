@@ -1,5 +1,14 @@
 import { describe, it, expect } from "vitest";
+import { NextRequest } from "next/server";
 import { GET, POST } from "@/app/api/courses/route";
+
+function makeGetRequest(params?: Record<string, string>) {
+  const url = new URL("http://localhost/api/courses");
+  if (params) {
+    for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  }
+  return new NextRequest(url);
+}
 import {
   GET as GET_BY_ID,
   DELETE as DELETE_COURSE,
@@ -16,10 +25,11 @@ import { getTestPrisma } from "../helpers/db";
 
 describe("GET /api/courses", () => {
   it("returns empty array when no courses exist", async () => {
-    const response = await GET();
+    const response = await GET(makeGetRequest());
     const data = await response.json();
     expect(response.status).toBe(200);
-    expect(data).toEqual([]);
+    expect(data.courses).toEqual([]);
+    expect(data.filters).toBeDefined();
   });
 
   it("returns courses with lesson counts", async () => {
@@ -27,11 +37,11 @@ describe("GET /api/courses", () => {
     await createTestLesson(course.id, { title: "Lesson 1", orderIndex: 0 });
     await createTestLesson(course.id, { title: "Lesson 2", orderIndex: 1 });
 
-    const response = await GET();
+    const response = await GET(makeGetRequest());
     const data = await response.json();
-    expect(data).toHaveLength(1);
-    expect(data[0].id).toBe(course.id);
-    expect(data[0]._count.lessons).toBe(2);
+    expect(data.courses).toHaveLength(1);
+    expect(data.courses[0].id).toBe(course.id);
+    expect(data.courses[0]._count.lessons).toBe(2);
   });
 
   it("returns courses ordered by createdAt desc", async () => {
@@ -40,25 +50,25 @@ describe("GET /api/courses", () => {
     await new Promise((r) => setTimeout(r, 50));
     await createTestCourse({ title: "Second Course" });
 
-    const response = await GET();
+    const response = await GET(makeGetRequest());
     const data = await response.json();
-    expect(data).toHaveLength(2);
-    expect(data[0].title).toBe("Second Course");
-    expect(data[1].title).toBe("First Course");
+    expect(data.courses).toHaveLength(2);
+    expect(data.courses[0].title).toBe("Second Course");
+    expect(data.courses[1].title).toBe("First Course");
   });
 
   it("returns courses with their language field", async () => {
     await createTestCourse({ title: "English Course", language: "en" });
     await createTestCourse({ title: "Polish Course", language: "pl" });
 
-    const response = await GET();
+    const response = await GET(makeGetRequest());
     const data = await response.json();
-    expect(data).toHaveLength(2);
+    expect(data.courses).toHaveLength(2);
 
-    const englishCourse = data.find(
+    const englishCourse = data.courses.find(
       (c: { title: string }) => c.title === "English Course"
     );
-    const polishCourse = data.find(
+    const polishCourse = data.courses.find(
       (c: { title: string }) => c.title === "Polish Course"
     );
     expect(englishCourse.language).toBe("en");

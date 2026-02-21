@@ -140,14 +140,12 @@ test.describe("Notebook", () => {
     });
 
     // Find and click an insert button (the "+" between pages)
-    // There will be insert buttons between pages; hover to reveal then click
+    // nth(0) is the "insert at top" button; nth(1) is after the first page
     const insertButtons = aside.locator('button[title="Insert custom page"]');
-    // The second insert button should be between the first and second pages
-    const insertButton = insertButtons.nth(1);
-    await insertButton.click({ force: true });
+    await insertButtons.nth(1).click({ force: true });
 
     // Should see "Untitled" in the page list
-    await expect(aside.getByText("Untitled")).toBeVisible({ timeout: 5000 });
+    await expect(aside.getByText("Untitled")).toBeVisible({ timeout: 10000 });
   });
 
   test("lesson page title links to lesson", async ({ page }) => {

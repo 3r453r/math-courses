@@ -15,6 +15,9 @@ const eslintConfig = defineConfig([
           ignoreRestSiblings: true,
         },
       ],
+      // Intentional initialization pattern: setState called synchronously in
+      // useEffect to sync with external systems (matchMedia, localStorage, etc.)
+      "react-hooks/set-state-in-effect": "off",
     },
   },
   // Override default ignores of eslint-config-next.
@@ -25,6 +28,14 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Ephemeral one-off scripts (gitignored, not reusable utilities):
+    "scripts/gen-*.mjs",
+    "scripts/assemble-batch*.mjs",
+    "scripts/assemble-enhancements.mjs",
+    "scripts/enhance-lesson-examples.mts",
+    "scripts/ab-test-*.mts",
+    // Debug dumps:
+    ".debug-dumps/**",
   ]),
 ]);
 

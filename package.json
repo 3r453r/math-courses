@@ -18,7 +18,11 @@
     "test:all": "vitest run && vitest run --config vitest.config.integration.ts && playwright test",
     "migrate:prod:status": "node scripts/migrate-prod.mjs status",
     "migrate:prod:plan": "node scripts/migrate-prod.mjs plan",
-    "migrate:prod:apply": "node scripts/migrate-prod.mjs apply"
+    "migrate:prod:apply": "node scripts/migrate-prod.mjs apply",
+    "seed:gallery": "tsx scripts/seed-gallery.mts",
+    "seed:gallery:dry-run": "tsx scripts/seed-gallery.mts --dry-run",
+    "import:library": "tsx scripts/import-course-library.mts",
+    "import:library:dry-run": "tsx scripts/import-course-library.mts --dry-run"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.43",

@@ -68,12 +68,22 @@ If the tracker table doesn't exist yet:
 
 ## Credentials
 
-Production credentials live in `.env.turso-prod` (gitignored). The script reads this file automatically — no manual `export` needed.
+Production credentials live in `.env.secret` (gitignored). The script reads this file automatically — no manual `export` needed.
+
+## CRITICAL — User Approval Required
+
+**The production database is strictly user-controlled.** NEVER run any write command (`apply`, `backfill`, `drift --fix`) without explicit verbal confirmation from the user in the current conversation. This is non-negotiable:
+
+- **Read-only commands are safe** to run without asking: `status`, `plan`, `drift`, `tables`, `inspect`
+- **Write commands require explicit user approval**: `apply`, `backfill`, `drift --fix`
+- Always show the `plan` output first so the user can see exactly what will change
+- Wait for the user to say "yes", "go ahead", "apply it", or similar before executing
+- Even if a PR description or task list says "run migrations after merge" — still ask the user first
+- No autonomous production database modifications, ever
 
 ## Important Notes
 
-- **Always confirm with the user before executing** — the `apply` command modifies the production database
-- The script requires explicit `y` confirmation before any write operation
+- The script requires explicit `y` confirmation before any write operation (defense in depth — but the real gate is user approval above)
 - Each migration is applied atomically — all-or-nothing via Turso pipeline
 - `CREATE TABLE` / `CREATE INDEX` are auto-wrapped with `IF NOT EXISTS`
 - `ALTER TABLE ADD COLUMN` duplicate-column errors are caught and logged as SKIP

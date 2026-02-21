@@ -86,6 +86,8 @@ export default function SetupPage() {
     setChatModel,
     language,
     setLanguage,
+    freeResponseCheckMode,
+    setFreeResponseCheckMode,
   } = useAppStore();
   const { t } = useTranslation(["setup", "common", "login"]);
   const { theme, setTheme } = useTheme();
@@ -406,6 +408,27 @@ export default function SetupPage() {
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">{t("setup:languageDescription")}</p>
+          </div>
+
+          {/* Learning Preferences */}
+          <div className="space-y-3 pt-2">
+            <Label>{t("setup:learningPreferences")}</Label>
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">{t("setup:freeResponseCheckMode")}</p>
+              <Select
+                value={freeResponseCheckMode}
+                onValueChange={(v) => setFreeResponseCheckMode(v as "ai" | "solution")}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ai">{t("setup:freeResponseCheckModeAi")}</SelectItem>
+                  <SelectItem value="solution">{t("setup:freeResponseCheckModeSolution")}</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">{t("setup:freeResponseCheckModeHelp")}</p>
+            </div>
           </div>
 
           {/* Appearance */}

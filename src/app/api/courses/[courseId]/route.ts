@@ -11,6 +11,7 @@ const updateCourseSchema = z.object({
   lessonFailureThreshold: z.number().min(0).max(1).optional(),
   lessonWeights: z.record(z.string(), z.number().min(0.1).max(5.0)).optional(),
   galleryEligible: z.boolean().optional(),
+  isBookmarked: z.boolean().optional(),
 });
 
 export async function GET(
@@ -92,7 +93,7 @@ export async function PATCH(
     const { data: body, error: parseError } = await parseBody(request, updateCourseSchema);
     if (parseError) return parseError;
 
-    const { contextDoc, passThreshold, noLessonCanFail, lessonFailureThreshold, lessonWeights, galleryEligible } = body;
+    const { contextDoc, passThreshold, noLessonCanFail, lessonFailureThreshold, lessonWeights, galleryEligible, isBookmarked } = body;
 
     const updateData: Record<string, unknown> = {};
     if (contextDoc !== undefined) updateData.contextDoc = contextDoc;
@@ -100,6 +101,7 @@ export async function PATCH(
     if (noLessonCanFail !== undefined) updateData.noLessonCanFail = noLessonCanFail;
     if (lessonFailureThreshold !== undefined) updateData.lessonFailureThreshold = lessonFailureThreshold;
     if (galleryEligible !== undefined) updateData.galleryEligible = galleryEligible;
+    if (isBookmarked !== undefined) updateData.isBookmarked = isBookmarked;
 
     if (Object.keys(updateData).length > 0) {
       await prisma.course.update({

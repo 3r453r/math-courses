@@ -13,13 +13,27 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { MathMarkdown } from "./MathMarkdown";
 import type { PracticeExercise as PracticeExerciseType } from "@/types/lesson";
 import { cn } from "@/lib/utils";
+import { useAppStore } from "@/stores/appStore";
+import { useApiHeaders } from "@/hooks/useApiHeaders";
 
 interface Props {
   exercise: PracticeExerciseType;
   index: number;
+}
+
+interface CheckResult {
+  score: number;
+  feedback: string;
+  keyPointsMet: string[];
 }
 
 export function PracticeExercise({ exercise, index }: Props) {
@@ -29,6 +43,16 @@ export function PracticeExercise({ exercise, index }: Props) {
   const [userAnswer, setUserAnswer] = useState("");
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [checkResult, setCheckResult] = useState<CheckResult | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
+  const [noApiKey, setNoApiKey] = useState(false);
+
+  const apiKeys = useAppStore((s) => s.apiKeys);
+  const freeResponseCheckMode = useAppStore((s) => s.freeResponseCheckMode);
+  const generationModel = useAppStore((s) => s.generationModel);
+  const apiHeaders = useApiHeaders();
+
+  const hasApiKey = !!(apiKeys.anthropic || apiKeys.openai || apiKeys.google);
 
   const isCorrect = (() => {
     if (!submitted) return null;
@@ -44,7 +68,44 @@ export function PracticeExercise({ exercise, index }: Props) {
     return null;
   })();
 
-  function handleSubmit() {
+  async function handleSubmit() {
+    if (exercise.answerType === "free_response") {
+      if (!hasApiKey || freeResponseCheckMode === "solution") {
+        setSubmitted(true);
+        setShowSolution(true);
+        if (!hasApiKey) setNoApiKey(true);
+        return;
+      }
+
+      // AI mode
+      setIsChecking(true);
+      setSubmitted(true);
+      try {
+        const res = await fetch("/api/practice/check", {
+          method: "POST",
+          headers: apiHeaders,
+          body: JSON.stringify({
+            questionText: exercise.problemStatement,
+            studentAnswer: userAnswer,
+            solution: exercise.solution,
+            keyPoints: exercise.keyPoints ?? [],
+            model: generationModel,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json() as CheckResult;
+          setCheckResult(data);
+        } else {
+          setShowSolution(true);
+        }
+      } catch {
+        setShowSolution(true);
+      } finally {
+        setIsChecking(false);
+      }
+      return;
+    }
+
     setSubmitted(true);
   }
 
@@ -54,7 +115,25 @@ export function PracticeExercise({ exercise, index }: Props) {
     setSelectedChoice(null);
     setShowSolution(false);
     setHintsRevealed(0);
+    setCheckResult(null);
+    setIsChecking(false);
+    setNoApiKey(false);
   }
+
+  const scorePercent = checkResult ? Math.round(checkResult.score * 100) : null;
+  const scoreBadgeVariant =
+    scorePercent === null
+      ? "secondary"
+      : scorePercent >= 80
+      ? "default"
+      : scorePercent >= 50
+      ? "secondary"
+      : "destructive";
+
+  const keyPointsNotMet =
+    checkResult && exercise.keyPoints
+      ? exercise.keyPoints.filter((kp) => !checkResult.keyPointsMet.includes(kp))
+      : [];
 
   return (
     <Card className="my-6 border-l-4 border-l-emerald-500">
@@ -69,6 +148,20 @@ export function PracticeExercise({ exercise, index }: Props) {
           <Badge variant="secondary" className="text-xs capitalize">
             {exercise.answerType.replace("_", " ")}
           </Badge>
+          {exercise.answerType === "free_response" && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-muted text-muted-foreground text-[10px] font-medium cursor-help select-none">
+                    ?
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  {t("freeResponseAiHint")}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -131,13 +224,79 @@ export function PracticeExercise({ exercise, index }: Props) {
 
         {/* Free response */}
         {exercise.answerType === "free_response" && (
-          <textarea
-            className="w-full min-h-[100px] p-3 rounded-lg border bg-background text-sm resize-y"
-            placeholder={t("freeResponsePlaceholder")}
-            value={userAnswer}
-            onChange={(e) => setUserAnswer(e.target.value)}
-            disabled={submitted}
-          />
+          <>
+            <textarea
+              className="w-full min-h-[100px] p-3 rounded-lg border bg-background text-sm resize-y"
+              placeholder={t("freeResponsePlaceholder")}
+              value={userAnswer}
+              onChange={(e) => setUserAnswer(e.target.value)}
+              disabled={submitted}
+            />
+
+            {isChecking && (
+              <p className="text-sm text-muted-foreground animate-pulse">
+                {t("checkingAnswer")}
+              </p>
+            )}
+
+            {checkResult && !isChecking && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Badge variant={scoreBadgeVariant}>
+                    {t("aiScore", { percent: scorePercent })}
+                  </Badge>
+                </div>
+                <p className="text-sm">{checkResult.feedback}</p>
+
+                {exercise.keyPoints && exercise.keyPoints.length > 0 && (
+                  <div className="space-y-1">
+                    {checkResult.keyPointsMet.length > 0 && (
+                      <>
+                        <p className="text-xs font-medium text-muted-foreground">
+                          {t("keyPointsMet")}
+                        </p>
+                        <ul className="space-y-0.5">
+                          {checkResult.keyPointsMet.map((kp, i) => (
+                            <li
+                              key={i}
+                              className="flex items-start gap-1.5 text-sm text-green-700 dark:text-green-400"
+                            >
+                              <span className="mt-0.5 shrink-0">✓</span>
+                              <MathMarkdown content={kp} className="text-sm" />
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                    {keyPointsNotMet.length > 0 && (
+                      <>
+                        <p className="text-xs font-medium text-muted-foreground mt-2">
+                          {t("keyPointsNotMet")}
+                        </p>
+                        <ul className="space-y-0.5">
+                          {keyPointsNotMet.map((kp, i) => (
+                            <li
+                              key={i}
+                              className="flex items-start gap-1.5 text-sm text-muted-foreground"
+                            >
+                              <span className="mt-0.5 shrink-0">○</span>
+                              <MathMarkdown content={kp} className="text-sm" />
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {noApiKey && submitted && (
+              <p className="text-xs text-muted-foreground">
+                {t("addApiKeyForFeedback")}
+              </p>
+            )}
+          </>
         )}
 
         {/* Actions */}
@@ -147,9 +306,11 @@ export function PracticeExercise({ exercise, index }: Props) {
               size="sm"
               onClick={handleSubmit}
               disabled={
+                isChecking ||
                 (exercise.answerType === "multiple_choice" &&
                   !selectedChoice) ||
-                (exercise.answerType === "numeric" && !userAnswer.trim())
+                (exercise.answerType === "numeric" && !userAnswer.trim()) ||
+                (exercise.answerType === "free_response" && !userAnswer.trim())
               }
             >
               {t("checkAnswer")}

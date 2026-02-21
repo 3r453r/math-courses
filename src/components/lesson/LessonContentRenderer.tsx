@@ -18,9 +18,21 @@ import type { LessonContent, LessonSection } from "@/types/lesson";
 
 interface Props {
   content: LessonContent;
+  onRegenerateViz?: (sectionIndex: number) => void;
+  regeneratingVizIndex?: number | null;
 }
 
-function SectionRenderer({ section }: { section: LessonSection }) {
+function SectionRenderer({
+  section,
+  index,
+  onRegenerateViz,
+  regeneratingVizIndex,
+}: {
+  section: LessonSection;
+  index: number;
+  onRegenerateViz?: (sectionIndex: number) => void;
+  regeneratingVizIndex?: number | null;
+}) {
   switch (section.type) {
     case "text":
       return <TextSectionRenderer section={section} />;
@@ -31,7 +43,14 @@ function SectionRenderer({ section }: { section: LessonSection }) {
     case "theorem":
       return <TheoremSectionRenderer section={section} />;
     case "visualization":
-      return <VisualizationSectionRenderer section={section} />;
+      return (
+        <VisualizationSectionRenderer
+          section={section}
+          sectionIndex={index}
+          onRegenerate={onRegenerateViz}
+          isRegenerating={regeneratingVizIndex === index}
+        />
+      );
     case "code_block":
       return <CodeBlockSectionRenderer section={section} />;
     default:
@@ -39,7 +58,7 @@ function SectionRenderer({ section }: { section: LessonSection }) {
   }
 }
 
-export function LessonContentRenderer({ content }: Props) {
+export function LessonContentRenderer({ content, onRegenerateViz, regeneratingVizIndex }: Props) {
   const { t } = useTranslation("lessonContent");
 
   return (
@@ -62,7 +81,13 @@ export function LessonContentRenderer({ content }: Props) {
 
       {/* Sections */}
       {content.sections.map((section, i) => (
-        <SectionRenderer key={i} section={section} />
+        <SectionRenderer
+          key={i}
+          section={section}
+          index={i}
+          onRegenerateViz={onRegenerateViz}
+          regeneratingVizIndex={regeneratingVizIndex}
+        />
       ))}
 
       {/* Worked Examples */}
