@@ -9,7 +9,7 @@ import { parseBody } from "@/lib/api-validation";
 const putApiKeysSchema = z.object({
   apiKeys: z.record(
     z.enum(["anthropic", "openai", "google"]),
-    z.string().max(500)
+    z.string().max(500).optional()
   ),
 });
 
