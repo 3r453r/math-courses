@@ -46,6 +46,20 @@ yarn-error.log*
 scripts/.seed-state.json
 scripts/logs/
 
+# one-off course generation scripts (ephemeral, not reusable utilities)
+scripts/gen-*.mjs
+scripts/assemble-batch*.mjs
+scripts/assemble-enhancements.mjs
+scripts/enhance-lesson-examples.mts
+# A/B test analysis artifacts
+scripts/ab-test-*.md
+scripts/ab-test-*.mts
+# gallery seeding config data (generated)
+scripts/gallery-courses.json
+# root-level debug dumps
+/*.ps1
+/*.txt
+
 # course library (generated content, not source)
 /course-library/
 
