@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
+import { ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -9,13 +10,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { LANGUAGE_NAMES } from "@/lib/ai/prompts/languageInstruction";
+
+const DIFFICULTY_ORDER = ["beginner", "intermediate", "advanced"];
 
 interface GalleryFiltersProps {
   search: string;
   onSearchChange: (value: string) => void;
-  subject: string;
-  onSubjectChange: (value: string) => void;
+  selectedSubjects: string[];
+  onSubjectsChange: (values: string[]) => void;
   language: string;
   onLanguageChange: (value: string) => void;
   difficulty: string;
@@ -30,8 +42,8 @@ interface GalleryFiltersProps {
 export function GalleryFilters({
   search,
   onSearchChange,
-  subject,
-  onSubjectChange,
+  selectedSubjects,
+  onSubjectsChange,
   language,
   onLanguageChange,
   difficulty,
@@ -44,6 +56,25 @@ export function GalleryFilters({
 }: GalleryFiltersProps) {
   const { t } = useTranslation(["gallery"]);
 
+  const sortedDifficulties = [...difficulties].sort(
+    (a, b) => (DIFFICULTY_ORDER.indexOf(a) ?? 99) - (DIFFICULTY_ORDER.indexOf(b) ?? 99)
+  );
+
+  function toggleSubject(s: string) {
+    if (selectedSubjects.includes(s)) {
+      onSubjectsChange(selectedSubjects.filter((x) => x !== s));
+    } else {
+      onSubjectsChange([...selectedSubjects, s]);
+    }
+  }
+
+  const subjectLabel =
+    selectedSubjects.length === 0
+      ? t("gallery:filters.allSubjects")
+      : selectedSubjects.length === 1
+        ? selectedSubjects[0]
+        : t("gallery:filters.subjectsSelected", { count: selectedSubjects.length });
+
   return (
     <div className="flex flex-wrap gap-3 items-center w-full">
       <Input
@@ -53,19 +84,37 @@ export function GalleryFilters({
         className="w-full sm:w-64"
       />
 
-      <Select value={subject} onValueChange={onSubjectChange}>
-        <SelectTrigger className="w-full sm:w-40">
-          <SelectValue placeholder={t("gallery:filters.allSubjects")} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{t("gallery:filters.allSubjects")}</SelectItem>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="w-full sm:w-44 justify-between font-normal">
+            <span className="truncate">{subjectLabel}</span>
+            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-52 max-h-72 overflow-y-auto">
+          {selectedSubjects.length > 0 && (
+            <>
+              <DropdownMenuItem
+                onSelect={() => onSubjectsChange([])}
+                className="text-muted-foreground text-xs"
+              >
+                {t("gallery:filters.clearSubjects")}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
           {subjects.map((s) => (
-            <SelectItem key={s} value={s}>
+            <DropdownMenuCheckboxItem
+              key={s}
+              checked={selectedSubjects.includes(s)}
+              onCheckedChange={() => toggleSubject(s)}
+              onSelect={(e) => e.preventDefault()}
+            >
               {s}
-            </SelectItem>
+            </DropdownMenuCheckboxItem>
           ))}
-        </SelectContent>
-      </Select>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <Select value={language} onValueChange={onLanguageChange}>
         <SelectTrigger className="w-full sm:w-40">
@@ -87,7 +136,7 @@ export function GalleryFilters({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">{t("gallery:filters.allDifficulties")}</SelectItem>
-          {difficulties.map((d) => (
+          {sortedDifficulties.map((d) => (
             <SelectItem key={d} value={d} className="capitalize">
               {d}
             </SelectItem>

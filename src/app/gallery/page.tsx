@@ -64,7 +64,8 @@ function GalleryContent() {
 
   // Read filter state from URL
   const search = searchParams.get("search") ?? "";
-  const subject = searchParams.get("subject") ?? "all";
+  const subjectsParam = searchParams.get("subjects") ?? "";
+  const selectedSubjects = subjectsParam ? subjectsParam.split(",") : [];
   const language = searchParams.get("language") ?? "all";
   const difficulty = searchParams.get("difficulty") ?? "all";
   const sort = searchParams.get("sort") ?? "recent";
@@ -82,7 +83,7 @@ function GalleryContent() {
   function updateParams(updates: Record<string, string | null>, push = false) {
     const next = new URLSearchParams(searchParams.toString());
     for (const [k, v] of Object.entries(updates)) {
-      if (v === null || v === "" || v === "all" || (k === "page" && v === "1")) {
+      if (v === null || v === "" || v === "all" || (k === "page" && v === "1") || (k === "subjects" && v === "")) {
         next.delete(k);
       } else {
         next.set(k, v);
@@ -109,6 +110,10 @@ function GalleryContent() {
     updateParams({ [key]: value, page: null });
   }
 
+  function handleSubjectsChange(values: string[]) {
+    updateParams({ subjects: values.join(","), page: null });
+  }
+
   function handlePageChange(newPage: number) {
     updateParams({ page: String(newPage) }, true);
   }
@@ -118,7 +123,7 @@ function GalleryContent() {
     try {
       const params = new URLSearchParams({ page: String(page), sort });
       if (search) params.set("search", search);
-      if (subject !== "all") params.set("subject", subject);
+      if (selectedSubjects.length > 0) params.set("subjects", selectedSubjects.join(","));
       if (language !== "all") params.set("language", language);
       if (difficulty !== "all") params.set("difficulty", difficulty);
 
@@ -131,7 +136,7 @@ function GalleryContent() {
     } finally {
       setLoading(false);
     }
-  }, [page, sort, search, subject, language, difficulty]);
+  }, [page, sort, search, subjectsParam, language, difficulty]);
 
   useEffect(() => {
     fetchGallery();
@@ -201,8 +206,8 @@ function GalleryContent() {
       <GalleryFilters
         search={searchInput}
         onSearchChange={handleSearchChange}
-        subject={subject}
-        onSubjectChange={(v) => handleFilterChange("subject", v)}
+        selectedSubjects={selectedSubjects}
+        onSubjectsChange={handleSubjectsChange}
         language={language}
         onLanguageChange={(v) => handleFilterChange("language", v)}
         difficulty={difficulty}

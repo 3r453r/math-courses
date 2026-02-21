@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { parseSubjects } from "@/lib/subjects";
+import { parseSubjects, SUBJECTS } from "@/lib/subjects";
+
+const SUBJECTS_LOWER = new Map(SUBJECTS.map((s) => [s.toLowerCase(), s]));
 import { enforceRateLimit } from "@/lib/rate-limit";
 
 const PUBLIC_GALLERY_RATE_LIMIT = {
@@ -27,7 +29,8 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, Number(searchParams.get("page") ?? 1));
     const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") ?? 12)));
     const language = searchParams.get("language") ?? undefined;
-    const subject = searchParams.get("subject") ?? undefined;
+    const subjectsParam = searchParams.get("subjects") ?? undefined;
+    const subjectList = subjectsParam ? subjectsParam.split(",").filter(Boolean) : [];
     const difficulty = searchParams.get("difficulty") ?? undefined;
     const sort = searchParams.get("sort") ?? "recent";
     const search = searchParams.get("search") ?? undefined;
@@ -43,7 +46,11 @@ export async function GET(request: NextRequest) {
     // Course-level filters via nested relation
     const courseWhere: Record<string, unknown> = {};
     if (language) courseWhere.language = language;
-    if (subject) courseWhere.subject = { contains: `"${subject}"` };
+    if (subjectList.length === 1) {
+      courseWhere.subject = { contains: `"${subjectList[0]}"` };
+    } else if (subjectList.length > 1) {
+      courseWhere.OR = subjectList.map((s) => ({ subject: { contains: `"${s}"` } }));
+    }
     if (difficulty) courseWhere.difficulty = difficulty;
     if (search) {
       courseWhere.OR = [
@@ -111,7 +118,13 @@ export async function GET(request: NextRequest) {
       where: { isGalleryListed: true, isActive: true },
       select: { course: { select: { subject: true, difficulty: true, language: true } } },
     });
-    const subjects = [...new Set(allListings.flatMap((s) => parseSubjects(s.course.subject)))].sort();
+    const subjects = [
+      ...new Set(
+        allListings
+          .flatMap((s) => parseSubjects(s.course.subject))
+          .map((s) => SUBJECTS_LOWER.get(s.toLowerCase()) ?? s)
+      ),
+    ].sort();
     const difficulties = [...new Set(allListings.map((s) => s.course.difficulty))].sort();
     const languages = [...new Set(allListings.map((s) => s.course.language).filter(Boolean))].sort();
 

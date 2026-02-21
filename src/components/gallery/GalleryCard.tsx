@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +24,13 @@ import {
 import { StarRating } from "./StarRating";
 import { LANGUAGE_NAMES } from "@/lib/ai/prompts/languageInstruction";
 import { parseSubjects } from "@/lib/subjects";
-import { ChevronDown } from "lucide-react";
+import { computeDagLayers } from "@/lib/course/dagLayers";
+
+interface LessonStructure {
+  id: string;
+  title: string;
+  orderIndex: number;
+}
 
 interface GalleryItem {
   shareToken: string;
@@ -62,6 +70,25 @@ export function GalleryCard({
   isAuthenticated,
 }: GalleryCardProps) {
   const { t } = useTranslation(["gallery"]);
+  const [expanded, setExpanded] = useState(false);
+  const [lessonLayers, setLessonLayers] = useState<LessonStructure[][] | null>(null);
+  const [loadingLessons, setLoadingLessons] = useState(false);
+
+  async function handleToggle() {
+    if (!expanded && !lessonLayers) {
+      setLoadingLessons(true);
+      try {
+        const res = await fetch(`/api/gallery/${item.shareToken}/lessons`);
+        if (res.ok) {
+          const { lessons, edges } = await res.json();
+          setLessonLayers(computeDagLayers(lessons, edges));
+        }
+      } finally {
+        setLoadingLessons(false);
+      }
+    }
+    setExpanded((v) => !v);
+  }
   const tags: string[] = (() => {
     try {
       return JSON.parse(item.tags);
@@ -141,6 +168,33 @@ export function GalleryCard({
             )}
           </div>
         </div>
+
+        <button
+          onClick={handleToggle}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors w-fit"
+        >
+          {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          {expanded ? t("gallery:card.hideLessons") : t("gallery:card.showLessons")}
+        </button>
+
+        {expanded && (
+          <div className="max-h-48 overflow-y-auto space-y-2 pr-1 border-t pt-2">
+            {loadingLessons ? (
+              <p className="text-xs text-muted-foreground">{t("gallery:card.loadingLessons")}</p>
+            ) : lessonLayers?.map((layer, i) => (
+              <div key={i}>
+                <p className="text-xs font-medium text-muted-foreground mb-0.5">
+                  {t("gallery:card.step", { n: i + 1 })}
+                </p>
+                <ul className="space-y-0.5">
+                  {layer.map((lesson) => (
+                    <li key={lesson.id} className="text-xs truncate pl-1">• {lesson.title}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="flex flex-col gap-2">
           {item.hasPreview && (
